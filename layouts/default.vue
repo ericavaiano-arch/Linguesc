@@ -1,10 +1,14 @@
 <template>
-  <div class="min-h-screen flex bg-gray-200">
-    <Sidebar :open="sidebarOpen" @toggle="toggleSidebar" />
+  <div class="flex flex-col h-screen">
+    <!-- Navbar -->
+    <Navbar />
 
-    <div class="flex-1 flex flex-col transition-all duration-300">
+    <div class="flex flex-1">
+      <!-- Sidebar -->
+      <Sidebar :open="sidebarOpen" @toggle="toggleSidebar" />
 
-      <main class="flex-1 p-6">
+      <!-- Conteúdo -->
+      <main class="flex-1 p-6 transition-all duration-300">
         <slot />
       </main>
     </div>
@@ -14,6 +18,7 @@
 <script setup>
 import { ref } from 'vue'
 import Sidebar from '~/components/Sidebar.vue'
+import Navbar from '~/components/Navbar.vue'
 
 const sidebarOpen = ref(true)
 
