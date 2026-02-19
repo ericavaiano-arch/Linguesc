@@ -72,18 +72,36 @@ export default {
     // },
     async verificarUsuario() {
       try {
+        const response = await axios.post(
+          'http://localhost:4000/login',
+          {
+            email: this.email,
+            senha: this.senha
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
 
-        // Por enquanto todos entram no Hub inicial
-        this.$router.push({ path: '/hub' });
+        // Salva usuário logado
+        localStorage.setItem('user', JSON.stringify(response.data));
+
+        // Redireciona para área interna
+        this.$router.push('/hub');
 
       } catch (error) {
-        console.error('Erro ao verificar o usuário:', error);
-        alert('Erro ao verificar o usuário');
+        if (error.response && error.response.data.error) {
+          alert(error.response.data.error);
+        } else {
+          alert('Erro ao conectar com o servidor');
+        }
       }
     },
 
     goToProfile() {
-      this.$router.push('/profile/0');
+      this.$router.push('/register');
     }
   }
 };

@@ -26,13 +26,16 @@
           </NuxtLink>
 
           <NuxtLink
+            v-if="tipoFormatado === 'Aluno'"
             to="/presencaAluno"
             class="text-gray-700 hover:text-green-600 font-medium"
           >
             Presença - Aluno
           </NuxtLink>
 
+
           <NuxtLink
+            v-if="tipoFormatado === 'Professor'"
             to="/presencaProfessor"
             class="text-gray-700 hover:text-green-600 font-medium"
           >
@@ -61,11 +64,12 @@
           class="absolute right-0 mt-2 w-40 bg-white rounded shadow-md py-2 text-sm"
         >
           <NuxtLink
-            to="/perfil"
+            :to="`/profile/${userId}`"
             class="block px-4 py-2 hover:bg-gray-100"
           >
             Perfil
           </NuxtLink>
+
           <button
             @click="logout"
             class="w-full text-left px-4 py-2 hover:bg-gray-100"
@@ -80,15 +84,48 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 const open = ref(false)
+const user = ref(null)
 
-// depois você puxa isso do usuário logado
-const userName = 'Aluno'
-const initial = userName.charAt(0).toUpperCase()
+onMounted(() => {
+  const storedUser = localStorage.getItem('user')
+  if (storedUser) {
+    user.value = JSON.parse(storedUser)
+  }
+})
+
+const userName = computed(() => user.value?.nome || '')
+const userId = computed(() => user.value?.id || null)
+
+const tipoFormatado = computed(() => {
+  if (!user.value?.tipoUsuario) return ''
+
+  if (user.value.tipoUsuario === 'ALUNO') return 'Aluno'
+  if (user.value.tipoUsuario === 'PROFESSOR') return 'Professor'
+
+  return user.value.tipoUsuario
+})
+
+const initial = computed(() => {
+  return userName.value
+    ? userName.value.charAt(0).toUpperCase()
+    : '?'
+})
 
 function logout() {
-  navigateTo('/')
+  open.value = false
+
+  // Remove usuário do storage
+  localStorage.removeItem('user')
+
+  // Limpa estado local
+  user.value = null
+
+  // Redireciona substituindo histórico
+  navigateTo('/', { replace: true })
 }
+
 </script>
+
