@@ -35,7 +35,7 @@
   </div>
 </template>
 
-<script>
+<!-- <script>
 import axios from 'axios';
 
 definePageMeta({
@@ -99,6 +99,71 @@ export default {
         }
       }
     },
+
+    goToProfile() {
+      this.$router.push('/register');
+    }
+  }
+};
+</script> -->
+
+<script>
+import { supabase } from '@/utils/supabase'
+
+definePageMeta({
+  layout: 'auth'
+})
+
+export default {
+  data() {
+    return {
+      email: '',
+      senha: '',
+    };
+  },
+
+  async mounted() {
+    // 🔥 TESTE DE CONEXÃO
+    const { data, error } = await supabase
+      .from('usuarios')
+      .select('*')
+
+    if (error) {
+      console.error('Erro Supabase:', error)
+    } else {
+      console.log('Conectado ao Supabase ✅')
+      console.log(data)
+    }
+  },
+
+  methods: {
+    async verificarUsuario() {
+      try {
+        const response = await $fetch('/api/login', {
+          method: 'POST',
+          body: {
+            email: this.email,
+            senha: this.senha
+          }
+        })
+
+        if (response.error) {
+          alert(response.error)
+          return
+        }
+
+        // Salva usuário logado
+        localStorage.setItem('user', JSON.stringify(response))
+
+        // Redireciona
+        this.$router.push('/hub')
+
+      } catch (error) {
+        alert('Erro ao fazer login')
+        console.error(error)
+      }
+    },
+
 
     goToProfile() {
       this.$router.push('/register');
