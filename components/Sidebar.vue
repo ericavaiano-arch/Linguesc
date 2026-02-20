@@ -48,6 +48,21 @@
         icon="🧑‍🏫"
         :open="open"
       />
+
+      <SidebarItem
+        v-if="tipoUsuario === 'PROFESSOR'"
+        :to="`/presenca-professor/turma/qrcode/1`"
+        label="Presença - QrCode"
+        icon="🧑‍🏫"
+        :open="open"
+      />
+
+      <SidebarItem
+        to="/registroPresenca"
+        label="Presença - QrCode - Aluno"
+        icon="🧑‍🏫"
+        :open="open"
+      />
     </nav>
   </aside>
 </template>

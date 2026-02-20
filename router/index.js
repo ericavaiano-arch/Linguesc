@@ -6,6 +6,10 @@ import PresencaTurma from '@/views/PresencaTurma.vue'
 import Register from '@/views/Register.vue'
 import Login from '@/pages/index.vue'
 
+// Import correto do Qrcode
+import QrcodePresenca from '@/pages/presenca-professor/turma/Qrcode.vue'
+import RegistroPresenca from  '@/pages/registroPresenca.vue'
+
 
 const routes = [
   // LOGIN (rota pública principal)
@@ -23,6 +27,12 @@ const routes = [
   },
 
   // ROTAS PRIVADAS
+    {
+    path: '/registro-presenca',
+    name: 'RegistroPresenca',
+    component: RegistroPresenca,
+    meta: { requiresAuth: true }
+  },
   {
     path: '/presenca-professor',
     name: 'PresencaProfessor',
@@ -35,9 +45,15 @@ const routes = [
     component: PresencaTurma,
     props: true,
     meta: { requiresAuth: true }
+  },
+  {
+  path: '/presenca-professor/turma/qrcode/:id',
+    name: 'QrcodePresenca',
+    component: QrcodePresenca,
+    props: true,
+    meta: { requiresAuth: true }
   }
 ]
-
 
 const router = createRouter({
   history: createWebHistory(),
@@ -53,6 +69,5 @@ router.beforeEach((to, from, next) => {
     next();
   }
 });
-
 
 export default router
