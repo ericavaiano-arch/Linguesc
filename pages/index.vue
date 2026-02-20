@@ -35,78 +35,6 @@
   </div>
 </template>
 
-<!-- <script>
-import axios from 'axios';
-
-definePageMeta({
-  layout: 'auth'
-})
-
-export default {
-  data() {
-    return {
-      email: '',
-      senha: '',
-    };
-  },
-  methods: {
-    // async verificarUsuario() {
-    //   let id = null
-    //   try {
-    //     const response = await axios.get('http://localhost:4000/usuarios');
-    //     const usuarios = response.data;
-    //     const usuario = usuarios.find(user => user.email === this.email && user.senha === this.senha);
-    //     if (usuario) {
-    //       id = usuario.id
-    //     }
-
-    //     if (usuario) {
-    //       this.$router.push({path: `/projects/${usuario.id}`});
-    //     } else {
-    //       alert('Email ou senha incorretos');
-    //     }
-    //   } catch (error) {
-    //     console.error('Erro ao verificar o usuário:', error);
-    //     alert('Erro ao verificar o usuário');
-    //   }
-    // },
-    async verificarUsuario() {
-      try {
-        const response = await axios.post(
-          'http://localhost:4000/login',
-          {
-            email: this.email,
-            senha: this.senha
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-
-        // Salva usuário logado
-        localStorage.setItem('user', JSON.stringify(response.data));
-
-        // Redireciona para área interna
-        this.$router.push('/hub');
-
-      } catch (error) {
-        if (error.response && error.response.data.error) {
-          alert(error.response.data.error);
-        } else {
-          alert('Erro ao conectar com o servidor');
-        }
-      }
-    },
-
-    goToProfile() {
-      this.$router.push('/register');
-    }
-  }
-};
-</script> -->
-
 <script>
 import { supabase } from '@/utils/supabase'
 
@@ -122,48 +50,41 @@ export default {
     };
   },
 
-  async mounted() {
-    // 🔥 TESTE DE CONEXÃO
-    const { data, error } = await supabase
-      .from('usuarios')
-      .select('*')
-
-    if (error) {
-      console.error('Erro Supabase:', error)
-    } else {
-      console.log('Conectado ao Supabase ✅')
-      console.log(data)
-    }
-  },
-
   methods: {
     async verificarUsuario() {
-      try {
-        const response = await $fetch('/api/login', {
-          method: 'POST',
-          body: {
-            email: this.email,
-            senha: this.senha
-          }
-        })
+      if (!this.email || !this.senha) {
+        alert('Email e senha obrigatórios');
+        return;
+      }
 
-        if (response.error) {
-          alert(response.error)
-          return
+      try {
+        // Faz login pelo Supabase Auth
+        const { data: usuario, error } = await supabase
+          .from('usuarios')
+          .select('id, nome, email, tipoUsuario, dtInclusao')
+          .eq('email', this.email)
+          .eq('senha', this.senha)
+          .single();
+
+        if (error || !usuario) {
+          alert('Email ou senha incorretos');
+          return;
         }
 
-        // Salva usuário logado
-        localStorage.setItem('user', JSON.stringify(response))
+        // login OK
+        localStorage.setItem('user', JSON.stringify({
+          id: usuario.id,
+          nome: usuario.nome,
+          email: usuario.email,
+          tipoUsuario: usuario.tipoUsuario
+        }));
+        this.$router.push('/hub');
 
-        // Redireciona
-        this.$router.push('/hub')
-
-      } catch (error) {
-        alert('Erro ao fazer login')
-        console.error(error)
+      } catch (err) {
+        console.error('Erro ao conectar com Supabase:', err);
+        alert('Erro ao conectar com o servidor');
       }
     },
-
 
     goToProfile() {
       this.$router.push('/register');

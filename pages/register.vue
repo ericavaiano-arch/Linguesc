@@ -44,12 +44,6 @@
               <option value="PROFESSOR">Professor</option>
             </select>
           </div>
-          <!-- <div class="mb-4">
-            <label class="block text-gray-700 text-md font-bold mb-2" for="dataNascimento">
-              Data de Nascimento
-            </label>
-            <input v-model="dataNascimento" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="dataNascimento" type="date">
-          </div> -->
 
           <div class="flex justify-center mt-8">
             <button :class="{ 'opacity-50': !nome || !email || !senha || !tipoUsuario }" :disabled="!nome || !email || !senha || !tipoUsuario" class="bg-green-500 hover:bg-green-600 w-full text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
@@ -63,12 +57,11 @@
 </template>
 
 <script>
-import axios from 'axios';
+import { supabase } from '@/utils/supabase'
 
 definePageMeta({
   layout: 'auth'
 })
-
 
 export default {
   data() {
@@ -78,35 +71,44 @@ export default {
       senha: '',
       tipoUsuario: '',
       emailInvalido: false,
-      senhaCurta: false,
-      erro: ''
+      senhaCurta: false
     };
   },
   methods: {
     async cadastrarUsuario() {
-      const payload = {
-        nome: this.nome,
-        email: this.email,
-        senha: this.senha,
-        tipoUsuario: this.tipoUsuario
-      };
+      if (!this.nome || !this.email || !this.senha || !this.tipoUsuario) {
+        alert('Todos os campos são obrigatórios');
+        return;
+      }
+
+      if (this.emailInvalido || this.senhaCurta) {
+        alert('Corrija os erros antes de cadastrar');
+        return;
+      }
 
       try {
-        const response = await axios.post(
-          'http://localhost:4000/usuarios',
-          payload,
-          {
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          }
-        );
+        // Insere usuário na tabela 'usuarios'
+        const { data, error } = await supabase
+          .from('usuarios')
+          .insert([{
+            nome: this.nome,
+            email: this.email,
+            senha: this.senha,
+            tipoUsuario: this.tipoUsuario
+          }]);
 
+        if (error) {
+          alert(error.message);
+          return;
+        }
+
+        alert('Usuário cadastrado com sucesso!');
         this.resetForm();
         this.voltar();
 
-      } catch (error) {
-        alert(error.response?.data?.error || 'Erro ao cadastrar');
+      } catch (err) {
+        console.error('Erro ao cadastrar usuário:', err);
+        alert('Erro ao conectar com Supabase');
       }
     },
 
@@ -116,13 +118,16 @@ export default {
       this.senha = '';
       this.tipoUsuario = '';
     },
+
     voltar() {
       this.$router.push('/');
     },
+
     validarEmail() {
       const regexEmail = /\S+@\S+\.\S+/;
       this.emailInvalido = !regexEmail.test(this.email);
     },
+
     validarSenha() {
       this.senhaCurta = this.senha.length < 8;
     },

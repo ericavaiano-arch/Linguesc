@@ -26,13 +26,6 @@
             <input v-model="email" @input="validarEmail" :class="{ 'border-red-500': emailInvalido }" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="email" type="email" placeholder="E-mail">
             <p v-if="emailInvalido" class="text-red-500 text-xs italic">Formato de e-mail inválido.</p>
           </div>
-          <!-- <div class="mb-4">
-            <label class="block text-gray-700 text-md font-bold mb-2" for="senha">
-              Senha
-            </label>
-            <input v-model="senha" @input="validarSenha" :class="{ 'border-red-500': senhaCurta }" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="senha" type="password" placeholder="Senha">
-            <p v-if="senhaCurta" class="text-red-500 text-xs italic">A senha deve ter pelo menos 8 caracteres.</p>
-          </div> -->
           <div class="mb-4">
             <label class="block text-gray-700 text-md font-bold mb-2">
               Tipo de Usuário
@@ -44,12 +37,6 @@
               <option value="PROFESSOR">Professor</option>
             </select>
           </div>
-          <!-- <div class="mb-4">
-            <label class="block text-gray-700 text-md font-bold mb-2" for="dtInclusao">
-              Data de Nascimento
-            </label>
-            <input v-model="dtInclusao" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="dtInclusao" type="date">
-          </div> -->
 
           <div class="flex justify-center mt-8">
             <button :class="{ 'opacity-50': !nome || !email || !tipoUsuario }" :disabled="!nome || !email  || !tipoUsuario" class="bg-green-500 hover:bg-green-600 w-full text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
@@ -63,89 +50,85 @@
 </template>
 
 <script>
-import axios from 'axios';
+import { supabase } from '@/utils/supabase'
 
 export default {
   data() {
     return {
       nome: '',
       email: '',
-      senha: '',
       tipoUsuario: '',
       emailInvalido: false,
-      senhaCurta: false,
-      cadastrando: false,
-      userId: null,
-      erro: ''
+      userId: null
     };
   },
   methods: {
     async salvarPerfil() {
-      const payload = {
-        nome: this.nome,
-        email: this.email,
-        tipoUsuario: this.tipoUsuario
-      };
-
-      if (this.senha) {
-        payload.senha = this.senha;
+      if (!this.nome || !this.email || !this.tipoUsuario) {
+        alert('Preencha todos os campos');
+        return;
       }
 
       try {
-        await axios.put(
-          `http://localhost:4000/usuarios/${this.userId}`,
-          payload
-        );
+        const { data, error } = await supabase
+          .from('usuarios')
+          .update({
+            nome: this.nome,
+            email: this.email,
+            tipoUsuario: this.tipoUsuario
+          })
+          .eq('id', this.userId);
 
-        alert('Perfil atualizado com sucesso');
+        if (error) {
+          alert(error.message);
+          return;
+        }
 
-      } catch (error) {
-        alert(error.response?.data?.error || 'Erro ao atualizar');
+        alert('Perfil atualizado com sucesso!');
+
+      } catch (err) {
+        console.error('Erro ao atualizar usuário:', err);
+        alert('Erro ao atualizar usuário');
       }
     },
 
-
-    resetForm() {
-      this.nome = '';
-      this.email = '';
-      this.senha = '';
-      this.tipoUsuario = '';
-    },
-    voltar() {
-        this.$router.push({path: `/projects/${this.userId}`});
-    },
-    validarEmail() {
-      const regexEmail = /\S+@\S+\.\S+/;
-      this.emailInvalido = !regexEmail.test(this.email);
-    },
-    validarSenha() {
-      this.senhaCurta = this.senha.length < 8;
-    },
-    checkOtherOption() {
-      if (this.ocupacao !== 'Outro') {
-        this.outraOcupacao = '';
-      }
-    },
-    async getUser () {
+    async getUser() {
       try {
-        const response = await axios.get(`http://localhost:4000/usuarios/${this.userId}`);
-        const usuario = response.data;
+        const { data: usuario, error } = await supabase
+          .from('usuarios')
+          .select('id, nome, email, tipoUsuario, dtInclusao')
+          .eq('id', this.userId)
+          .single();
+
+        if (error || !usuario) {
+          alert('Erro ao carregar dados do usuário');
+          return;
+        }
+
         this.nome = usuario.nome;
         this.email = usuario.email;
         this.tipoUsuario = usuario.tipoUsuario;
 
-      } catch (error) {
-        console.error('Erro ao verificar o usuário:', error);
-        alert('Erro ao verificar o usuário');
+      } catch (err) {
+        console.error('Erro ao buscar usuário:', err);
+        alert('Erro ao buscar usuário');
       }
+    },
+
+    validarEmail() {
+      const regexEmail = /\S+@\S+\.\S+/;
+      this.emailInvalido = !regexEmail.test(this.email);
+    },
+
+    voltar() {
+      this.$router.push('/');
     }
   },
+
   created() {
     this.userId = Number(this.$route.params.id);
-    if (this.userId != 0){
+    if (this.userId) {
       this.getUser();
-    } else {
-      this.userId = 0;
     }
   }
 };
