@@ -4,10 +4,10 @@
     <!-- Header -->
     <div class="mb-10">
       <h1 class="text-3xl font-bold text-green-700">
-        Presença – Professor
+        QR Code - Professor
       </h1>
       <p class="text-gray-500 mt-2">
-        Selecione uma turma para acompanhar a presença dos alunos.
+        Selecione uma turma para gerar o QR Code de presença.
       </p>
       <div class="w-20 h-1 bg-green-600 mt-4 rounded"></div>
     </div>
@@ -35,7 +35,7 @@
         v-for="turma in turmas"
         :key="turma.id"
         class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg hover:border-green-500 transition-all duration-300 cursor-pointer"
-        @click="irParaTurma(turma.id)"
+        @click="irParaQRCode(turma.id)"
       >
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">
@@ -53,12 +53,12 @@
           #{{ turma.id }}
         </p>
 
-
       </div>
     </div>
 
   </div>
 </template>
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -94,8 +94,8 @@ async function carregarTurmas() {
   loading.value = false
 }
 
-function irParaTurma(id) {
-  router.push(`/presenca-professor/turma/${id}`)
+function irParaQRCode(id) {
+  router.push(`/presenca-professor/turma/qrcode/${id}`)
 }
 
 onMounted(() => {

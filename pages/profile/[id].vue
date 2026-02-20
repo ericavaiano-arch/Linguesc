@@ -1,54 +1,84 @@
 <template>
-  <div class="min-h-screen bg-gray-100 flex flex-col">
-    <div class="relative">
-      <button @click="voltar" class="absolute top-4 left-4 text-gray-600 hover:text-gray-800 focus:outline-none">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
-      <p class="mt-4 mx-8 md:mx-16 lg:mx-32 xl:mx-48 text-3xl font-bold text-center">
-        Editar Usuário
-      </p>
-    </div>
-    <div class="flex justify-center mt-8 w-full">
-      <div class="w-full max-w-xs md:max-w-md lg:max-w-lg xl:max-w-xl">
-        <form @submit.prevent="salvarPerfil" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 border border-gray-300">
-          <div class="mb-4">
-            <label class="block text-gray-700 text-md font-bold mb-2" for="nome">
-              Nome
-            </label>
-            <input v-model="nome" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="nome" type="text" placeholder="Nome">
-          </div>
-          <div class="mb-4">
-            <label class="block text-gray-700 text-md font-bold mb-2" for="email">
-              E-mail
-            </label>
-            <input v-model="email" @input="validarEmail" :class="{ 'border-red-500': emailInvalido }" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="email" type="email" placeholder="E-mail">
-            <p v-if="emailInvalido" class="text-red-500 text-xs italic">Formato de e-mail inválido.</p>
-          </div>
-          <div class="mb-4">
-            <label class="block text-gray-700 text-md font-bold mb-2">
-              Tipo de Usuário
-            </label>
-            <select v-model="tipoUsuario"
-                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
-              <option disabled value="">Selecione</option>
-              <option value="ALUNO">Aluno</option>
-              <option value="PROFESSOR">Professor</option>
-            </select>
-          </div>
+  <div class="min-h-screen bg-gray-100 p-4 md:p-8">
 
-          <div class="flex justify-center mt-8">
-            <button :class="{ 'opacity-50': !nome || !email || !tipoUsuario }" :disabled="!nome || !email  || !tipoUsuario" class="bg-green-500 hover:bg-green-600 w-full text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-              Salvar
-            </button>
-          </div>
-        </form>
-      </div>
+    <!-- Header -->
+    <div class="max-w-3xl mx-auto mb-6 flex items-center gap-4">
+      <h1 class="text-2xl md:text-3xl font-bold text-gray-800">
+        Editar Usuário
+      </h1>
     </div>
+
+    <!-- Card -->
+    <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-md border border-gray-100 p-6 md:p-8">
+
+      <form @submit.prevent="salvarPerfil" class="space-y-6">
+
+        <!-- Nome -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            Nome
+          </label>
+          <input
+            v-model="nome"
+            type="text"
+            placeholder="Digite o nome"
+            class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+          />
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            E-mail
+          </label>
+          <input
+            v-model="email"
+            @input="validarEmail"
+            type="email"
+            placeholder="Digite o e-mail"
+            :class="[
+              'w-full rounded-lg px-4 py-2 focus:outline-none focus:ring-2 transition',
+              emailInvalido
+                ? 'border border-red-500 focus:ring-red-400'
+                : 'border border-gray-300 focus:ring-green-500 focus:border-green-500'
+            ]"
+          />
+          <p v-if="emailInvalido" class="text-red-500 text-sm mt-1">
+            Formato de e-mail inválido.
+          </p>
+        </div>
+
+        <!-- Tipo Usuário -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            Tipo de Usuário
+          </label>
+          <select
+            v-model="tipoUsuario"
+            class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+          >
+            <option disabled value="">Selecione</option>
+            <option value="ALUNO">Aluno</option>
+            <option value="PROFESSOR">Professor</option>
+          </select>
+        </div>
+
+        <!-- Botão -->
+        <div class="pt-4">
+          <button
+            :disabled="!nome || !email || !tipoUsuario || emailInvalido"
+            class="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-lg transition"
+          >
+            Salvar Alterações
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+
   </div>
 </template>
-
 <script>
 import { supabase } from '@/utils/supabase'
 
@@ -119,10 +149,6 @@ export default {
       const regexEmail = /\S+@\S+\.\S+/;
       this.emailInvalido = !regexEmail.test(this.email);
     },
-
-    voltar() {
-      this.$router.push('/');
-    }
   },
 
   created() {

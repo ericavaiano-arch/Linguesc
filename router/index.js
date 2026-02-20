@@ -9,7 +9,7 @@ import Login from '@/pages/index.vue'
 // Import correto do Qrcode
 import QrcodePresenca from '@/pages/presenca-professor/turma/Qrcode.vue'
 import RegistroPresenca from  '@/pages/registroPresenca.vue'
-
+import QrCodeTurmas from  '@/pages/qrCodeTurmas.vue'
 
 const routes = [
   // LOGIN (rota pública principal)
@@ -50,6 +50,13 @@ const routes = [
   path: '/presenca-professor/turma/qrcode/:id',
     name: 'QrcodePresenca',
     component: QrcodePresenca,
+    props: true,
+    meta: { requiresAuth: true }
+  },
+  {
+  path: '/qr-code-turmas',
+    name: 'QrCodeTurmas',
+    component: QrCodeTurmas,
     props: true,
     meta: { requiresAuth: true }
   }
