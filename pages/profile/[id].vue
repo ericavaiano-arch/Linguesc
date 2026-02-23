@@ -1,11 +1,15 @@
 <template>
   <div class="min-h-screen bg-gray-100 p-4 md:p-8">
 
-    <!-- Header -->
-    <div class="max-w-3xl mx-auto mb-6 flex items-center gap-4">
-      <h1 class="text-2xl md:text-3xl font-bold text-gray-800">
-        Editar Usuário
+       <!-- Header -->
+    <div class="mb-10">
+      <h1 class="text-3xl font-bold text-green-700">
+        Editar Perfil
       </h1>
+      <p class="text-gray-500 mt-2">
+        Atualize suas informações pessoais.
+      </p>
+      <div class="w-20 h-1 bg-green-600 mt-4 rounded"></div>
     </div>
 
     <!-- Card -->
@@ -48,25 +52,10 @@
           </p>
         </div>
 
-        <!-- Tipo Usuário -->
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2">
-            Tipo de Usuário
-          </label>
-          <select
-            v-model="tipoUsuario"
-            class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-          >
-            <option disabled value="">Selecione</option>
-            <option value="ALUNO">Aluno</option>
-            <option value="PROFESSOR">Professor</option>
-          </select>
-        </div>
-
         <!-- Botão -->
         <div class="pt-4">
           <button
-            :disabled="!nome || !email || !tipoUsuario || emailInvalido"
+            :disabled="!nome || !email || emailInvalido"
             class="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-lg transition"
           >
             Salvar Alterações
@@ -81,21 +70,23 @@
 </template>
 <script>
 import { supabase } from '@/utils/supabase'
+import { useToast } from 'vue-toastification'
+
+const toast = useToast()
 
 export default {
   data() {
     return {
       nome: '',
       email: '',
-      tipoUsuario: '',
       emailInvalido: false,
       userId: null
     };
   },
   methods: {
     async salvarPerfil() {
-      if (!this.nome || !this.email || !this.tipoUsuario) {
-        alert('Preencha todos os campos');
+      if (!this.nome || !this.email) {
+        toast.warning('Preencha todos os campos.')
         return;
       }
 
@@ -104,21 +95,19 @@ export default {
           .from('usuarios')
           .update({
             nome: this.nome,
-            email: this.email,
-            tipoUsuario: this.tipoUsuario
+            email: this.email
           })
           .eq('id', this.userId);
 
         if (error) {
-          alert(error.message);
+          toast.error(error.message);
           return;
         }
 
-        alert('Perfil atualizado com sucesso!');
+        toast.success('Perfil atualizado com sucesso!')
 
       } catch (err) {
-        console.error('Erro ao atualizar usuário:', err);
-        alert('Erro ao atualizar usuário');
+        toast.error('Erro ao atualizar perfil.')
       }
     },
 
@@ -126,22 +115,21 @@ export default {
       try {
         const { data: usuario, error } = await supabase
           .from('usuarios')
-          .select('id, nome, email, tipoUsuario, dtInclusao')
+          .select('id, nome, email, dtInclusao')
           .eq('id', this.userId)
           .single();
 
         if (error || !usuario) {
-          alert('Erro ao carregar dados do usuário');
+          toast.error('Erro ao carregar dados do usuário.')
           return;
         }
 
         this.nome = usuario.nome;
         this.email = usuario.email;
-        this.tipoUsuario = usuario.tipoUsuario;
 
       } catch (err) {
         console.error('Erro ao buscar usuário:', err);
-        alert('Erro ao buscar usuário');
+        toast.error('Erro ao buscar usuário.')
       }
     },
 

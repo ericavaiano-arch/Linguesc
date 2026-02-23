@@ -1,27 +1,31 @@
 <template>
-  <div>
-    <h1 class="text-2xl font-bold text-gray-800 mb-2">
-      Presença - Aluno
-    </h1>
+  <div class="min-h-screen bg-gray-50 p-8">
 
-    <p class="text-gray-600 mb-6">
-      Acompanhe sua frequência semanal ao longo do curso.
-    </p>
+    <!-- Header -->
+    <div class="mb-10">
+      <h1 class="text-3xl font-bold text-green-700">
+        Presença - Aluno
+      </h1>
+      <p class="text-gray-500 mt-2">
+        Acompanhe sua frequência semanal ao longo do curso.
+      </p>
+      <div class="w-20 h-1 bg-green-600 mt-4 rounded"></div>
+    </div>
 
     <!-- Grid principal -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-      <!-- Registro semanal (66%) -->
-      <div class="md:col-span-2 bg-white rounded-lg shadow p-6">
-        <h2 class="text-lg font-semibold text-gray-700 mb-4">
+      <!-- Registro semanal -->
+      <div class="lg:col-span-2 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300">
+        <h2 class="text-lg font-semibold text-gray-800 mb-6">
           Registro semanal
         </h2>
 
-        <ul class="space-y-2">
+        <ul class="space-y-3">
           <li
             v-for="item in presencas"
             :key="item.semana"
-            class="flex justify-between items-center px-4 py-3 rounded-md"
+            class="flex justify-between items-center px-5 py-4 rounded-xl border transition"
             :class="rowClass(item.status)"
           >
             <span class="font-medium text-gray-700">
@@ -38,47 +42,50 @@
         </ul>
       </div>
 
-      <!-- Frequência (33%) -->
-      <div class="bg-white p-4 rounded-lg shadow flex flex-col items-center justify-center">
-        <p class="text-sm text-gray-500 mb-3">
-          Frequência
-        </p>
+      <!-- Frequência -->
+      <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col items-center">
+
+        <h2 class="text-lg font-semibold text-gray-800 mb-6">
+          Frequência Geral
+        </h2>
 
         <!-- Gráfico -->
-        <div class="relative h-32 w-32 mb-4">
+        <div class="relative h-40 w-40 mb-6">
           <Doughnut :data="donutData" :options="donutOptions" />
 
           <!-- Percentual central -->
           <div class="absolute inset-0 flex items-center justify-center">
-            <p class="text-xl font-bold text-gray-800">
+            <p class="text-2xl font-bold text-gray-800">
               {{ percentual }}%
             </p>
           </div>
         </div>
 
         <!-- Resumo -->
-        <div class="flex gap-6 text-sm">
+        <div class="flex gap-8 text-sm mb-4">
           <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+            <span class="w-3 h-3 rounded-full bg-green-500"></span>
             <span class="text-gray-700">
               {{ totalPresencas }} presenças
             </span>
           </div>
 
           <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+            <span class="w-3 h-3 rounded-full bg-red-500"></span>
             <span class="text-gray-700">
               {{ totalFaltas }} faltas
             </span>
           </div>
         </div>
 
-        <p class="text-xs text-gray-400 mt-3 text-center">
+        <p class="text-xs text-gray-400 text-center">
           Aulas ainda não realizadas não entram no cálculo
         </p>
+
       </div>
 
     </div>
+
   </div>
 </template>
 

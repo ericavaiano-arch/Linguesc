@@ -69,9 +69,7 @@ const router = useRouter()
 const turmas = ref([])
 const loading = ref(true)
 
-const storedUser = localStorage.getItem('user')
-const user = storedUser ? JSON.parse(storedUser) : null
-const professorId = user?.id
+const professorId = ref(null)
 
 async function carregarTurmas() {
   if (!professorId) {
@@ -82,7 +80,7 @@ async function carregarTurmas() {
   const { data, error } = await supabase
     .from('turma')
     .select('*')
-    .eq('professor_id', professorId)
+    .eq('professor_id', professorId.value)
     .order('dtInclusao', { ascending: false })
 
   if (error) {
@@ -99,6 +97,9 @@ function irParaQRCode(id) {
 }
 
 onMounted(() => {
+  const storedUser = localStorage.getItem('user')
+  const professor = storedUser ? JSON.parse(storedUser) : null
+  professorId.value = professor?.id
   carregarTurmas()
 })
 </script>

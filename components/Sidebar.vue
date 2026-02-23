@@ -70,7 +70,7 @@
         <SidebarItem
           v-if="tipoUsuario == 'PROFESSOR'"
           to="/qrCodeTurmas"
-          label="Presença Semanal"
+          label="Realizar chamada"
           icon="🧾"
           :open="true"
           @click="$emit('toggle')"

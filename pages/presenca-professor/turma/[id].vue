@@ -1,24 +1,34 @@
 <template>
-  <div>
-    <h1 class="text-2xl font-bold text-gray-800 mb-2">
-      Presença da Turma {{ turma?.nome }}
-    </h1>
+  <div class="min-h-screen bg-gray-50 p-8">
 
-    <p class="text-gray-600 mb-6">
-      {{ alunos.length }} alunos
-    </p>
+    <!-- Header -->
+    <div class="mb-10">
+      <h1 class="text-3xl font-bold text-green-700">
+        Presença da Turma {{ turma?.nome }}
+      </h1>
+      <p class="text-gray-500 mt-2">
+        {{ alunos.length }} alunos matriculados
+      </p>
+      <div class="w-20 h-1 bg-green-600 mt-4 rounded"></div>
+    </div>
 
-    <!-- Lista de alunos -->
-    <div class="bg-white rounded-lg shadow p-6 mb-6">
-      <h2 class="text-lg font-semibold text-gray-700 mb-4">
-        Alunos
-      </h2>
+    <!-- Card Alunos -->
+    <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 mb-8">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-lg font-semibold text-gray-800">
+          Alunos da Turma
+        </h2>
 
-      <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <span class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full">
+          {{ alunos.length }} ativos
+        </span>
+      </div>
+
+      <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <li
           v-for="aluno in alunos"
           :key="aluno"
-          class="px-4 py-2 rounded-md bg-gray-50 text-gray-700"
+          class="px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 text-gray-700 hover:border-green-400 hover:bg-green-50 transition"
         >
           {{ aluno }}
         </li>
@@ -26,44 +36,56 @@
     </div>
 
     <!-- Gráficos -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
       <!-- Presença por aula -->
-      <div class="bg-white rounded-lg shadow p-6">
-        <h3 class="text-sm font-semibold text-gray-600 mb-4">
+      <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300">
+        <h3 class="text-lg font-semibold text-gray-800 mb-6">
           Presença por aula
         </h3>
 
-        <div class="h-64">
+        <div class="h-72">
           <Bar :data="barData" :options="barOptions" />
         </div>
       </div>
 
       <!-- Presença geral -->
-      <div class="bg-white rounded-lg shadow p-6 flex flex-col items-center justify-center">
-        <h3 class="text-sm font-semibold text-gray-600 mb-4">
+      <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col items-center">
+
+        <h3 class="text-lg font-semibold text-gray-800 mb-6">
           Presença geral da turma
         </h3>
 
-        <div class="relative h-40 w-40 mb-4">
+        <div class="relative h-44 w-44 mb-6">
           <Doughnut :data="donutData" :options="donutOptions" />
 
           <div class="absolute inset-0 flex items-center justify-center">
-            <p class="text-xl font-bold text-gray-800">
+            <p class="text-2xl font-bold text-gray-800">
               {{ percentualGeral }}%
             </p>
           </div>
         </div>
 
-        <div class="flex gap-6 text-sm">
-          <span class="text-green-600">
-            {{ totalPresencas }} presenças
-          </span>
-          <span class="text-red-500">
-            {{ totalFaltas }} faltas
-          </span>
+        <div class="flex gap-10 text-sm">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-green-500"></span>
+            <span class="text-gray-700">
+              {{ totalPresencas }} presenças
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-red-500"></span>
+            <span class="text-gray-700">
+              {{ totalFaltas }} faltas
+            </span>
+          </div>
         </div>
+
       </div>
+
     </div>
+
   </div>
 </template>
 

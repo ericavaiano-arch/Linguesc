@@ -1,41 +1,61 @@
 <template>
-  <div class="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-    
-    <div class="bg-white p-8 rounded shadow-lg w-full max-w-md text-center">
+  <div class="min-h-screen bg-gray-50 flex flex-col items-center px-4 pt-6 pb-10">
 
-      <!-- 🔵 TELA DE LEITURA -->
-      <div v-if="!leituraFinalizada">
-        <h1 class="text-2xl font-bold mb-6">Marcar Presença</h1>
+    <!-- HEADER -->
+    <div class="text-center mb-6">
+      <h1 class="text-3xl font-bold text-green-700">
+        Marcar Presença
+      </h1>
+      <p class="text-gray-500 mt-2">
+        Aponte a câmera para o QR code do professor
+      </p>
+    </div>
 
-        <div id="qr-reader" class="w-full"></div>
+    <!-- 🔵 SCANNER NO TOPO -->
+    <div
+      v-if="!leituraFinalizada"
+      class="w-full max-w-md bg-white rounded-2xl shadow-md border border-gray-200 p-4"
+    >
+      <div
+        id="qr-reader"
+        class="w-full rounded-xl overflow-hidden"
+      ></div>
 
-        <p class="mt-4 text-gray-600 text-sm">
-          Aponte a câmera para o QR code do professor.
-        </p>
-      </div>
-
-      <!-- 🟢 TELA DE SUCESSO -->
-      <div v-else>
-        <div class="text-green-600 text-6xl mb-4">✔</div>
-        <h2 class="text-2xl font-bold text-green-600">
-          Presença registrada!
-        </h2>
-        <p class="mt-2 text-gray-500">
-          Sua presença foi registrada com sucesso.
-        </p>
-      </div>
-
-      <!-- 🔴 Mensagem de erro -->
-      <p v-if="mensagem && !leituraFinalizada"
-         :class="{'text-green-500': sucesso, 'text-red-500': !sucesso}"
-         class="mt-4">
+      <div
+        v-if="mensagem"
+        :class="sucesso ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'"
+        class="mt-4 text-sm p-3 rounded-xl border text-center transition"
+        role="alert"
+      >
         {{ mensagem }}
+      </div>
+    </div>
+
+    <!-- 🟢 SUCESSO -->
+    <div
+      v-else
+      class="w-full max-w-md bg-white rounded-2xl shadow-md border border-gray-200 p-6 text-center mt-4"
+    >
+      <div class="text-green-600 text-5xl mb-4">✔</div>
+
+      <h2 class="text-xl font-bold text-green-600">
+        Presença registrada!
+      </h2>
+
+      <p class="text-gray-500 text-sm mt-2">
+        Sua presença foi confirmada com sucesso.
       </p>
 
+      <button
+        @click="voltar"
+        class="mt-6 w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-medium transition active:scale-95"
+      >
+        Voltar ao Início
+      </button>
     </div>
+
   </div>
 </template>
-
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { supabase } from '@/utils/supabase'
@@ -45,9 +65,7 @@ const sucesso = ref(false)
 const leituraFinalizada = ref(false)
 const processando = ref(false)
 
-const storedUser = localStorage.getItem('user')
-const aluno = storedUser ? JSON.parse(storedUser) : null
-const alunoId = aluno?.id
+const alunoId = ref(null)
 
 let html5QrCode = null
 
@@ -56,6 +74,10 @@ let ultimoCodigoLido = null
 const INTERVALO_MINIMO = 5000
 
 onMounted(() => {
+  const storedUser = localStorage.getItem('user')
+  const aluno = storedUser ? JSON.parse(storedUser) : null
+  alunoId.value = aluno?.id
+
   import('html5-qrcode').then((module) => {
     const { Html5Qrcode } = module
     html5QrCode = new Html5Qrcode("qr-reader")

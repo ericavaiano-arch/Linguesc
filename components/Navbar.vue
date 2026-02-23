@@ -26,50 +26,6 @@
         </NuxtLink>
 
         <!-- 🔥 Links Desktop -->
-        <div class="hidden md:flex space-x-6 text-sm ml-6">
-
-          <NuxtLink
-            to="/hub"
-            class="text-gray-700 hover:text-green-600 font-medium transition"
-          >
-            Início
-          </NuxtLink>
-
-          <!-- ALUNO -->
-          <NuxtLink
-            v-if="tipoUsuario === 'ALUNO'"
-            to="/presencaAluno"
-            class="text-gray-700 hover:text-green-600 font-medium transition"
-          >
-            Presença - Aluno
-          </NuxtLink>
-
-          <NuxtLink
-            v-if="tipoUsuario === 'ALUNO'"
-            to="/registroPresenca"
-            class="text-gray-700 hover:text-green-600 font-medium transition"
-          >
-            Marcar Presença
-          </NuxtLink>
-
-          <!-- PROFESSOR -->
-          <NuxtLink
-            v-if="tipoUsuario === 'PROFESSOR'"
-            to="/presencaProfessor"
-            class="text-gray-700 hover:text-green-600 font-medium transition"
-          >
-            Minhas Turmas
-          </NuxtLink>
-
-          <NuxtLink
-            v-if="tipoUsuario === 'PROFESSOR'"
-            to="/qrCodeTurmas"
-            class="text-gray-700 hover:text-green-600 font-medium transition"
-          >
-            Presença Semanal
-          </NuxtLink>
-
-        </div>
       </div>
 
       <!-- 🔥 Perfil -->

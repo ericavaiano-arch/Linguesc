@@ -4,7 +4,7 @@
     <!-- Header -->
     <div class="mb-10">
       <h1 class="text-3xl font-bold text-green-700">
-        Presença – Professor
+        Presença - Professor
       </h1>
       <p class="text-gray-500 mt-2">
         Selecione uma turma para acompanhar a presença dos alunos.
@@ -69,9 +69,7 @@ const router = useRouter()
 const turmas = ref([])
 const loading = ref(true)
 
-const storedUser = localStorage.getItem('user')
-const user = storedUser ? JSON.parse(storedUser) : null
-const professorId = user?.id
+const professorId = ref(null)
 
 async function carregarTurmas() {
   if (!professorId) {
@@ -79,10 +77,12 @@ async function carregarTurmas() {
     return
   }
 
+  console.log(professorId?.value)
+
   const { data, error } = await supabase
     .from('turma')
     .select('*')
-    .eq('professor_id', professorId)
+    .eq('professor_id', professorId.value)
     .order('dtInclusao', { ascending: false })
 
   if (error) {
@@ -99,6 +99,9 @@ function irParaTurma(id) {
 }
 
 onMounted(() => {
+  const storedUser = localStorage.getItem('user')
+  const professor = storedUser ? JSON.parse(storedUser) : null
+  professorId.value = professor?.id
   carregarTurmas()
 })
 </script>

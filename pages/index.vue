@@ -1,42 +1,89 @@
 <template>
-  <div class="min-h-screen bg-gray-200 flex flex-col">
-    <div class="flex justify-center mt-12">
-      <div class="w-full max-w-md bg-white rounded-lg shadow-lg p-8">
-        <h1 class="text-2xl font-bold text-center text-gray-800 mb-8">
+  <div class="min-h-screen bg-gradient-to-br from-green-100 via-green-50 to-white flex items-center justify-center px-4 py-10">
+
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+
+      <!-- Logo / Header -->
+      <div class="text-center mb-8">
+        <div class="text-4xl mb-3">🌎</div>
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-800 leading-snug">
           Plataforma de acompanhamento e engajamento no aprendizado de línguas
         </h1>
-        <form @submit.prevent="verificarUsuario" class="space-y-6">
-          <div>
-            <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
-              E-mail
-            </label>
-            <input v-model="email" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="email" type="email" placeholder="E-mail">
-          </div>
-          <div>
-            <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
-              Senha
-            </label>
-            <input v-model="senha" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="password" type="password" placeholder="********">
-          </div>
-          <div class="flex items-center justify-between">
-            <button :class="{ 'opacity-50': !email || !senha }" :disabled="!email || !senha" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded w-full focus:outline-none focus:shadow-outline transition ease-in-out duration-300" type="submit">
-              Entrar
-            </button>
-          </div>
-        </form>
-        <div class="flex items-center justify-center mt-6">
-          <p class="text-gray-700">Ainda não tem cadastro?</p>
-          <button @click="goToProfile" class="ml-2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline transition ease-in-out duration-300" type="button">
-            Cadastre-se
-          </button>
-        </div>
+        <p class="text-sm text-gray-500 mt-2">
+          Faça login para continuar
+        </p>
       </div>
+
+      <!-- Formulário -->
+      <form @submit.prevent="verificarUsuario" class="space-y-5">
+
+        <!-- Email -->
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+            E-mail
+          </label>
+          <input
+            v-model="email"
+            id="email"
+            type="email"
+            autocomplete="email"
+            placeholder="seuemail@exemplo.com"
+            required
+            class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+          />
+        </div>
+
+        <!-- Senha -->
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+            Senha
+          </label>
+          <input
+            v-model="senha"
+            id="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="••••••••"
+            required
+            class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+          />
+        </div>
+
+        <!-- Botão -->
+        <button
+          :disabled="!email || !senha"
+          class="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-semibold py-3 rounded-xl transition active:scale-95"
+          type="submit"
+        >
+          Entrar
+        </button>
+
+      </form>
+
+      <!-- Cadastro -->
+      <div class="mt-8 text-center text-sm">
+        <p class="text-gray-600">
+          Ainda não tem cadastro?
+        </p>
+        <button
+          @click="goToProfile"
+          class="mt-2 text-green-600 font-semibold hover:underline"
+          type="button"
+        >
+          Criar conta
+        </button>
+      </div>
+
     </div>
+
   </div>
 </template>
 
 <script>
 import { supabase } from '@/utils/supabase'
+import { useToast } from 'vue-toastification'
+
+const toast = useToast()
 
 definePageMeta({
   layout: 'auth'
@@ -53,7 +100,7 @@ export default {
   methods: {
     async verificarUsuario() {
       if (!this.email || !this.senha) {
-        alert('Email e senha obrigatórios');
+        toast.warning('Email e senha obrigatórios.')
         return;
       }
 
@@ -67,7 +114,7 @@ export default {
           .single();
 
         if (error || !usuario) {
-          alert('Email ou senha incorretos');
+          toast.error('Email ou senha incorretos.')
           return;
         }
 
@@ -82,7 +129,7 @@ export default {
 
       } catch (err) {
         console.error('Erro ao conectar com Supabase:', err);
-        alert('Erro ao conectar com o servidor');
+        toast.error('Erro ao conectar com o servidor.')
       }
     },
 
