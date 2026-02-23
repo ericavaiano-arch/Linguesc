@@ -68,13 +68,16 @@
 
   </div>
 </template>
+
 <script>
 import { supabase } from '@/utils/supabase'
-import { useToast } from 'vue-toastification'
-
-const toast = useToast()
 
 export default {
+  setup() {
+    const { $toast } = useNuxtApp()
+    return { toast: $toast }
+  },
+
   data() {
     return {
       nome: '',
@@ -83,15 +86,16 @@ export default {
       userId: null
     };
   },
+
   methods: {
     async salvarPerfil() {
       if (!this.nome || !this.email) {
-        toast.warning('Preencha todos os campos.')
+        this.$toast.warning('Preencha todos os campos.')
         return;
       }
 
       try {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('usuarios')
           .update({
             nome: this.nome,
@@ -100,14 +104,14 @@ export default {
           .eq('id', this.userId);
 
         if (error) {
-          toast.error(error.message);
+          this.toast.error(error.message);
           return;
         }
 
-        toast.success('Perfil atualizado com sucesso!')
+        this.toast.success('Perfil atualizado com sucesso!')
 
       } catch (err) {
-        toast.error('Erro ao atualizar perfil.')
+        this.toast.error('Erro ao atualizar perfil.')
       }
     },
 
@@ -120,7 +124,7 @@ export default {
           .single();
 
         if (error || !usuario) {
-          toast.error('Erro ao carregar dados do usuário.')
+          this.toast.error('Erro ao carregar dados do usuário.')
           return;
         }
 
@@ -129,13 +133,13 @@ export default {
 
       } catch (err) {
         console.error('Erro ao buscar usuário:', err);
-        toast.error('Erro ao buscar usuário.')
+        this.toast.error('Erro ao buscar usuário.')
       }
     },
 
     validarEmail() {
-      const regexEmail = /\S+@\S+\.\S+/;
-      this.emailInvalido = !regexEmail.test(this.email);
+      const regexEmail = /\S+@\S+\.\S+/
+      this.emailInvalido = !regexEmail.test(this.email)
     },
   },
 

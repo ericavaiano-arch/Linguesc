@@ -81,15 +81,17 @@
 
 <script>
 import { supabase } from '@/utils/supabase'
-import { useToast } from 'vue-toastification'
-
-const toast = useToast()
 
 definePageMeta({
   layout: 'auth'
 })
 
 export default {
+  setup() {
+    const { $toast } = useNuxtApp()
+    return { toast: $toast }
+  },
+
   data() {
     return {
       email: '',
@@ -100,12 +102,11 @@ export default {
   methods: {
     async verificarUsuario() {
       if (!this.email || !this.senha) {
-        toast.warning('Email e senha obrigatórios.')
+        this.toast.warning('Email e senha obrigatórios.')
         return;
       }
 
       try {
-        // Faz login pelo Supabase Auth
         const { data: usuario, error } = await supabase
           .from('usuarios')
           .select('id, nome, email, tipoUsuario, dtInclusao')
@@ -114,22 +115,22 @@ export default {
           .single();
 
         if (error || !usuario) {
-          toast.error('Email ou senha incorretos.')
+          this.toast.error('Email ou senha incorretos.')
           return;
         }
 
-        // login OK
         localStorage.setItem('user', JSON.stringify({
           id: usuario.id,
           nome: usuario.nome,
           email: usuario.email,
           tipoUsuario: usuario.tipoUsuario
         }));
+
         this.$router.push('/hub');
 
       } catch (err) {
         console.error('Erro ao conectar com Supabase:', err);
-        toast.error('Erro ao conectar com o servidor.')
+        this.toast.error('Erro ao conectar com o servidor.')
       }
     },
 

@@ -128,15 +128,17 @@
 
 <script>
 import { supabase } from '@/utils/supabase'
-import { useToast } from 'vue-toastification'
-
-const toast = useToast()
 
 definePageMeta({
   layout: 'auth'
 })
 
 export default {
+  setup() {
+    const { $toast } = useNuxtApp()
+    return { toast: $toast }
+  },
+
   data() {
     return {
       nome: '',
@@ -147,15 +149,16 @@ export default {
       senhaCurta: false
     };
   },
+
   methods: {
     async cadastrarUsuario() {
       if (!this.nome || !this.email || !this.senha || !this.tipoUsuario) {
-        toast.warning('Todos os campos são obrigatórios.')
+        this.toast.warning('Todos os campos são obrigatórios.')
         return
       }
 
       if (this.emailInvalido || this.senhaCurta) {
-        toast.error('Corrija os erros antes de cadastrar.')
+        this.toast.error('Corrija os erros antes de cadastrar.')
         return
       }
 
@@ -171,47 +174,48 @@ export default {
 
         if (error) {
           if (error.code === '23505') {
-            toast.error('Este e-mail já está cadastrado.')
+            this.toast.error('Este e-mail já está cadastrado.')
             return
           }
 
-          toast.error('Erro ao cadastrar usuário.')
+          this.toast.error('Erro ao cadastrar usuário.')
           console.error(error)
           return
         }
 
-        toast.success('Usuário cadastrado com sucesso!')
+        this.toast.success('Usuário cadastrado com sucesso!')
         this.resetForm()
         this.voltar()
 
       } catch (err) {
         console.error('Erro inesperado:', err)
-        toast.error('Erro ao conectar com o servidor.')
+        this.$toast.error('Erro ao conectar com o servidor.')
       }
     },
 
     resetForm() {
-      this.nome = '';
-      this.email = '';
-      this.senha = '';
-      this.tipoUsuario = '';
+      this.nome = ''
+      this.email = ''
+      this.senha = ''
+      this.tipoUsuario = ''
     },
 
     voltar() {
-      this.$router.push('/');
+      this.$router.push('/')
     },
 
     validarEmail() {
-      const regexEmail = /\S+@\S+\.\S+/;
-      this.emailInvalido = !regexEmail.test(this.email);
+      const regexEmail = /\S+@\S+\.\S+/
+      this.emailInvalido = !regexEmail.test(this.email)
     },
 
     validarSenha() {
-      this.senhaCurta = this.senha.length < 8;
-    },
+      this.senhaCurta = this.senha.length < 8
+    }
   },
-  created(){
-    this.resetForm();
+
+  created() {
+    this.resetForm()
   }
 };
 </script>
