@@ -33,14 +33,6 @@
             <div class="w-3 h-3 bg-green-500 rounded-full"></div>
           </div>
 
-          <p class="text-sm text-gray-400">
-            Código da turma
-          </p>
-
-          <p class="text-sm font-medium text-gray-600 mt-1">
-            #{{ turmaId }}
-          </p>
-
           <p class="text-sm text-gray-400 mt-4">
             Total de alunos
           </p>

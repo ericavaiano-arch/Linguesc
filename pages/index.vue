@@ -5,7 +5,13 @@
 
       <!-- Logo / Header -->
       <div class="text-center mb-8">
-        <div class="text-4xl mb-3">🌎</div>
+        <div class="text-4xl mb-3 flex justify-center">
+          <img
+            src="~/assets/images/logo_linguesc.png"
+            alt="Linguesc"
+            class="h-40"
+          />
+        </div>
         <h1 class="text-xl sm:text-2xl font-bold text-gray-800 leading-snug">
           Plataforma de acompanhamento e engajamento no aprendizado de línguas
         </h1>

@@ -4,7 +4,7 @@
     <!-- Header -->
     <div class="mb-10">
       <h1 class="text-3xl font-bold text-green-700">
-        Chamada Manual
+        Chamada
       </h1>
       <p class="text-gray-500 mt-2">
         Selecione uma turma para realizar a chamada manualmente.
@@ -44,13 +44,6 @@
           <div class="w-3 h-3 bg-green-500 rounded-full"></div>
         </div>
 
-        <p class="text-sm text-gray-400">
-          Código da turma
-        </p>
-        <p class="text-sm font-medium text-gray-600 mt-1">
-          #{{ turma.id }}
-        </p>
-
         <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">
           Fazer chamada →
         </div>
@@ -81,7 +74,7 @@ async function carregarTurmas() {
     .from('turma')
     .select('*')
     .eq('professor_id', professorId.value)
-    .order('dtInclusao', { ascending: false })
+    .order('nome', { ascending: true })
 
   if (error) {
     console.error('Erro ao buscar turmas:', error.message)

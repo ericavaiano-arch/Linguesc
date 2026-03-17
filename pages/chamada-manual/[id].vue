@@ -43,7 +43,7 @@
             <div>
               <p class="text-sm font-semibold text-gray-800">{{ formatarData(aula.data) }}</p>
               <span
-                class="text-xs px-2 py-0.5 rounded-full font-medium"
+                class="text-xs px-2 py-0.5 rounded font-medium"
                 :class="{
                   'bg-green-200 text-green-800': aula.status === 'REALIZADA',
                   'bg-yellow-100 text-yellow-800': aula.status === 'AGENDADA',
@@ -133,7 +133,7 @@
           class="bg-green-600 hover:bg-green-700 disabled:bg-green-300 disabled:cursor-not-allowed text-white font-semibold px-8 py-3 rounded-xl transition active:scale-95 flex items-center gap-2"
         >
           <div v-if="salvando" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-          {{ salvando ? 'Salvando...' : (modoEdicao ? '💾 Atualizar Chamada' : '💾 Salvar Chamada') }}
+          {{ salvando ? 'Salvando...' : (modoEdicao ? 'Atualizar Chamada' : 'Salvar Chamada') }}
         </button>
       </div>
 
@@ -169,7 +169,7 @@ const aulasOrdenadas = computed(() => [...aulas.value].sort((a, b) => new Date(a
 
 function formatarData(dataStr) {
   const d = new Date(dataStr + 'T12:00:00')
-  return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
+  return d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 async function carregarTurma() {

@@ -12,12 +12,12 @@
 
         <!-- ALUNO -->
         <SidebarItem v-if="tipoUsuario === 'ALUNO'" to="/presencaAluno" label="Presença - Aluno" icon="📅" :open="true" @click="$emit('toggle')" />
-        <SidebarItem v-if="tipoUsuario === 'ALUNO'" to="/registroPresenca" label="Marcar Presença" icon="📷" :open="true" @click="$emit('toggle')" />
+        <!-- <SidebarItem v-if="tipoUsuario === 'ALUNO'" to="/registroPresenca" label="Marcar Presença" icon="📷" :open="true" @click="$emit('toggle')" /> -->
 
         <!-- PROFESSOR -->
         <SidebarItem v-if="tipoUsuario === 'PROFESSOR'" to="/turmas" label="Minhas Turmas" icon="📚" :open="true" @click="$emit('toggle')" />
-        <SidebarItem v-if="tipoUsuario === 'PROFESSOR'" to="/qrCodeTurmas" label="Chamada por QR Code" icon="🧾" :open="true" @click="$emit('toggle')" />
-        <SidebarItem v-if="tipoUsuario === 'PROFESSOR'" to="/chamada-manual" label="Chamada Manual" icon="✅" :open="true" @click="$emit('toggle')" />
+        <!-- <SidebarItem v-if="tipoUsuario === 'PROFESSOR'" to="/qrCodeTurmas" label="Chamada por QR Code" icon="🧾" :open="true" @click="$emit('toggle')" /> -->
+        <SidebarItem v-if="tipoUsuario === 'PROFESSOR'" to="/chamada-manual" label="Chamada" icon="✅" :open="true" @click="$emit('toggle')" />
       </nav>
     </aside>
   </div>

@@ -19,14 +19,14 @@
         <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">Acessar →</div>
       </div>
 
-      <div v-if="tipoUsuario === 'ALUNO'" @click="irPara('/registroPresenca')" class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
+      <!-- <div v-if="tipoUsuario === 'ALUNO'" @click="irPara('/registroPresenca')" class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">📷 Marcar Presença</h2>
           <span class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full">QR Code</span>
         </div>
         <p class="text-gray-500 text-sm leading-relaxed">Registre sua presença na aula de hoje escaneando o QR Code disponibilizado pelo professor.</p>
         <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">Acessar →</div>
-      </div>
+      </div> -->
 
       <!-- PROFESSOR -->
       <div v-if="tipoUsuario === 'PROFESSOR'" @click="irPara('/turmas')" class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
@@ -38,18 +38,18 @@
         <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">Acessar →</div>
       </div>
 
-      <div v-if="tipoUsuario === 'PROFESSOR'" @click="irPara('/qrCodeTurmas')" class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
+      <!-- <div v-if="tipoUsuario === 'PROFESSOR'" @click="irPara('/qrCodeTurmas')" class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">🧾 Chamada por QR Code</h2>
           <span class="text-xs bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full">Controle</span>
         </div>
         <p class="text-gray-500 text-sm leading-relaxed">Gere e exiba o QR Code da aula para registrar a presença dos alunos.</p>
         <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">Acessar →</div>
-      </div>
+      </div> -->
 
       <div v-if="tipoUsuario === 'PROFESSOR'" @click="irPara('/chamada-manual')" class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">✅ Chamada Manual</h2>
+          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">✅ Chamada</h2>
           <span class="text-xs bg-teal-100 text-teal-700 px-3 py-1 rounded-full">Controle</span>
         </div>
         <p class="text-gray-500 text-sm leading-relaxed">Selecione os alunos presentes diretamente pelo painel, sem necessidade de QR Code.</p>
