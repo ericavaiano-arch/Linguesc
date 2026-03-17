@@ -219,7 +219,7 @@ async function salvarChamada() {
       $toast.error('Erro ao salvar chamada. Tente novamente.')
     } else {
       $toast.success(`Chamada salva! ${presentes.value.size} presença(s) registrada(s).`)
-      router.push('/chamada-manual')
+      router.push('/chamadaManual')
     }
   } catch (err) {
     console.error('Erro inesperado:', err)
