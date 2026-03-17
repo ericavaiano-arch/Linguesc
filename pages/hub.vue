@@ -114,7 +114,7 @@
       <!-- CHAMADA MANUAL - PROFESSOR -->
       <div
         v-if="tipoUsuario === 'PROFESSOR'"
-        @click="irPara('/chamada-manual')"
+        @click="irPara('/chamadaManual')"
         class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer"
       >
         <div class="flex justify-between items-center mb-4">
