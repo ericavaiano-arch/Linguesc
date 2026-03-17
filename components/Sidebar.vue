@@ -76,11 +76,21 @@
           @click="$emit('toggle')"
         />
 
+        <SidebarItem
+          v-if="tipoUsuario == 'PROFESSOR'"
+          to="/chamada-manual"
+          label="Chamada Manual"
+          icon="✅"
+          :open="true"
+          @click="$emit('toggle')"
+        />
+
       </nav>
 
     </aside>
   </div>
 </template>
+
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 

@@ -39,7 +39,6 @@
         </div>
       </div>
 
-
       <!-- MARCAR PRESENÇA -->
       <div
         v-if="tipoUsuario === 'ALUNO'"
@@ -63,7 +62,6 @@
           Acessar →
         </div>
       </div>
-
 
       <!-- TURMAS - PROFESSOR -->
       <div
@@ -89,7 +87,6 @@
         </div>
       </div>
 
-
       <!-- QR CODE - PROFESSOR -->
       <div
         v-if="tipoUsuario === 'PROFESSOR'"
@@ -107,6 +104,30 @@
 
         <p class="text-gray-500 text-sm leading-relaxed">
           Gere e exiba o QR Code da aula para registrar a presença dos alunos.
+        </p>
+
+        <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">
+          Acessar →
+        </div>
+      </div>
+
+      <!-- CHAMADA MANUAL - PROFESSOR -->
+      <div
+        v-if="tipoUsuario === 'PROFESSOR'"
+        @click="irPara('/chamada-manual')"
+        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">
+            ✅ Chamada Manual
+          </h2>
+          <span class="text-xs bg-teal-100 text-teal-700 px-3 py-1 rounded-full">
+            Controle
+          </span>
+        </div>
+
+        <p class="text-gray-500 text-sm leading-relaxed">
+          Selecione os alunos presentes na aula diretamente pelo painel, sem necessidade de QR Code.
         </p>
 
         <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">
@@ -133,21 +154,27 @@
         </p>
 
         <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">
-          Editar Perfil →
+          Acessar →
         </div>
       </div>
 
     </div>
-
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+
 const user = ref(null)
+
+const tipoUsuario = computed(() => user.value?.tipoUsuario || null)
+
+function irPara(rota) {
+  router.push(rota)
+}
 
 onMounted(() => {
   const storedUser = localStorage.getItem('user')
@@ -155,10 +182,4 @@ onMounted(() => {
     user.value = JSON.parse(storedUser)
   }
 })
-
-const tipoUsuario = computed(() => user.value?.tipoUsuario || null)
-
-function irPara(rota) {
-  router.push(rota)
-}
 </script>
