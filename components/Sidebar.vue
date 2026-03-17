@@ -78,7 +78,7 @@
 
         <SidebarItem
           v-if="tipoUsuario == 'PROFESSOR'"
-          to="/chamada-manual"
+          to="/chamadaManual"
           label="Chamada Manual"
           icon="✅"
           :open="true"
