@@ -11,6 +11,10 @@ import QrcodePresenca from '@/pages/presenca-professor/turma/Qrcode.vue'
 import RegistroPresenca from  '@/pages/registroPresenca.vue'
 import QrCodeTurmas from  '@/pages/qrCodeTurmas.vue'
 
+// Chamada Manual
+import ChamadaManual from '@/pages/chamadaManual.vue'
+import ChamadaManualTurma from '@/pages/chamada-manual/[id].vue'
+
 const routes = [
   // LOGIN (rota pública principal)
   {
@@ -27,7 +31,7 @@ const routes = [
   },
 
   // ROTAS PRIVADAS
-    {
+  {
     path: '/registro-presenca',
     name: 'RegistroPresenca',
     component: RegistroPresenca,
@@ -47,16 +51,29 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-  path: '/presenca-professor/turma/qrcode/:id',
+    path: '/presenca-professor/turma/qrcode/:id',
     name: 'QrcodePresenca',
     component: QrcodePresenca,
     props: true,
     meta: { requiresAuth: true }
   },
   {
-  path: '/qr-code-turmas',
+    path: '/qr-code-turmas',
     name: 'QrCodeTurmas',
     component: QrCodeTurmas,
+    props: true,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/chamada-manual',
+    name: 'ChamadaManual',
+    component: ChamadaManual,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/chamada-manual/:id',
+    name: 'ChamadaManualTurma',
+    component: ChamadaManualTurma,
     props: true,
     meta: { requiresAuth: true }
   }
