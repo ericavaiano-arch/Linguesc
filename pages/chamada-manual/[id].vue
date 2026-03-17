@@ -3,64 +3,80 @@
 
     <!-- Header -->
     <div class="mb-10">
-      <h1 class="text-3xl font-bold text-green-700">
-        Chamada — {{ turma?.nome }}
-      </h1>
-      <p class="text-gray-500 mt-2">
-        Selecione a data e marque os alunos presentes.
-      </p>
+      <button @click="$router.back()" class="text-sm text-gray-400 hover:text-gray-600 transition mb-4 flex items-center gap-1">
+        ← Voltar
+      </button>
+      <h1 class="text-3xl font-bold text-green-700">Chamada — {{ turma?.nome }}</h1>
+      <p class="text-gray-500 mt-2">Selecione a aula e marque os alunos presentes.</p>
       <div class="w-20 h-1 bg-green-600 mt-4 rounded"></div>
     </div>
 
-    <!-- Loading turma -->
     <div v-if="loading" class="flex items-center gap-3 text-green-700">
       <div class="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-      <span>Carregando turma...</span>
+      <span>Carregando...</span>
     </div>
 
     <div v-else>
 
-      <!-- Seleção de data -->
+      <!-- Seleção de aula -->
       <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-8">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">📅 Data da Aula</h2>
-        <div class="flex items-center gap-4">
-          <input
-            v-model="dataAula"
-            type="date"
-            @change="carregarPresencasDaData"
-            class="border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
-          />
-          <div v-if="loadingPresencas" class="flex items-center gap-2 text-sm text-green-700">
-            <div class="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-            <span>Carregando presenças...</span>
-          </div>
-          <span
-            v-else-if="dataAula && modoEdicao"
-            class="text-xs bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full font-medium"
-          >
-            ✏️ Editando chamada existente
-          </span>
-          <span
-            v-else-if="dataAula && !modoEdicao"
-            class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-medium"
-          >
-            🆕 Nova chamada
-          </span>
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">📅 Selecione a Aula</h2>
+
+        <div v-if="aulas.length === 0" class="text-sm text-gray-400 py-4 text-center">
+          Nenhuma aula cadastrada para esta turma.
+          <br>
+          <button @click="$router.push(`/turmas/${turmaId}/aulas`)" class="mt-2 text-green-600 hover:underline font-medium">
+            Cadastrar aulas →
+          </button>
         </div>
+
+        <ul v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <li
+            v-for="aula in aulasOrdenadas"
+            :key="aula.id"
+            @click="selecionarAula(aula)"
+            class="flex items-center justify-between px-4 py-3 rounded-xl border cursor-pointer transition-all"
+            :class="aulaSelecionada?.id === aula.id
+              ? 'border-green-500 bg-green-50'
+              : 'border-gray-200 bg-gray-50 hover:border-green-300'"
+          >
+            <div>
+              <p class="text-sm font-semibold text-gray-800">{{ formatarData(aula.data) }}</p>
+              <span
+                class="text-xs px-2 py-0.5 rounded-full font-medium"
+                :class="{
+                  'bg-green-200 text-green-800': aula.status === 'REALIZADA',
+                  'bg-yellow-100 text-yellow-800': aula.status === 'AGENDADA',
+                  'bg-red-200 text-red-800': aula.status === 'CANCELADA',
+                }"
+              >
+                {{ aula.status }}
+              </span>
+            </div>
+            <div v-if="aulaSelecionada?.id === aula.id" class="w-4 h-4 rounded-full bg-green-500"></div>
+          </li>
+        </ul>
       </div>
 
-      <!-- Grid de Alunos -->
-      <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-8">
+      <!-- Grid de alunos (só aparece se tiver aula selecionada) -->
+      <div v-if="aulaSelecionada" class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-8">
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-lg font-semibold text-gray-800">
-            👥 Alunos da Turma
-          </h2>
+          <h2 class="text-lg font-semibold text-gray-800">👥 Alunos da Turma</h2>
           <div class="flex items-center gap-3">
-            <span class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full">
-              {{ presentesCount }} presentes
+            <div v-if="loadingPresencas" class="flex items-center gap-2 text-sm text-green-700">
+              <div class="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <span
+              v-else-if="modoEdicao"
+              class="text-xs bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full font-medium"
+            >
+              ✏️ Editando chamada
+            </span>
+            <span v-else class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-medium">
+              🆕 Nova chamada
             </span>
             <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
-              {{ alunos.length }} total
+              {{ presentesCount }}/{{ alunos.length }}
             </span>
           </div>
         </div>
@@ -92,25 +108,14 @@
               ? 'border-green-400 bg-green-50 text-green-800'
               : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 hover:bg-gray-100'"
           >
-            <!-- Checkbox visual -->
             <div
               class="w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all"
-              :class="presentes.has(aluno.id)
-                ? 'bg-green-500 border-green-500'
-                : 'border-gray-300 bg-white'"
+              :class="presentes.has(aluno.id) ? 'bg-green-500 border-green-500' : 'border-gray-300 bg-white'"
             >
-              <svg
-                v-if="presentes.has(aluno.id)"
-                class="w-3 h-3 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="3"
-              >
+              <svg v-if="presentes.has(aluno.id)" class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-
             <span class="text-sm font-medium truncate">{{ aluno.nome }}</span>
           </li>
         </ul>
@@ -121,10 +126,10 @@
       </div>
 
       <!-- Botão salvar -->
-      <div class="flex justify-end">
+      <div v-if="aulaSelecionada" class="flex justify-end">
         <button
           @click="salvarChamada"
-          :disabled="salvando || !dataAula"
+          :disabled="salvando"
           class="bg-green-600 hover:bg-green-700 disabled:bg-green-300 disabled:cursor-not-allowed text-white font-semibold px-8 py-3 rounded-xl transition active:scale-95 flex items-center gap-2"
         >
           <div v-if="salvando" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -147,54 +152,43 @@ const { $toast } = useNuxtApp()
 
 const turmaId = route.params.id
 const turma = ref(null)
+const aulas = ref([])
 const alunos = ref([])
 const loading = ref(true)
 const loadingPresencas = ref(false)
 const salvando = ref(false)
 
-// Data padrão: hoje
-const hoje = new Date().toISOString().split('T')[0]
-const dataAula = ref(hoje)
-
-// Set com IDs marcados atualmente na tela
+const aulaSelecionada = ref(null)
 const presentes = ref(new Set())
-
-// Set com IDs que já estavam salvos no banco para a data selecionada
-// Usado para calcular o diff no momento de salvar
 const presentesOriginais = ref(new Set())
-
-// Mapa aluno_id -> presenca_id para saber quais registros deletar
 const presencaIds = ref({})
-
 const modoEdicao = ref(false)
 
 const presentesCount = computed(() => presentes.value.size)
+const aulasOrdenadas = computed(() => [...aulas.value].sort((a, b) => new Date(a.data) - new Date(b.data)))
 
-// ─── Carregar turma ───────────────────────────────────────────────
-async function carregarTurma() {
-  const { data, error } = await supabase
-    .from('turma')
-    .select('*')
-    .eq('id', turmaId)
-    .single()
-
-  if (error) {
-    console.error('Erro ao buscar turma:', error.message)
-  } else {
-    turma.value = data
-  }
+function formatarData(dataStr) {
+  const d = new Date(dataStr + 'T12:00:00')
+  return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
-// ─── Carregar alunos da turma ─────────────────────────────────────
+async function carregarTurma() {
+  const { data } = await supabase.from('turma').select('*').eq('id', turmaId).single()
+  turma.value = data
+}
+
+async function carregarAulas() {
+  const { data, error } = await supabase.from('aula').select('*').eq('turma_id', turmaId)
+  if (!error) aulas.value = data
+}
+
 async function carregarAlunos() {
   const { data, error } = await supabase
     .from('turma_aluno')
     .select('aluno_id, usuarios(id, nome)')
     .eq('turma_id', turmaId)
 
-  if (error) {
-    console.error('Erro ao buscar alunos:', error.message)
-  } else {
+  if (!error) {
     alunos.value = data.map(item => ({
       id: item.aluno_id,
       nome: item.usuarios?.nome || 'Aluno'
@@ -202,33 +196,22 @@ async function carregarAlunos() {
   }
 }
 
-// ─── Carregar presenças já registradas para a data selecionada ────
-async function carregarPresencasDaData() {
-  if (!dataAula.value || alunos.value.length === 0) return
-
+async function selecionarAula(aula) {
+  aulaSelecionada.value = aula
   loadingPresencas.value = true
   presencaIds.value = {}
-
-  // Range do dia selecionado (00:00 até 23:59)
-  const inicio = new Date(dataAula.value + 'T00:00:00').toISOString()
-  const fim = new Date(dataAula.value + 'T23:59:59').toISOString()
-
-  const alunoIds = alunos.value.map(a => a.id)
 
   const { data, error } = await supabase
     .from('presenca')
     .select('id, aluno_id')
-    .in('aluno_id', alunoIds)
-    .gte('dtPresenca', inicio)
-    .lte('dtPresenca', fim)
+    .eq('aula_id', aula.id)
 
   if (error) {
-    console.error('Erro ao buscar presenças:', error.message)
+    console.error(error)
     loadingPresencas.value = false
     return
   }
 
-  // Monta mapa aluno_id -> presenca_id e pré-marca os presentes
   const novosPresentes = new Set()
   data.forEach(p => {
     novosPresentes.add(p.aluno_id)
@@ -238,66 +221,37 @@ async function carregarPresencasDaData() {
   presentes.value = novosPresentes
   presentesOriginais.value = new Set(novosPresentes)
   modoEdicao.value = novosPresentes.size > 0
-
   loadingPresencas.value = false
 }
 
-// ─── Toggle de presença ───────────────────────────────────────────
 function togglePresenca(alunoId) {
-  const novoSet = new Set(presentes.value)
-  if (novoSet.has(alunoId)) {
-    novoSet.delete(alunoId)
-  } else {
-    novoSet.add(alunoId)
-  }
-  presentes.value = novoSet
+  const s = new Set(presentes.value)
+  s.has(alunoId) ? s.delete(alunoId) : s.add(alunoId)
+  presentes.value = s
 }
 
-function marcarTodos() {
-  presentes.value = new Set(alunos.value.map(a => a.id))
-}
+function marcarTodos() { presentes.value = new Set(alunos.value.map(a => a.id)) }
+function desmarcarTodos() { presentes.value = new Set() }
 
-function desmarcarTodos() {
-  presentes.value = new Set()
-}
-
-// ─── Salvar chamada (INSERT novos + DELETE removidos) ─────────────
 async function salvarChamada() {
-  if (!dataAula.value) {
-    $toast.warning('Selecione a data da aula antes de salvar.')
-    return
-  }
-
   salvando.value = true
-
   try {
-    // Alunos a inserir: marcados agora mas que NÃO estavam antes
     const aInserir = [...presentes.value].filter(id => !presentesOriginais.value.has(id))
-
-    // Alunos a remover: estavam antes mas NÃO estão mais marcados
     const aRemover = [...presentesOriginais.value].filter(id => !presentes.value.has(id))
 
     const promessas = []
 
     if (aInserir.length > 0) {
-      const registros = aInserir.map(alunoId => ({
-        aluno_id: alunoId,
-        dtPresenca: new Date(dataAula.value + 'T12:00:00').toISOString(),
-        status: 'PRESENTE'
-      }))
-      promessas.push(supabase.from('presenca').insert(registros))
+      promessas.push(
+        supabase.from('presenca').insert(
+          aInserir.map(aluno_id => ({ aluno_id, aula_id: aulaSelecionada.value.id, status: 'PRESENTE' }))
+        )
+      )
     }
 
     if (aRemover.length > 0) {
-      const idsParaRemover = aRemover
-        .map(alunoId => presencaIds.value[alunoId])
-        .filter(Boolean)
-
-      if (idsParaRemover.length > 0) {
-        promessas.push(
-          supabase.from('presenca').delete().in('id', idsParaRemover)
-        )
-      }
+      const ids = aRemover.map(id => presencaIds.value[id]).filter(Boolean)
+      if (ids.length > 0) promessas.push(supabase.from('presenca').delete().in('id', ids))
     }
 
     if (promessas.length === 0) {
@@ -309,29 +263,28 @@ async function salvarChamada() {
     const resultados = await Promise.all(promessas)
     const erros = resultados.filter(r => r.error)
 
-    if (erros.length > 0) {
-      console.error('Erros ao salvar:', erros)
-      $toast.error('Erro ao salvar chamada. Tente novamente.')
-    } else {
-      const msg = modoEdicao.value
-        ? `Chamada atualizada! +${aInserir.length} adicionado(s), -${aRemover.length} removido(s).`
-        : `Chamada salva! ${presentes.value.size} presença(s) registrada(s).`
-      $toast.success(msg)
-      router.push('/chamadaManual')
-    }
+    if (erros.length > 0) throw erros[0].error
+
+    // Marcar aula como REALIZADA
+    await supabase.from('aula').update({ status: 'REALIZADA' }).eq('id', aulaSelecionada.value.id)
+
+    const msg = modoEdicao.value
+      ? `Chamada atualizada! +${aInserir.length} adicionado(s), -${aRemover.length} removido(s).`
+      : `Chamada salva! ${presentes.value.size} presença(s) registrada(s).`
+
+    $toast.success(msg)
+    router.push('/chamada-manual')
+
   } catch (err) {
-    console.error('Erro inesperado:', err)
-    $toast.error('Erro inesperado ao salvar.')
+    console.error(err)
+    $toast.error('Erro ao salvar chamada.')
   } finally {
     salvando.value = false
   }
 }
 
-// ─── Init ─────────────────────────────────────────────────────────
 onMounted(async () => {
-  await Promise.all([carregarTurma(), carregarAlunos()])
+  await Promise.all([carregarTurma(), carregarAulas(), carregarAlunos()])
   loading.value = false
-  // Carrega presenças do dia atual ao abrir a página
-  await carregarPresencasDaData()
 })
 </script>
