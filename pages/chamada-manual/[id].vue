@@ -95,6 +95,12 @@
           >
             ❌ Desmarcar todos
           </button>
+          <button
+            @click="registrarAulaVazia"
+            class="text-sm px-4 py-2 rounded-xl border border-orange-200 text-orange-600 hover:bg-orange-50 transition"
+          >
+            🚫 Ninguém presente
+          </button>
         </div>
 
         <!-- Lista de alunos -->
@@ -278,6 +284,23 @@ async function salvarChamada() {
   } catch (err) {
     console.error(err)
     $toast.error('Erro ao salvar chamada.')
+  } finally {
+    salvando.value = false
+  }
+}
+
+async function registrarAulaVazia() {
+  salvando.value = true
+  try {
+    await supabase.from('presenca').delete().eq('aula_id', aulaSelecionada.value.id)
+
+    await supabase.from('aula').update({ status: 'REALIZADA' }).eq('id', aulaSelecionada.value.id)
+
+    $toast.success('Aula registrada sem presenças.')
+    router.push('/chamada-manual')
+  } catch (err) {
+    console.error(err)
+    $toast.error('Erro ao registrar aula.')
   } finally {
     salvando.value = false
   }
