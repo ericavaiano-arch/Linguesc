@@ -105,15 +105,17 @@
 
         <!-- Lista de alunos -->
         <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <li
-            v-for="aluno in alunos"
-            :key="aluno.id"
-            @click="togglePresenca(aluno.id)"
-            class="flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all duration-150"
-            :class="presentes.has(aluno.id)
-              ? 'border-green-400 bg-green-50 text-green-800'
-              : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 hover:bg-gray-100'"
-          >
+        <li
+          v-for="aluno in alunos"
+          :key="aluno.id"
+          @click="aluno.ativo ? togglePresenca(aluno.id) : null"
+          class="flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-150"
+          :class="!aluno.ativo
+            ? 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'
+            : presentes.has(aluno.id)
+              ? 'border-green-400 bg-green-50 text-green-800 cursor-pointer'
+              : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 hover:bg-gray-100 cursor-pointer'"
+        >
             <div
               class="w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all"
               :class="presentes.has(aluno.id) ? 'bg-green-500 border-green-500' : 'border-gray-300 bg-white'"
@@ -122,7 +124,10 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <span class="text-sm font-medium truncate">{{ aluno.nome }}</span>
+            <span class="text-sm font-medium truncate" :class="!aluno.ativo ? 'text-gray-400' : ''">
+              {{ aluno.nome }}
+              <span v-if="!aluno.ativo" class="ml-1 text-xs bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full">Inativo</span>
+            </span>
           </li>
         </ul>
 
@@ -151,6 +156,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/utils/supabase'
+
+definePageMeta({ middleware: 'professor' })
 
 const route = useRoute()
 const router = useRouter()
@@ -191,13 +198,14 @@ async function carregarAulas() {
 async function carregarAlunos() {
   const { data, error } = await supabase
     .from('turma_aluno')
-    .select('aluno_id, usuarios(id, nome)')
+    .select('aluno_id, usuarios(id, nome, ativo)')
     .eq('turma_id', turmaId)
 
   if (!error) {
     alunos.value = data.map(item => ({
       id: item.aluno_id,
-      nome: item.usuarios?.nome || 'Aluno'
+      nome: item.usuarios?.nome || 'Aluno',
+      ativo: item.usuarios?.ativo ?? true
     }))
   }
 }
@@ -236,7 +244,7 @@ function togglePresenca(alunoId) {
   presentes.value = s
 }
 
-function marcarTodos() { presentes.value = new Set(alunos.value.map(a => a.id)) }
+function marcarTodos() { presentes.value = new Set(alunos.value.filter(a => a.ativo).map(a => a.id)) }
 function desmarcarTodos() { presentes.value = new Set() }
 
 async function salvarChamada() {

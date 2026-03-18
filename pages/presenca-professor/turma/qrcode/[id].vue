@@ -65,6 +65,8 @@
 import { supabase } from '@/utils/supabase'
 import QrcodeVue from 'qrcode.vue'
 
+definePageMeta({ middleware: 'professor' })
+
 export default {
   components: { QrcodeVue },
   data() {

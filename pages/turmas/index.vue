@@ -290,12 +290,14 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/utils/supabase'
 
+definePageMeta({ middleware: 'professor' })
+
 const { $toast } = useNuxtApp()
 const router = useRouter()
+const { user } = useAuth()
 
 const turmas = ref([])
 const loading = ref(true)
-const professorId = ref(null)
 const menuAberto = ref(null)
 
 // Encerramento
@@ -378,9 +380,10 @@ function nomeTurmaDoAluno(alunoId) { return mapaMatriculas.value[alunoId]?.turma
 
 // ─── Carregar dados ───────────────────────────────────────────────
 async function carregarTurmas() {
-  if (!professorId.value) { loading.value = false; return }
+  const professorId = user.value?.id
+  if (!professorId) { loading.value = false; return }
   const { data, error } = await supabase
-    .from('turma').select('*, turma_aluno(count)').eq('professor_id', professorId.value).order('nome', { ascending: true })
+    .from('turma').select('*, turma_aluno(count)').eq('professor_id', professorId).order('nome', { ascending: true })
   if (error) console.error(error.message)
   else turmas.value = data
   loading.value = false
@@ -394,7 +397,7 @@ async function carregarMatriculas() {
 }
 
 async function carregarTodosAlunos() {
-  const { data } = await supabase.from('usuarios').select('id, nome, email').eq('tipoUsuario', 'ALUNO').order('nome', { ascending: true })
+  const { data } = await supabase.from('usuarios').select('id, nome, email').eq('tipoUsuario', 'ALUNO').eq('ativo', true).order('nome', { ascending: true })
   todosAlunos.value = data || []
 }
 
@@ -419,7 +422,6 @@ async function reativarTurma(turma) {
 async function abrirCriacao() {
   edicaoMeta.value = 75
 
-  edicaoMeta.value = turma.meta_frequencia ?? 75
   modo.value = 'criar'; edicaoNome.value = ''; edicaoAlunos.value = []; alunosOriginais.value = []; filtroEdicao.value = ''; painelAberto.value = true; loadingAlunos.value = true
   await Promise.all([carregarTodosAlunos(), carregarMatriculas()])
   loadingAlunos.value = false
@@ -429,7 +431,7 @@ async function abrirEdicao(turma) {
   modo.value = 'editar'; turmaSelecionada.value = turma; edicaoNome.value = turma.nome; edicaoAlunos.value = []; filtroEdicao.value = ''; painelAberto.value = true; loadingAlunos.value = true
   const [{ data: vinculos }, { data: todos }] = await Promise.all([
     supabase.from('turma_aluno').select('aluno_id, usuarios(id, nome, email)').eq('turma_id', turma.id),
-    supabase.from('usuarios').select('id, nome, email').eq('tipoUsuario', 'ALUNO').order('nome', { ascending: true })
+    supabase.from('usuarios').select('id, nome, email').eq('tipoUsuario', 'ALUNO').eq('ativo', true).order('nome', { ascending: true })
   ])
   await carregarMatriculas()
   edicaoAlunos.value = (vinculos || []).map(v => ({ id: v.aluno_id, nome: v.usuarios?.nome || '', email: v.usuarios?.email || '' })).sort((a, b) => a.nome.localeCompare(b.nome))
@@ -454,9 +456,10 @@ async function salvar() {
 }
 
 async function salvarCriacao() {
+  const professorId = user.value?.id
   const nomeTrimmed = edicaoNome.value.trim()
   if (turmas.value.some(t => t.nome.toLowerCase() === nomeTrimmed.toLowerCase())) { $toast.error('Já existe uma turma com este nome.'); return }
-  const { data: novaTurma, error } = await supabase.from('turma').insert([{ nome: nomeTrimmed, professor_id: professorId.value, meta_frequencia: edicaoMeta.value }]).select().single()
+  const { data: novaTurma, error } = await supabase.from('turma').insert([{ nome: nomeTrimmed, professor_id: professorId, meta_frequencia: edicaoMeta.value }]).select().single()
   if (error) throw error
   if (edicaoAlunos.value.length > 0) {
     const { error: e } = await supabase.from('turma_aluno').insert(edicaoAlunos.value.map(a => ({ turma_id: novaTurma.id, aluno_id: a.id })))
@@ -488,8 +491,6 @@ async function salvarEdicao() {
 }
 
 onMounted(() => {
-  const stored = localStorage.getItem('user')
-  professorId.value = stored ? JSON.parse(stored)?.id : null
   carregarTurmas()
 })
 </script>

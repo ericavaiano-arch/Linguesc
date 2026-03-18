@@ -11,29 +11,32 @@
         <SidebarItem to="/hub" label="Início" icon="🏠" :open="true" @click="$emit('toggle')" />
 
         <!-- ALUNO -->
-        <SidebarItem v-if="tipoUsuario === 'ALUNO'" to="/presencaAluno" label="Minha Presença" icon="📅" :open="true" @click="$emit('toggle')" />
-        <!-- <SidebarItem v-if="tipoUsuario === 'ALUNO'" to="/registroPresenca" label="Marcar Presença" icon="📷" :open="true" @click="$emit('toggle')" /> -->
+        <SidebarItem v-if="isAluno" to="/presencaAluno" label="Minha Presença" icon="📅" :open="true" @click="$emit('toggle')" />
+        <!-- <SidebarItem v-if="isAluno" to="/registroPresenca" label="Marcar Presença" icon="📷" :open="true" @click="$emit('toggle')" /> -->
 
         <!-- PROFESSOR -->
-        <SidebarItem v-if="tipoUsuario === 'PROFESSOR'" to="/dashboard" label="Dashboard" icon="📊" :open="true" @click="$emit('toggle')" />
-        <SidebarItem v-if="tipoUsuario === 'PROFESSOR'" to="/turmas" label="Minhas Turmas" icon="📚" :open="true" @click="$emit('toggle')" />
-        <!-- <SidebarItem v-if="tipoUsuario === 'PROFESSOR'" to="/qrCodeTurmas" label="Chamada por QR Code" icon="🧾" :open="true" @click="$emit('toggle')" /> -->
-        <SidebarItem v-if="tipoUsuario === 'PROFESSOR'" to="/chamada-manual" label="Chamada" icon="✅" :open="true" @click="$emit('toggle')" />
+        <SidebarItem v-if="isProfessor" to="/dashboard" label="Dashboard" icon="📊" :open="true" @click="$emit('toggle')" />
+        <SidebarItem v-if="isProfessor" to="/turmas" label="Minhas Turmas" icon="📚" :open="true" @click="$emit('toggle')" />
+        <!-- <SidebarItem v-if="isProfessor" to="/qrCodeTurmas" label="Chamada por QR Code" icon="🧾" :open="true" @click="$emit('toggle')" /> -->
+        <SidebarItem v-if="isProfessor" to="/chamada-manual" label="Chamada" icon="✅" :open="true" @click="$emit('toggle')" />
+
+        <!-- ADMIN -->
+        <template v-if="isAdmin">
+          <div class="px-3 pt-4 pb-1">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Admin</p>
+          </div>
+          <SidebarItem to="/admin" label="Dashboard Global" icon="📊" :open="true" @click="$emit('toggle')" />
+          <SidebarItem to="/admin/usuarios" label="Usuários" icon="👥" :open="true" @click="$emit('toggle')" />
+          <SidebarItem to="/admin/configuracoes" label="Configurações" icon="⚙️" :open="true" @click="$emit('toggle')" />
+        </template>
       </nav>
     </aside>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-
 defineProps({ open: { type: Boolean, required: true } })
 defineEmits(['toggle'])
 
-const user = ref(null)
-onMounted(() => {
-  const stored = localStorage.getItem('user')
-  if (stored) user.value = JSON.parse(stored)
-})
-const tipoUsuario = computed(() => user.value?.tipoUsuario || null)
+const { isAluno, isProfessor, isAdmin } = useAuth()
 </script>

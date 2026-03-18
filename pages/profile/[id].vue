@@ -72,6 +72,8 @@
 <script>
 import { supabase } from '@/utils/supabase'
 
+definePageMeta({ middleware: 'auth' })
+
 export default {
   setup() {
     const { $toast } = useNuxtApp()

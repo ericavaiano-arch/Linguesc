@@ -95,6 +95,7 @@
                 : 'border-red-100 bg-red-50'"
             >
               <span class="text-sm font-medium text-gray-800">{{ aluno.nome }}</span>
+              <span v-if="!aluno.ativo" class="ml-1 text-xs bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full">Inativo</span>
               <span
                 class="text-xs font-semibold px-3 py-1 rounded-full"
                 :class="aluno.presente ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'"
@@ -149,6 +150,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/utils/supabase'
 
+definePageMeta({ middleware: 'professor' })
+
 const route = useRoute()
 const router = useRouter()
 const turmaId = Number(route.params.id)
@@ -168,14 +171,15 @@ onMounted(async () => {
   { data: aulasData },
 ] = await Promise.all([
   supabase.from('turma').select('id, nome').eq('id', turmaId).single(),
-  supabase.from('turma_aluno').select('aluno_id, usuarios(id, nome)').eq('turma_id', turmaId),
+  supabase.from('turma_aluno').select('aluno_id, usuarios(id, nome, ativo)').eq('turma_id', turmaId),
   supabase.from('aula').select('id, data, status').eq('turma_id', turmaId).order('data', { ascending: false }),
 ])
 
 turma.value = turmaData
 alunos.value = (vinculosData || [])
-  .map(v => ({ id: v.aluno_id, nome: v.usuarios?.nome || '' }))
+  .map(v => ({ id: v.aluno_id, nome: v.usuarios?.nome || '', ativo: v.usuarios?.ativo ?? true }))
   .sort((a, b) => a.nome.localeCompare(b.nome))
+
 aulas.value = aulasData || []
 
 // Filtra presenças pelos alunos da turma E pelas aulas da turma

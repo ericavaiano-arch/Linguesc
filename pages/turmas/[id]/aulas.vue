@@ -237,6 +237,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { supabase } from '@/utils/supabase'
 
+definePageMeta({ middleware: 'professor' })
+
 const route = useRoute()
 const { $toast } = useNuxtApp()
 const turmaId = route.params.id

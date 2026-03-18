@@ -102,6 +102,8 @@ import {
   Legend
 } from 'chart.js'
 
+definePageMeta({ middleware: 'professor' })
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
