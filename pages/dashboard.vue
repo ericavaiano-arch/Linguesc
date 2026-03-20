@@ -213,7 +213,8 @@ onMounted(async () => {
     { data: aulasData },
     { data: presencasData },
     { data: vinculosData },
-    { data: justificativasData }, // NOVO
+    { data: justificativasData },
+    { data: notificacoesData },
   ] = await Promise.all([
     supabase.from('turma').select('id, nome, meta_frequencia').eq('professor_id', professorId).eq('status', 'ATIVA').order('nome'),
     supabase.from('aula').select('id, turma_id, data, status').order('data', { ascending: true }),
@@ -232,6 +233,18 @@ onMounted(async () => {
   todasPresencas.value = presencasData || []
   todosVinculos.value = vinculosData || []
   todasJustificativas.value = justificativasData || [] // NOVO
+
+  notificadosIds.value = new Set(
+    (notificacoesData || []).map(n => n.aluno_id + n.turma_id)
+  )
+
+    // Logo após o Promise.all, antes de loading.value = false
+  console.log('notificacoesData:', notificacoesData)
+  console.log('notificadosIds montados:', [...notificadosIds.value])
+
+  // E no alunosEmRisco, adiciona:
+  console.log('chaves em risco:', alunosEmRisco.value.map(a => a.alunoId + a.turmaId))
+
   loading.value = false
 })
 

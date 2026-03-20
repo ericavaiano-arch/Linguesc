@@ -79,9 +79,9 @@
                     <button @click.stop="navegar(`/turmas/${turma.id}/aulas`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
                       📅 <span>Cadastrar Aulas</span>
                     </button>
-                    <button @click.stop="navegar(`/turmas/${turma.id}/historico`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
+                    <!-- <button @click.stop="navegar(`/turmas/${turma.id}/historico`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
                       📋 <span>Histórico</span>
-                    </button>
+                    </button> -->
                     <button @click.stop="navegar(`/turmas/${turma.id}/relatorio`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
                       📄 <span>Relatório</span>
                     </button>
@@ -129,9 +129,9 @@
                       v-if="menuAberto === turma.id"
                       class="absolute right-0 top-9 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-30 py-1 overflow-hidden"
                     >
-                      <button @click="navegar(`/turmas/${turma.id}/historico`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
+                      <!-- <button @click="navegar(`/turmas/${turma.id}/historico`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
                         📋 <span>Histórico</span>
-                      </button>
+                      </button> -->
                       <button @click="navegar(`/turmas/${turma.id}/relatorio`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
                         📄 <span>Relatório</span>
                       </button>

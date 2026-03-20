@@ -118,12 +118,17 @@
                   <span
                     class="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold"
                     :class="{
-                      'bg-green-100 text-green-700': aluno.presencasPorAula[aula.id] === 'P',
-                      'bg-blue-100 text-blue-700':   aluno.presencasPorAula[aula.id] === 'J',
-                      'bg-red-100 text-red-600':     !aluno.presencasPorAula[aula.id],
+                      'bg-green-100 text-green-700':  aluno.presencasPorAula[aula.id] === 'P',
+                      'bg-blue-100 text-blue-700':    aluno.presencasPorAula[aula.id] === 'J',
+                      'bg-yellow-100 text-yellow-700': aluno.presencasPorAula[aula.id] === 'PENDENTE',
+                      'bg-red-100 text-red-600':      aluno.presencasPorAula[aula.id] === 'F',
                     }"
                   >
-                    {{ aluno.presencasPorAula[aula.id] === 'P' ? '✓' : aluno.presencasPorAula[aula.id] === 'J' ? 'J' : '✗' }}
+                    {{
+                      aluno.presencasPorAula[aula.id] === 'P' ? '✓' :
+                      aluno.presencasPorAula[aula.id] === 'J' ? 'J' :
+                      aluno.presencasPorAula[aula.id] === 'PENDENTE' ? '⏳' : '✗'
+                    }}
                   </span>
                 </td>
                 <td class="text-center px-6 py-3 font-semibold text-gray-700">
@@ -214,11 +219,14 @@ onMounted(async () => {
 
   const [{ data: presencasData }, { data: justificativasData }] = await Promise.all([
     supabase.from('presenca').select('aula_id, aluno_id').in('aluno_id', alunoIds),
-    supabase.from('justificativa_falta').select('aluno_id, aula_id').eq('status', 'ACEITA').in('aluno_id', alunoIds), // NOVO
+    supabase
+      .from('justificativa_falta')
+      .select('aluno_id, aula_id, status') // ADICIONADO status
+      .in('aluno_id', alunoIds),           // removido o .eq('status', 'ACEITA')
   ])
 
   presencas.value = (presencasData || []).filter(p => aulasIds.has(p.aula_id))
-  justificativas.value = (justificativasData || []).filter(j => aulasIds.has(j.aula_id)) // NOVO
+  justificativas.value = (justificativasData || []).filter(j => aulasIds.has(j.aula_id))
   loading.value = false
 })
 
@@ -233,18 +241,25 @@ const tabelaAlunos = computed(() => {
 
     aulasRealizadas.value.forEach(aula => {
       const presente = presencas.value.some(p => p.aluno_id === aluno.id && p.aula_id === aula.id)
-      const justificada = justificativas.value.some(j => j.aluno_id === aluno.id && j.aula_id === aula.id)
-      // 'P' = presente, 'J' = justificada, false = falta
-      presencasPorAula[aula.id] = presente ? 'P' : justificada ? 'J' : false
+      if (presente) {
+        presencasPorAula[aula.id] = 'P'
+        return
+      }
+      const just = justificativas.value.find(j => j.aluno_id === aluno.id && j.aula_id === aula.id)
+      if (just?.status === 'ACEITA')    presencasPorAula[aula.id] = 'J'
+      else if (just?.status === 'PENDENTE') presencasPorAula[aula.id] = 'PENDENTE'
+      else                              presencasPorAula[aula.id] = 'F'
     })
 
+    // Cálculo usa só aceitas — pendente não conta como presença
     const aulasIds = aulasRealizadas.value.map(a => a.id)
-    const freq = calcularFrequenciaSync(aluno.id, aulasIds, presencas.value, justificativas.value)
+    const justAceitas = justificativas.value.filter(j => j.status === 'ACEITA')
+    const freq = calcularFrequenciaSync(aluno.id, aulasIds, presencas.value, justAceitas)
 
     return {
       ...aluno,
       presencasPorAula,
-      totalPresencas: freq.totalValidas, // presenças + justificadas aceitas
+      totalPresencas: freq.totalValidas,
       frequencia: freq.frequencia,
     }
   })
@@ -286,10 +301,12 @@ function exportarCSV() {
 
   const linhas = tabelaAlunos.value.map(aluno => [
     aluno.nome,
+    // Substitui o map de aulas dentro de linhas no imprimirPDF
     ...aulasRealizadas.value.map(aula => {
       const v = aluno.presencasPorAula[aula.id]
       if (v === 'P') return 'P'
       if (v === 'J') return 'J'
+      if (v === 'PENDENTE') return '?'
       return 'F'
     }),
     aluno.totalPresencas,
@@ -385,9 +402,10 @@ function imprimirPDF() {
     aluno.nome + (aluno.ativo ? '' : ' (inativo)'),
     ...aulasRealizadas.value.map(aula => {
       const v = aluno.presencasPorAula[aula.id]
-      if (v === 'P') return '✓'
+      if (v === 'P') return 'P'
       if (v === 'J') return 'J'
-      return '✗'
+      if (v === 'PENDENTE') return '?'
+      return 'F'
     }),
     `${aluno.totalPresencas}/${aulasRealizadas.value.length}`,
     `${aluno.frequencia}%`,
@@ -423,11 +441,14 @@ function imprimirPDF() {
 
       if (isAulaCol && data.section === 'body') {
         data.cell.styles.halign = 'center'
-        if (data.cell.raw === '✓') {
+        data.cell.styles.fontStyle = 'bold'
+        if (data.cell.raw === 'P') {
           data.cell.styles.textColor = [22, 163, 74]
         } else if (data.cell.raw === 'J') {
-          data.cell.styles.textColor = [37, 99, 235] // azul — justificada
-        } else if (data.cell.raw === '✗') {
+          data.cell.styles.textColor = [37, 99, 235]
+        } else if (data.cell.raw === '?') {
+          data.cell.styles.textColor = [161, 98, 7]
+        } else if (data.cell.raw === 'F') {
           data.cell.styles.textColor = [220, 38, 38]
         }
       }
@@ -435,6 +456,7 @@ function imprimirPDF() {
       if (data.column.index === cabecalho.length - 1 && data.section === 'body') {
         const freq = parseInt(data.cell.raw)
         data.cell.styles.textColor = freq < meta.value ? [220, 38, 38] : [22, 163, 74]
+        data.cell.styles.fontStyle = 'bold'
       }
     },
     didDrawPage(data) {
@@ -455,6 +477,13 @@ function imprimirPDF() {
       )
     },
   })
+
+  // Após o autoTable, antes do doc.save
+  const legendaY = doc.lastAutoTable.finalY + 6
+  doc.setFontSize(7)
+  doc.setTextColor(156, 163, 175)
+  doc.setFont('helvetica', 'normal')
+  doc.text('Legenda: P = Presente · J = Justificada · ? = Aguardando avaliação · F = Falta', 14, legendaY)
 
   doc.save(`presenca_${turmaName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`)
 }
