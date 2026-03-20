@@ -4,11 +4,9 @@
     <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
 
       <div class="text-center mb-8">
-        <div class="text-4xl mb-3">🌎</div>
-        <h1 class="text-xl sm:text-2xl font-bold text-gray-800 leading-snug">
-          Plataforma de acompanhamento e engajamento no aprendizado de línguas
-        </h1>
-        <p class="text-sm text-gray-500 mt-2">Faça login para continuar</p>
+        <div class="text-4xl mb-3 flex justify-center">
+          <img src="~/assets/images/logo_linguesc.png" alt="Linguesc" class="h-32" />
+        </div>
       </div>
 
       <form @submit.prevent="verificarUsuario" class="space-y-5">
