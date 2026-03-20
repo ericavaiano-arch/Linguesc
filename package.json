@@ -19,6 +19,8 @@
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "html5-qrcode": "^2.3.8",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "nuxt": "^3.11.2",
     "qrcode.vue": "^3.8.0",
     "uuid": "^13.0.0",

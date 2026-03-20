@@ -90,17 +90,25 @@
               v-for="aluno in alunosComPresenca"
               :key="aluno.id"
               class="flex items-center justify-between px-4 py-3 rounded-xl border transition"
-              :class="aluno.presente
-                ? 'border-green-200 bg-green-50'
-                : 'border-red-100 bg-red-50'"
+              :class="{
+                'border-green-200 bg-green-50':  aluno.presente,
+                'border-blue-200 bg-blue-50':    aluno.justificada,
+                'border-red-100 bg-red-50':      !aluno.presente && !aluno.justificada,
+              }"
             >
-              <span class="text-sm font-medium text-gray-800">{{ aluno.nome }}</span>
-              <span v-if="!aluno.ativo" class="ml-1 text-xs bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full">Inativo</span>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-medium text-gray-800">{{ aluno.nome }}</span>
+                <span v-if="!aluno.ativo" class="text-xs bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full">Inativo</span>
+              </div>
               <span
                 class="text-xs font-semibold px-3 py-1 rounded-full"
-                :class="aluno.presente ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'"
+                :class="{
+                  'bg-green-100 text-green-700': aluno.presente,
+                  'bg-blue-100 text-blue-700':   aluno.justificada,
+                  'bg-red-100 text-red-600':     !aluno.presente && !aluno.justificada,
+                }"
               >
-                {{ aluno.presente ? 'Presente' : 'Falta' }}
+                {{ aluno.presente ? 'Presente' : aluno.justificada ? 'Justificada' : 'Falta' }}
               </span>
             </li>
           </ul>
@@ -149,6 +157,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/utils/supabase'
+import { calcularFrequenciaSync } from '~/composables/usePresenca'
 
 definePageMeta({ middleware: 'professor' })
 
@@ -157,43 +166,41 @@ const router = useRouter()
 const turmaId = Number(route.params.id)
 
 const turma = ref(null)
-const alunos = ref([])       // { id, nome }
-const aulas = ref([])        // todas as aulas da turma
-const presencas = ref([])    // { aula_id, aluno_id }
+const alunos = ref([])
+const aulas = ref([])
+const presencas = ref([])
+const justificativas = ref([]) // NOVO — { aluno_id, aula_id }
 const loading = ref(true)
 const aulaSelecionada = ref(null)
 
-// ─── Carregar ─────────────────────────────────────────────────────
 onMounted(async () => {
   const [
-  { data: turmaData },
-  { data: vinculosData },
-  { data: aulasData },
-] = await Promise.all([
-  supabase.from('turma').select('id, nome').eq('id', turmaId).single(),
-  supabase.from('turma_aluno').select('aluno_id, usuarios(id, nome, ativo)').eq('turma_id', turmaId),
-  supabase.from('aula').select('id, data, status').eq('turma_id', turmaId).order('data', { ascending: false }),
-])
+    { data: turmaData },
+    { data: vinculosData },
+    { data: aulasData },
+  ] = await Promise.all([
+    supabase.from('turma').select('id, nome').eq('id', turmaId).single(),
+    supabase.from('turma_aluno').select('aluno_id, usuarios(id, nome, ativo)').eq('turma_id', turmaId),
+    supabase.from('aula').select('id, data, status').eq('turma_id', turmaId).order('data', { ascending: false }),
+  ])
 
-turma.value = turmaData
-alunos.value = (vinculosData || [])
-  .map(v => ({ id: v.aluno_id, nome: v.usuarios?.nome || '', ativo: v.usuarios?.ativo ?? true }))
-  .sort((a, b) => a.nome.localeCompare(b.nome))
+  turma.value = turmaData
+  alunos.value = (vinculosData || [])
+    .map(v => ({ id: v.aluno_id, nome: v.usuarios?.nome || '', ativo: v.usuarios?.ativo ?? true }))
+    .sort((a, b) => a.nome.localeCompare(b.nome))
 
-aulas.value = aulasData || []
+  aulas.value = aulasData || []
 
-// Filtra presenças pelos alunos da turma E pelas aulas da turma
-const alunoIds = alunos.value.map(a => a.id)
-const aulasIds = new Set((aulasData || []).map(a => a.id))
+  const alunoIds = alunos.value.map(a => a.id)
+  const aulasIds = new Set((aulasData || []).map(a => a.id))
 
-const { data: presencasData } = await supabase
-  .from('presenca')
-  .select('aula_id, aluno_id')
-  .eq('status', 'PRESENTE')
-  .in('aluno_id', alunoIds)
+  const [{ data: presencasData }, { data: justificativasData }] = await Promise.all([
+    supabase.from('presenca').select('aula_id, aluno_id').in('aluno_id', alunoIds),
+    supabase.from('justificativa_falta').select('aluno_id, aula_id').eq('status', 'ACEITA').in('aluno_id', alunoIds), // NOVO
+  ])
 
-presencas.value = (presencasData || []).filter(p => aulasIds.has(p.aula_id))
-
+  presencas.value = (presencasData || []).filter(p => aulasIds.has(p.aula_id))
+  justificativas.value = (justificativasData || []).filter(j => aulasIds.has(j.aula_id)) // NOVO
   loading.value = false
 })
 
@@ -202,7 +209,6 @@ const aulasRealizadas = computed(() =>
   aulas.value.filter(a => a.status === 'REALIZADA')
 )
 
-// Mapa aula_id → count de presentes
 const presencasPorAula = computed(() => {
   const mapa = {}
   presencas.value.forEach(p => {
@@ -216,30 +222,35 @@ function taxaPresenca(aulaId) {
   return Math.round(((presencasPorAula.value[aulaId] ?? 0) / alunos.value.length) * 100)
 }
 
-// Alunos com status de presença na aula selecionada
+// ATUALIZADO — mostra presente, justificada ou falta
 const alunosComPresenca = computed(() => {
   if (!aulaSelecionada.value) return []
+  const aulaId = aulaSelecionada.value.id
+
   const presentesIds = new Set(
-    presencas.value.filter(p => p.aula_id === aulaSelecionada.value.id).map(p => p.aluno_id)
+    presencas.value.filter(p => p.aula_id === aulaId).map(p => p.aluno_id)
   )
-  return alunos.value.map(a => ({ ...a, presente: presentesIds.has(a.id) }))
+  const justificadasIds = new Set(
+    justificativas.value.filter(j => j.aula_id === aulaId).map(j => j.aluno_id)
+  )
+
+  return alunos.value.map(a => ({
+    ...a,
+    presente: presentesIds.has(a.id),
+    justificada: !presentesIds.has(a.id) && justificadasIds.has(a.id),
+  }))
 })
 
-// Frequência acumulada por aluno
+// ATUALIZADO — usa calcularFrequenciaSync
 const frequenciaPorAluno = computed(() => {
   const realizadas = aulasRealizadas.value
   if (realizadas.length === 0) return []
-  const ids = realizadas.map(a => a.id)
+
+  const aulasIds = realizadas.map(a => a.id)
 
   return alunos.value.map(aluno => {
-    const count = presencas.value.filter(
-      p => p.aluno_id === aluno.id && ids.includes(p.aula_id)
-    ).length
-    return {
-      ...aluno,
-      presencas: count,
-      frequencia: Math.round((count / realizadas.length) * 100)
-    }
+    const freq = calcularFrequenciaSync(aluno.id, aulasIds, presencas.value, justificativas.value)
+    return { ...aluno, presencas: freq.totalValidas, frequencia: freq.frequencia }
   }).sort((a, b) => a.frequencia - b.frequencia)
 })
 

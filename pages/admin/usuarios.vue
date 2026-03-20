@@ -64,12 +64,12 @@
               <span
                 class="text-xs font-semibold px-2.5 py-1 rounded-full"
                 :class="{
-                  'bg-purple-100 text-purple-700': usuario.tipoUsuario === 'ADMIN',
-                  'bg-blue-100 text-blue-700': usuario.tipoUsuario === 'PROFESSOR',
-                  'bg-green-100 text-green-700': usuario.tipoUsuario === 'ALUNO',
+                  'bg-purple-100 text-purple-700': usuario.tipo_usuario === 'ADMIN',
+                  'bg-blue-100 text-blue-700': usuario.tipo_usuario === 'PROFESSOR',
+                  'bg-green-100 text-green-700': usuario.tipo_usuario === 'ALUNO',
                 }"
               >
-                {{ usuario.tipoUsuario }}
+                {{ usuario.tipo_usuario }}
               </span>
             </td>
             <td class="px-6 py-4 text-center">
@@ -99,43 +99,47 @@
       </table>
     </div>
 
-    <!-- ── OVERLAY ── -->
+    <!-- Overlay -->
     <Transition name="fade">
       <div v-if="painelAberto" class="fixed inset-0 bg-black/40 z-[60]" @click="fecharPainel"></div>
     </Transition>
 
-    <!-- ── DRAWER ── -->
+    <!-- Drawer -->
     <Transition name="slide">
       <div v-if="painelAberto" class="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl z-[70] flex flex-col">
         <div class="flex items-center justify-between p-6 border-b">
-          <h2 class="text-lg font-semibold text-gray-800">{{ modo === 'criar' ? '➕ Novo Usuário' : '✏️ Editar Usuário' }}</h2>
+          <h2 class="text-lg font-semibold text-gray-800">
+            {{ modo === 'criar' ? '➕ Novo Usuário' : '✏️ Editar Usuário' }}
+          </h2>
           <button @click="fecharPainel" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 transition text-xl">×</button>
         </div>
 
         <div class="flex-1 overflow-y-auto p-6 space-y-5">
           <div>
             <label class="text-sm font-medium text-gray-700 mb-2 block">Nome</label>
-            <input v-model="form.nome" type="text" placeholder="Nome completo" class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+            <input v-model="form.nome" type="text" placeholder="Nome completo"
+              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
           </div>
           <div>
             <label class="text-sm font-medium text-gray-700 mb-2 block">E-mail</label>
-            <input v-model="form.email" type="email" placeholder="email@exemplo.com" class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+            <input v-model="form.email" type="email" placeholder="email@exemplo.com"
+              :disabled="modo === 'editar'"
+              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition disabled:bg-gray-50 disabled:text-gray-400" />
+            <p v-if="modo === 'editar'" class="text-xs text-gray-400 mt-1">E-mail não pode ser alterado por aqui.</p>
           </div>
           <div v-if="modo === 'criar'">
             <label class="text-sm font-medium text-gray-700 mb-2 block">Senha</label>
-            <input v-model="form.senha" type="password" placeholder="Senha de acesso" class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+            <input v-model="form.senha" type="password" placeholder="Mínimo 8 caracteres"
+              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
           </div>
           <div>
             <label class="text-sm font-medium text-gray-700 mb-2 block">Tipo de Usuário</label>
-            <select v-model="form.tipoUsuario" class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition">
+            <select v-model="form.tipo_usuario"
+              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition">
               <option value="ALUNO">Aluno</option>
               <option value="PROFESSOR">Professor</option>
               <option value="ADMIN">Admin</option>
             </select>
-          </div>
-          <div v-if="modo === 'editar'">
-            <label class="text-sm font-medium text-gray-700 mb-2 block">Nova senha <span class="text-gray-400 font-normal">(deixe em branco para não alterar)</span></label>
-            <input v-model="form.novaSenha" type="password" placeholder="Nova senha" class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
           </div>
         </div>
 
@@ -156,8 +160,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { supabase } from '@/utils/supabase'
+import { supabase } from '~/utils/supabase'
 
 definePageMeta({ middleware: 'admin' })
 
@@ -173,41 +176,63 @@ const modo = ref('criar')
 const salvando = ref(false)
 const usuarioEditando = ref(null)
 
-const form = ref({ nome: '', email: '', senha: '', tipoUsuario: 'ALUNO', novaSenha: '' })
+const form = ref({
+  nome: '',
+  email: '',
+  senha: '',
+  tipo_usuario: 'ALUNO',
+})
 
 const usuariosFiltrados = computed(() => {
   return usuarios.value.filter(u => {
     const termo = filtro.value.trim().toLowerCase()
     const matchTexto = !termo || u.nome.toLowerCase().includes(termo) || u.email.toLowerCase().includes(termo)
-    const matchTipo = !filtroTipo.value || u.tipoUsuario === filtroTipo.value
+    const matchTipo = !filtroTipo.value || u.tipo_usuario === filtroTipo.value
     const matchAtivo = filtroAtivo.value === '' || String(u.ativo) === filtroAtivo.value
     return matchTexto && matchTipo && matchAtivo
   })
 })
 
 async function carregarUsuarios() {
-  const { data } = await supabase
-    .from('usuarios')
-    .select('id, nome, email, tipoUsuario, ativo, dtInclusao')
+  loading.value = true
+  // Usa a view usuarios_completo que já traz o email de auth.users
+  const { data, error } = await supabase
+    .from('usuarios_completo')
+    .select('*')
     .order('nome')
-  usuarios.value = data || []
+
+  if (error) {
+    $toast.error('Erro ao carregar usuários.')
+    console.error(error)
+  } else {
+    usuarios.value = data || []
+  }
+
   loading.value = false
 }
 
 function abrirCriacao() {
   modo.value = 'criar'
-  form.value = { nome: '', email: '', senha: '', tipoUsuario: 'ALUNO', novaSenha: '' }
+  form.value = { nome: '', email: '', senha: '', tipo_usuario: 'ALUNO' }
   painelAberto.value = true
 }
 
 function abrirEdicao(usuario) {
   modo.value = 'editar'
   usuarioEditando.value = usuario
-  form.value = { nome: usuario.nome, email: usuario.email, senha: '', tipoUsuario: usuario.tipoUsuario, novaSenha: '' }
+  form.value = {
+    nome: usuario.nome,
+    email: usuario.email,
+    senha: '',
+    tipo_usuario: usuario.tipo_usuario,
+  }
   painelAberto.value = true
 }
 
-function fecharPainel() { painelAberto.value = false; usuarioEditando.value = null }
+function fecharPainel() {
+  painelAberto.value = false
+  usuarioEditando.value = null
+}
 
 async function salvar() {
   if (!form.value.nome.trim() || !form.value.email.trim()) return
@@ -215,29 +240,52 @@ async function salvar() {
 
   try {
     if (modo.value === 'criar') {
-      if (!form.value.senha.trim()) { $toast.warning('Informe uma senha.'); return }
-      const { error } = await supabase.from('usuarios').insert([{
-        nome: form.value.nome.trim(),
-        email: form.value.email.trim(),
-        senha: form.value.senha,
-        tipoUsuario: form.value.tipoUsuario,
-        ativo: true
-      }])
-      if (error) {
-        if (error.code === '23505') { $toast.error('Este e-mail já está cadastrado.'); return }
-        throw error
+      if (!form.value.senha.trim() || form.value.senha.length < 8) {
+        $toast.warning('A senha deve ter pelo menos 8 caracteres.')
+        return
       }
-      $toast.success('Usuário criado com sucesso!')
-    } else {
-      const updates = {
-        nome: form.value.nome.trim(),
-        email: form.value.email.trim(),
-        tipoUsuario: form.value.tipoUsuario,
-      }
-      if (form.value.novaSenha.trim()) updates.senha = form.value.novaSenha.trim()
 
-      const { error } = await supabase.from('usuarios').update(updates).eq('id', usuarioEditando.value.id)
+      // 1. Cria no Auth
+      const { data, error: authError } = await supabase.auth.signUp({
+        email: form.value.email.trim(),
+        password: form.value.senha,
+      })
+
+      if (authError || !data.user) {
+        $toast.error(authError?.message ?? 'Erro ao criar usuário.')
+        return
+      }
+
+      // 2. Insere perfil
+      const { error: dbError } = await supabase
+        .from('usuarios')
+        .insert({
+          id: data.user.id,
+          nome: form.value.nome.trim(),
+          tipo_usuario: form.value.tipo_usuario,
+        })
+
+      if (dbError) {
+        $toast.error('Erro ao salvar perfil do usuário.')
+        console.error(dbError)
+        return
+      }
+
+      $toast.success('Usuário criado com sucesso!')
+
+    } else {
+      // Edição: só atualiza nome e tipo_usuario em usuarios
+      // Email e senha são gerenciados pelo Supabase Auth separadamente
+      const { error } = await supabase
+        .from('usuarios')
+        .update({
+          nome: form.value.nome.trim(),
+          tipo_usuario: form.value.tipo_usuario,
+        })
+        .eq('id', usuarioEditando.value.id)
+
       if (error) throw error
+
       $toast.success('Usuário atualizado!')
     }
 

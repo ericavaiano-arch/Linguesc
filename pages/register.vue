@@ -126,96 +126,69 @@
   </div>
 </template>
 
-<script>
-import { supabase } from '@/utils/supabase'
+<script setup>
+import { supabase } from '~/utils/supabase'
 
-definePageMeta({
-  layout: 'auth'
-})
+definePageMeta({ layout: 'auth' })
 
-export default {
-  setup() {
-    const { $toast } = useNuxtApp()
-    return { toast: $toast }
-  },
+const { $toast } = useNuxtApp()
 
-  data() {
-    return {
-      nome: '',
-      email: '',
-      senha: '',
-      tipoUsuario: '',
-      emailInvalido: false,
-      senhaCurta: false
-    };
-  },
+const nome = ref('')
+const email = ref('')
+const senha = ref('')
+const tipoUsuario = ref('')
+const emailInvalido = ref(false)
+const senhaCurta = ref(false)
 
-  methods: {
-    async cadastrarUsuario() {
-      if (!this.nome || !this.email || !this.senha || !this.tipoUsuario) {
-        this.toast.warning('Todos os campos são obrigatórios.')
-        return
-      }
-
-      if (this.emailInvalido || this.senhaCurta) {
-        this.toast.error('Corrija os erros antes de cadastrar.')
-        return
-      }
-
-      try {
-        const { error } = await supabase
-          .from('usuarios')
-          .insert([{
-            nome: this.nome,
-            email: this.email,
-            senha: this.senha,
-            tipoUsuario: this.tipoUsuario
-          }])
-
-        if (error) {
-          if (error.code === '23505') {
-            this.toast.error('Este e-mail já está cadastrado.')
-            return
-          }
-
-          this.toast.error('Erro ao cadastrar usuário.')
-          console.error(error)
-          return
-        }
-
-        this.toast.success('Usuário cadastrado com sucesso!')
-        this.resetForm()
-        this.voltar()
-
-      } catch (err) {
-        console.error('Erro inesperado:', err)
-        this.$toast.error('Erro ao conectar com o servidor.')
-      }
-    },
-
-    resetForm() {
-      this.nome = ''
-      this.email = ''
-      this.senha = ''
-      this.tipoUsuario = ''
-    },
-
-    voltar() {
-      this.$router.push('/')
-    },
-
-    validarEmail() {
-      const regexEmail = /\S+@\S+\.\S+/
-      this.emailInvalido = !regexEmail.test(this.email)
-    },
-
-    validarSenha() {
-      this.senhaCurta = this.senha.length < 8
-    }
-  },
-
-  created() {
-    this.resetForm()
+async function cadastrarUsuario() {
+  if (!nome.value || !email.value || !senha.value || !tipoUsuario.value) {
+    $toast.warning('Todos os campos são obrigatórios.')
+    return
   }
-};
+
+  if (emailInvalido.value || senhaCurta.value) {
+    $toast.error('Corrija os erros antes de cadastrar.')
+    return
+  }
+
+  // 1. Cria o usuário no Supabase Auth
+  const { data, error: authError } = await supabase.auth.signUp({
+    email: email.value,
+    password: senha.value,
+  })
+
+  if (authError || !data.user) {
+    $toast.error(authError?.message ?? 'Erro ao cadastrar.')
+    return
+  }
+
+  // 2. Insere os dados extras em usuarios
+  const { error: dbError } = await supabase
+    .from('usuarios')
+    .insert({
+      id: data.user.id,
+      nome: nome.value,
+      tipo_usuario: tipoUsuario.value, // era tipoUsuario, agora é tipo_usuario
+    })
+
+  if (dbError) {
+    $toast.error('Erro ao salvar perfil.')
+    return
+  }
+
+  $toast.success('Cadastro realizado! Faça login para continuar.')
+  navigateTo('/')
+}
+
+function voltar() {
+  navigateTo('/')
+}
+
+function validarEmail() {
+  emailInvalido.value = !/\S+@\S+\.\S+/.test(email.value)
+}
+
+function validarSenha() {
+  senhaCurta.value = senha.value.length < 8
+}
 </script>

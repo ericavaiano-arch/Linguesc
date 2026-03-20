@@ -14,7 +14,7 @@
 
     <div v-else class="space-y-10">
 
-      <!-- ── CARDS GLOBAIS ── -->
+      <!-- Cards globais -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
         <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
           <p class="text-xs text-gray-400 font-medium mb-1">Professores ativos</p>
@@ -34,7 +34,7 @@
         </div>
       </div>
 
-      <!-- ── POR PROFESSOR ── -->
+      <!-- Por Professor -->
       <div>
         <h2 class="text-lg font-semibold text-gray-800 mb-4">👨‍🏫 Por Professor</h2>
         <div class="space-y-4">
@@ -43,7 +43,6 @@
             :key="prof.id"
             class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm"
           >
-            <!-- Header professor -->
             <div class="flex items-center justify-between mb-4">
               <div>
                 <h3 class="text-base font-semibold text-gray-800">{{ prof.nome }}</h3>
@@ -55,7 +54,6 @@
               </div>
             </div>
 
-            <!-- Turmas do professor -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div
                 v-for="turma in prof.turmas"
@@ -100,8 +98,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { supabase } from '@/utils/supabase'
+import { supabase } from '~/utils/supabase'
 
 definePageMeta({ middleware: 'admin' })
 
@@ -118,10 +115,27 @@ onMounted(async () => {
     { data: aulasData },
     { data: vinculosData },
   ] = await Promise.all([
-    supabase.from('usuarios').select('id, nome, email').eq('tipoUsuario', 'PROFESSOR').eq('ativo', true).order('nome'),
-    supabase.from('turma').select('id, nome, status, meta_frequencia, professor_id').order('nome'),
-    supabase.from('aula').select('id, turma_id, status'),
-    supabase.from('turma_aluno').select('turma_id, aluno_id, usuarios!aluno_id(ativo, tipoUsuario)'),
+    // usuarios_completo traz email + tipo_usuario
+    supabase
+      .from('usuarios_completo')
+      .select('id, nome, email, tipo_usuario, ativo')
+      .eq('tipo_usuario', 'PROFESSOR')
+      .eq('ativo', true)
+      .order('nome'),
+
+    supabase
+      .from('turma')
+      .select('id, nome, status, meta_frequencia, professor_id')
+      .order('nome'),
+
+    supabase
+      .from('aula')
+      .select('id, turma_id, status'),
+
+    // join com usuarios_completo para pegar tipo_usuario e ativo dos alunos
+    supabase
+      .from('turma_aluno')
+      .select('turma_id, aluno_id, usuarios_completo!aluno_id(ativo, tipo_usuario)'),
   ])
 
   professores.value = profsData || []
@@ -135,7 +149,7 @@ onMounted(async () => {
 const totalAlunos = computed(() => {
   const ids = new Set(
     todosVinculos.value
-      .filter(v => v.usuarios?.ativo === true && v.usuarios?.tipoUsuario === 'ALUNO')
+      .filter(v => v.usuarios_completo?.ativo === true && v.usuarios_completo?.tipo_usuario === 'ALUNO')
       .map(v => v.aluno_id)
   )
   return ids.size
@@ -164,9 +178,13 @@ const resumoPorProfessor = computed(() =>
       turmas,
       totalAlunos: new Set(
         todosVinculos.value
-            .filter(v => turmas.some(t => t.id === v.turma_id) && v.usuarios?.ativo === true && v.usuarios?.tipoUsuario === 'ALUNO')
-            .map(v => v.aluno_id)
-        ).size
+          .filter(v =>
+            turmas.some(t => t.id === v.turma_id) &&
+            v.usuarios_completo?.ativo === true &&
+            v.usuarios_completo?.tipo_usuario === 'ALUNO'
+          )
+          .map(v => v.aluno_id)
+      ).size
     }
   }).filter(p => p.turmas.length > 0)
 )

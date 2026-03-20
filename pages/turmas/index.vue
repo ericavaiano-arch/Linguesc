@@ -40,60 +40,63 @@
             class="group bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-green-400 transition-all duration-200"
           >
             <!-- Header do card -->
-            <div class="flex items-start justify-between mb-3">
-              <div class="flex-1 min-w-0 pr-2">
-                <h2 class="text-base font-semibold text-gray-800 group-hover:text-green-700 transition truncate">
-                  {{ turma.nome }}
-                </h2>
-                <p class="text-xs text-gray-400 mt-0.5">{{ turma.turma_aluno[0]?.count ?? 0 }} aluno(s)</p>
-              </div>
+          <div
+            class="flex items-start justify-between mb-3 cursor-pointer"
+            @click="navegar(`/turmas/${turma.id}/relatorio`)"
+          >
+            <div class="flex-1 min-w-0 pr-2">
+              <h2 class="text-base font-semibold text-gray-800 group-hover:text-green-700 transition truncate">
+                {{ turma.nome }}
+              </h2>
+              <p class="text-xs text-gray-400 mt-0.5">{{ turma.turma_aluno[0]?.count ?? 0 }} aluno(s)</p>
+            </div>
 
-              <!-- Ações rápidas + menu -->
-              <div class="flex items-center gap-1 flex-shrink-0">
-                <!-- Chamada (ação principal sempre visível) -->
+            <!-- Ações rápidas + menu -->
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <!-- Chamada (ação principal sempre visível) -->
+              <button
+                @click.stop="$router.push(`/chamada-manual/${turma.id}`)"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
+                title="Fazer chamada"
+              >
+                Fazer Chamada
+              </button>
+
+              <!-- Menu dropdown -->
+              <div class="relative">
                 <button
-                  @click="$router.push(`/chamada-manual/${turma.id}`)"
-                  class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
-                  title="Fazer chamada"
+                  @click.stop="toggleMenu(turma.id)"
+                  class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition text-lg"
                 >
-                  Fazer Chamada
+                  ⋮
                 </button>
 
-                <!-- Menu dropdown -->
-                <div class="relative">
-                  <button
-                    @click.stop="toggleMenu(turma.id)"
-                    class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition text-lg"
+                <Transition name="dropdown">
+                  <div
+                    v-if="menuAberto === turma.id"
+                    class="absolute right-0 top-9 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-30 py-1 overflow-hidden"
                   >
-                    ⋮
-                  </button>
-
-                  <Transition name="dropdown">
-                    <div
-                      v-if="menuAberto === turma.id"
-                      class="absolute right-0 top-9 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-30 py-1 overflow-hidden"
-                    >
-                      <button @click="navegar(`/turmas/${turma.id}/aulas`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
-                        📅 <span>Cadastrar Aulas</span>
-                      </button>
-                      <button @click="navegar(`/turmas/${turma.id}/historico`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
-                        📋 <span>Histórico</span>
-                      </button>
-                      <button @click="navegar(`/turmas/${turma.id}/relatorio`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
-                        📄 <span>Relatório</span>
-                      </button>
-                      <button @click="abrirEdicaoMenu(turma)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
-                        ✏️ <span>Editar turma</span>
-                      </button>
-                      <div class="border-t border-gray-100 my-1"></div>
-                      <button @click="confirmarEncerramentoMenu(turma)" class="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition flex items-center gap-2">
-                        🔒 <span>Encerrar turma</span>
-                      </button>
-                    </div>
-                  </Transition>
-                </div>
+                    <button @click.stop="navegar(`/turmas/${turma.id}/aulas`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
+                      📅 <span>Cadastrar Aulas</span>
+                    </button>
+                    <button @click.stop="navegar(`/turmas/${turma.id}/historico`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
+                      📋 <span>Histórico</span>
+                    </button>
+                    <button @click.stop="navegar(`/turmas/${turma.id}/relatorio`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
+                      📄 <span>Relatório</span>
+                    </button>
+                    <button @click.stop="abrirEdicaoMenu(turma)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
+                      ✏️ <span>Editar turma</span>
+                    </button>
+                    <div class="border-t border-gray-100 my-1"></div>
+                    <button @click.stop="confirmarEncerramentoMenu(turma)" class="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition flex items-center gap-2">
+                      🔒 <span>Encerrar turma</span>
+                    </button>
+                  </div>
+                </Transition>
               </div>
             </div>
+          </div>
           </div>
         </div>
       </div>
@@ -286,9 +289,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { supabase } from '@/utils/supabase'
+import { supabase } from '~/utils/supabase'
 
 definePageMeta({ middleware: 'professor' })
 
@@ -300,12 +301,10 @@ const turmas = ref([])
 const loading = ref(true)
 const menuAberto = ref(null)
 
-// Encerramento
 const modalEncerramento = ref(false)
 const turmaParaEncerrar = ref(null)
 const encerrando = ref(false)
 
-// Drawer
 const painelAberto = ref(false)
 const modo = ref('criar')
 const salvando = ref(false)
@@ -319,7 +318,6 @@ const filtroEdicao = ref('')
 const mapaMatriculas = ref({})
 const edicaoMeta = ref(75)
 
-// ─── Computed ─────────────────────────────────────────────────────
 const turmasAtivas = computed(() => turmas.value.filter(t => t.status !== 'FINALIZADA'))
 const turmasFinalizadas = computed(() => turmas.value.filter(t => t.status === 'FINALIZADA'))
 
@@ -336,7 +334,6 @@ const todosAlunosFiltrados = computed(() => {
   })
 })
 
-// ─── Menu dropdown ────────────────────────────────────────────────
 function toggleMenu(turmaId) {
   menuAberto.value = menuAberto.value === turmaId ? null : turmaId
 }
@@ -347,8 +344,6 @@ function navegar(rota) {
 }
 
 function abrirEdicaoMenu(turma) {
-  edicaoMeta.value = 75
-
   edicaoMeta.value = turma.meta_frequencia ?? 75
   menuAberto.value = null
   abrirEdicao(turma)
@@ -364,114 +359,206 @@ function reativarTurmaMenu(turma) {
   reativarTurma(turma)
 }
 
-// Fecha menu ao clicar fora
 function fecharMenuFora() { menuAberto.value = null }
 onMounted(() => document.addEventListener('click', fecharMenuFora))
 onUnmounted(() => document.removeEventListener('click', fecharMenuFora))
 
-// ─── Helpers matrícula ────────────────────────────────────────────
 function jaMatriculadoEmOutraTurma(alunoId) {
   const matricula = mapaMatriculas.value[alunoId]
   if (!matricula) return false
   if (modo.value === 'editar' && turmaSelecionada.value) return matricula.turmaId !== turmaSelecionada.value.id
   return true
 }
+
 function nomeTurmaDoAluno(alunoId) { return mapaMatriculas.value[alunoId]?.turmaNome || '' }
 
-// ─── Carregar dados ───────────────────────────────────────────────
 async function carregarTurmas() {
   const professorId = user.value?.id
   if (!professorId) { loading.value = false; return }
+
   const { data, error } = await supabase
-    .from('turma').select('*, turma_aluno(count)').eq('professor_id', professorId).order('nome', { ascending: true })
+    .from('turma')
+    .select('*, turma_aluno(count)')
+    .eq('professor_id', professorId)
+    .order('nome', { ascending: true })
+
   if (error) console.error(error.message)
   else turmas.value = data
   loading.value = false
 }
 
 async function carregarMatriculas() {
-  const { data } = await supabase.from('turma_aluno').select('aluno_id, turma_id, turma(id, nome)')
+  const { data } = await supabase
+    .from('turma_aluno')
+    .select('aluno_id, turma_id, turma(id, nome)')
+
   const mapa = {}
-  ;(data || []).forEach(v => { mapa[v.aluno_id] = { turmaId: v.turma_id, turmaNome: v.turma?.nome || '' } })
+  ;(data || []).forEach(v => {
+    mapa[v.aluno_id] = { turmaId: v.turma_id, turmaNome: v.turma?.nome || '' }
+  })
   mapaMatriculas.value = mapa
 }
 
 async function carregarTodosAlunos() {
-  const { data } = await supabase.from('usuarios').select('id, nome, email').eq('tipoUsuario', 'ALUNO').eq('ativo', true).order('nome', { ascending: true })
+  // usuarios_completo traz email + tipo_usuario
+  const { data } = await supabase
+    .from('usuarios_completo')
+    .select('id, nome, email, tipo_usuario, ativo')
+    .eq('tipo_usuario', 'ALUNO')
+    .eq('ativo', true)
+    .order('nome', { ascending: true })
+
   todosAlunos.value = data || []
 }
 
-// ─── Encerramento ─────────────────────────────────────────────────
 function confirmarEncerramento(turma) { turmaParaEncerrar.value = turma; modalEncerramento.value = true }
 
 async function encerrarTurma() {
   encerrando.value = true
-  const { error } = await supabase.from('turma').update({ status: 'FINALIZADA' }).eq('id', turmaParaEncerrar.value.id)
-  if (error) { $toast.error('Erro ao encerrar turma.') }
-  else { $toast.success(`Turma "${turmaParaEncerrar.value.nome}" encerrada.`); modalEncerramento.value = false; turmaParaEncerrar.value = null; await carregarTurmas() }
+  const { error } = await supabase
+    .from('turma')
+    .update({ status: 'FINALIZADA' })
+    .eq('id', turmaParaEncerrar.value.id)
+
+  if (error) {
+    $toast.error('Erro ao encerrar turma.')
+  } else {
+    $toast.success(`Turma "${turmaParaEncerrar.value.nome}" encerrada.`)
+    modalEncerramento.value = false
+    turmaParaEncerrar.value = null
+    await carregarTurmas()
+  }
   encerrando.value = false
 }
 
 async function reativarTurma(turma) {
-  const { error } = await supabase.from('turma').update({ status: 'ATIVA' }).eq('id', turma.id)
-  if (error) { $toast.error('Erro ao reativar turma.') }
-  else { $toast.success(`Turma "${turma.nome}" reativada.`); await carregarTurmas() }
+  const { error } = await supabase
+    .from('turma')
+    .update({ status: 'ATIVA' })
+    .eq('id', turma.id)
+
+  if (error) {
+    $toast.error('Erro ao reativar turma.')
+  } else {
+    $toast.success(`Turma "${turma.nome}" reativada.`)
+    await carregarTurmas()
+  }
 }
 
-// ─── Drawer ───────────────────────────────────────────────────────
 async function abrirCriacao() {
   edicaoMeta.value = 75
-
-  modo.value = 'criar'; edicaoNome.value = ''; edicaoAlunos.value = []; alunosOriginais.value = []; filtroEdicao.value = ''; painelAberto.value = true; loadingAlunos.value = true
+  modo.value = 'criar'
+  edicaoNome.value = ''
+  edicaoAlunos.value = []
+  alunosOriginais.value = []
+  filtroEdicao.value = ''
+  painelAberto.value = true
+  loadingAlunos.value = true
   await Promise.all([carregarTodosAlunos(), carregarMatriculas()])
   loadingAlunos.value = false
 }
 
 async function abrirEdicao(turma) {
-  modo.value = 'editar'; turmaSelecionada.value = turma; edicaoNome.value = turma.nome; edicaoAlunos.value = []; filtroEdicao.value = ''; painelAberto.value = true; loadingAlunos.value = true
+  modo.value = 'editar'
+  turmaSelecionada.value = turma
+  edicaoNome.value = turma.nome
+  edicaoAlunos.value = []
+  filtroEdicao.value = ''
+  painelAberto.value = true
+  loadingAlunos.value = true
+
   const [{ data: vinculos }, { data: todos }] = await Promise.all([
-    supabase.from('turma_aluno').select('aluno_id, usuarios(id, nome, email)').eq('turma_id', turma.id),
-    supabase.from('usuarios').select('id, nome, email').eq('tipoUsuario', 'ALUNO').eq('ativo', true).order('nome', { ascending: true })
+    // join com usuarios_completo para trazer email
+    supabase
+      .from('turma_aluno')
+      .select('aluno_id, usuarios_completo(id, nome, email)')
+      .eq('turma_id', turma.id),
+    supabase
+      .from('usuarios_completo')
+      .select('id, nome, email, tipo_usuario, ativo')
+      .eq('tipo_usuario', 'ALUNO')
+      .eq('ativo', true)
+      .order('nome', { ascending: true }),
   ])
+
   await carregarMatriculas()
-  edicaoAlunos.value = (vinculos || []).map(v => ({ id: v.aluno_id, nome: v.usuarios?.nome || '', email: v.usuarios?.email || '' })).sort((a, b) => a.nome.localeCompare(b.nome))
+
+  edicaoAlunos.value = (vinculos || [])
+    .map(v => ({
+      id: v.aluno_id,
+      nome: v.usuarios_completo?.nome || '',
+      email: v.usuarios_completo?.email || '',
+    }))
+    .sort((a, b) => a.nome.localeCompare(b.nome))
+
   alunosOriginais.value = edicaoAlunos.value.map(a => a.id)
   todosAlunos.value = todos || []
   loadingAlunos.value = false
 }
 
 function fecharPainel() { painelAberto.value = false; turmaSelecionada.value = null }
+
 function adicionarAluno(aluno) {
   if (jaMatriculadoEmOutraTurma(aluno.id)) return
-  if (!edicaoAlunos.value.some(a => a.id === aluno.id)) edicaoAlunos.value = [...edicaoAlunos.value, aluno].sort((a, b) => a.nome.localeCompare(b.nome))
+  if (!edicaoAlunos.value.some(a => a.id === aluno.id)) {
+    edicaoAlunos.value = [...edicaoAlunos.value, aluno].sort((a, b) => a.nome.localeCompare(b.nome))
+  }
 }
+
 function removerAluno(id) { edicaoAlunos.value = edicaoAlunos.value.filter(a => a.id !== id) }
 
 async function salvar() {
   if (!edicaoNome.value.trim()) return
   salvando.value = true
-  try { if (modo.value === 'criar') await salvarCriacao(); else await salvarEdicao() }
-  catch (err) { console.error(err); $toast.error('Erro ao salvar.') }
-  finally { salvando.value = false }
+  try {
+    if (modo.value === 'criar') await salvarCriacao()
+    else await salvarEdicao()
+  } catch (err) {
+    console.error(err)
+    $toast.error('Erro ao salvar.')
+  } finally {
+    salvando.value = false
+  }
 }
 
 async function salvarCriacao() {
   const professorId = user.value?.id
   const nomeTrimmed = edicaoNome.value.trim()
-  if (turmas.value.some(t => t.nome.toLowerCase() === nomeTrimmed.toLowerCase())) { $toast.error('Já existe uma turma com este nome.'); return }
-  const { data: novaTurma, error } = await supabase.from('turma').insert([{ nome: nomeTrimmed, professor_id: professorId, meta_frequencia: edicaoMeta.value }]).select().single()
+
+  if (turmas.value.some(t => t.nome.toLowerCase() === nomeTrimmed.toLowerCase())) {
+    $toast.error('Já existe uma turma com este nome.')
+    return
+  }
+
+  const { data: novaTurma, error } = await supabase
+    .from('turma')
+    .insert([{ nome: nomeTrimmed, professor_id: professorId, meta_frequencia: edicaoMeta.value }])
+    .select()
+    .single()
+
   if (error) throw error
+
   if (edicaoAlunos.value.length > 0) {
-    const { error: e } = await supabase.from('turma_aluno').insert(edicaoAlunos.value.map(a => ({ turma_id: novaTurma.id, aluno_id: a.id })))
+    const { error: e } = await supabase
+      .from('turma_aluno')
+      .insert(edicaoAlunos.value.map(a => ({ turma_id: novaTurma.id, aluno_id: a.id })))
     if (e) throw e
   }
-  $toast.success('Turma criada com sucesso!'); fecharPainel(); await carregarTurmas()
+
+  $toast.success('Turma criada com sucesso!')
+  fecharPainel()
+  await carregarTurmas()
 }
 
 async function salvarEdicao() {
   const nomeTrimmed = edicaoNome.value.trim()
   const turmaId = turmaSelecionada.value.id
-  if (turmas.value.some(t => t.nome.toLowerCase() === nomeTrimmed.toLowerCase() && t.id !== turmaId)) { $toast.error('Já existe uma turma com este nome.'); return }
+
+  if (turmas.value.some(t => t.nome.toLowerCase() === nomeTrimmed.toLowerCase() && t.id !== turmaId)) {
+    $toast.error('Já existe uma turma com este nome.')
+    return
+  }
+
   const promessas = []
 
   if (nomeTrimmed !== turmaSelecionada.value.nome || edicaoMeta.value !== turmaSelecionada.value.meta_frequencia) {
@@ -481,13 +568,26 @@ async function salvarEdicao() {
   const idsAtuais = edicaoAlunos.value.map(a => a.id)
   const aInserir = idsAtuais.filter(id => !alunosOriginais.value.includes(id))
   const aRemover = alunosOriginais.value.filter(id => !idsAtuais.includes(id))
-  if (aInserir.length > 0) promessas.push(supabase.from('turma_aluno').insert(aInserir.map(aluno_id => ({ turma_id: turmaId, aluno_id }))))
-  if (aRemover.length > 0) promessas.push(supabase.from('turma_aluno').delete().eq('turma_id', turmaId).in('aluno_id', aRemover))
-  if (promessas.length === 0) { $toast.warning('Nenhuma alteração detectada.'); return }
+
+  if (aInserir.length > 0) {
+    promessas.push(supabase.from('turma_aluno').insert(aInserir.map(aluno_id => ({ turma_id: turmaId, aluno_id }))))
+  }
+  if (aRemover.length > 0) {
+    promessas.push(supabase.from('turma_aluno').delete().eq('turma_id', turmaId).in('aluno_id', aRemover))
+  }
+
+  if (promessas.length === 0) {
+    $toast.warning('Nenhuma alteração detectada.')
+    return
+  }
+
   const resultados = await Promise.all(promessas)
   const erros = resultados.filter(r => r.error)
   if (erros.length > 0) throw erros[0].error
-  $toast.success('Turma atualizada com sucesso!'); fecharPainel(); await carregarTurmas()
+
+  $toast.success('Turma atualizada com sucesso!')
+  fecharPainel()
+  await carregarTurmas()
 }
 
 onMounted(() => {

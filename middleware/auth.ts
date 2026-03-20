@@ -1,10 +1,9 @@
 // middleware/auth.ts
-// Verifica se o usuário está autenticado
-// Redireciona para / (login) se não estiver
+export default defineNuxtRouteMiddleware(async (to) => {
+  if (import.meta.server) return // deixa o SSR passar, cliente assume
 
-export default defineNuxtRouteMiddleware(() => {
   const { user, reidratar } = useAuth()
-  reidratar()
+  await reidratar()
 
   if (!user.value) {
     return navigateTo('/')

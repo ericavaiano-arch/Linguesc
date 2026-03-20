@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-gray-50 p-8">
 
     <!-- Header (não imprime) -->
-    <div class="mb-8 no-print">
+    <div class="mb-8">
       <button @click="$router.back()" class="text-sm text-gray-400 hover:text-gray-600 transition mb-4 flex items-center gap-1">
         ← Voltar
       </button>
@@ -67,20 +67,38 @@
 
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
-            <thead>
-              <tr class="bg-gray-50 border-b border-gray-100">
-                <th class="text-left px-6 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Aluno</th>
-                <th
-                  v-for="aula in aulasRealizadas"
-                  :key="aula.id"
-                  class="text-center px-3 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide whitespace-nowrap"
-                >
-                  {{ formatarDataCurta(aula.data) }}
-                </th>
-                <th class="text-center px-6 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Presenças</th>
-                <th class="text-center px-6 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">%</th>
-              </tr>
-            </thead>
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-100">
+              <th
+                class="text-left px-6 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide cursor-pointer hover:text-gray-800 transition select-none"
+                @click="alternarOrdem('nome')"
+              >
+                Aluno
+                <span class="ml-1 text-gray-300">
+                  {{ ordemColuna === 'nome' ? (ordemDirecao === 'asc' ? '↑' : '↓') : '↕' }}
+                </span>
+              </th>
+              <th
+                v-for="aula in aulasRealizadas"
+                :key="aula.id"
+                class="text-center px-3 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide whitespace-nowrap"
+              >
+                {{ formatarDataCurta(aula.data) }}
+              </th>
+              <th class="text-center px-6 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">
+                Presenças
+              </th>
+              <th
+                class="text-center px-6 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide cursor-pointer hover:text-gray-800 transition select-none"
+                @click="alternarOrdem('frequencia')"
+              >
+                %
+                <span class="ml-1 text-gray-300">
+                  {{ ordemColuna === 'frequencia' ? (ordemDirecao === 'asc' ? '↑' : '↓') : '↕' }}
+                </span>
+              </th>
+            </tr>
+          </thead>
             <tbody class="divide-y divide-gray-50">
               <tr
                 v-for="aluno in tabelaAlunos"
@@ -91,6 +109,7 @@
                   {{ aluno.nome }}
                   <span v-if="!aluno.ativo" class="ml-1 text-xs bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full">Inativo</span>
                 </td>
+                <!-- Substitui o <span> dentro do v-for de aulasRealizadas no tbody -->
                 <td
                   v-for="aula in aulasRealizadas"
                   :key="aula.id"
@@ -98,9 +117,13 @@
                 >
                   <span
                     class="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold"
-                    :class="aluno.presencasPorAula[aula.id] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'"
+                    :class="{
+                      'bg-green-100 text-green-700': aluno.presencasPorAula[aula.id] === 'P',
+                      'bg-blue-100 text-blue-700':   aluno.presencasPorAula[aula.id] === 'J',
+                      'bg-red-100 text-red-600':     !aluno.presencasPorAula[aula.id],
+                    }"
                   >
-                    {{ aluno.presencasPorAula[aula.id] ? '✓' : '✗' }}
+                    {{ aluno.presencasPorAula[aula.id] === 'P' ? '✓' : aluno.presencasPorAula[aula.id] === 'J' ? 'J' : '✗' }}
                   </span>
                 </td>
                 <td class="text-center px-6 py-3 font-semibold text-gray-700">
@@ -134,6 +157,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { supabase } from '@/utils/supabase'
+import { calcularFrequenciaSync } from '~/composables/usePresenca'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 definePageMeta({ middleware: 'professor' })
 
@@ -144,7 +170,11 @@ const turma = ref(null)
 const alunos = ref([])
 const aulas = ref([])
 const presencas = ref([])
+const justificativas = ref([]) // NOVO — { aluno_id, aula_id }
 const loading = ref(true)
+const ordemColuna = ref('nome')
+const ordemDirecao = ref('asc')
+const nomeProfessor = ref('')
 
 const dataGeracao = new Date().toLocaleDateString('pt-BR', {
   day: '2-digit', month: '2-digit', year: 'numeric',
@@ -157,12 +187,22 @@ onMounted(async () => {
     { data: vinculosData },
     { data: aulasData },
   ] = await Promise.all([
-    supabase.from('turma').select('id, nome, status').eq('id', turmaId).single(),
+    supabase.from('turma').select('id, nome, status, meta_frequencia, professor_id').eq('id', turmaId).single(),
     supabase.from('turma_aluno').select('aluno_id, usuarios(id, nome, ativo)').eq('turma_id', turmaId),
     supabase.from('aula').select('id, data, status').eq('turma_id', turmaId).order('data', { ascending: true }),
   ])
 
   turma.value = turmaData
+
+  if (turmaData?.professor_id) {
+    const { data: profData } = await supabase
+      .from('usuarios')
+      .select('nome')
+      .eq('id', turmaData.professor_id)
+      .single()
+    nomeProfessor.value = profData?.nome ?? ''
+  }
+
   alunos.value = (vinculosData || [])
     .map(v => ({ id: v.aluno_id, nome: v.usuarios?.nome || '', ativo: v.usuarios?.ativo ?? true }))
     .sort((a, b) => a.nome.localeCompare(b.nome))
@@ -172,13 +212,13 @@ onMounted(async () => {
   const alunoIds = alunos.value.map(a => a.id)
   const aulasIds = new Set((aulasData || []).map(a => a.id))
 
-  const { data: presencasData } = await supabase
-    .from('presenca')
-    .select('aula_id, aluno_id')
-    .eq('status', 'PRESENTE')
-    .in('aluno_id', alunoIds)
+  const [{ data: presencasData }, { data: justificativasData }] = await Promise.all([
+    supabase.from('presenca').select('aula_id, aluno_id').in('aluno_id', alunoIds),
+    supabase.from('justificativa_falta').select('aluno_id, aula_id').eq('status', 'ACEITA').in('aluno_id', alunoIds), // NOVO
+  ])
 
   presencas.value = (presencasData || []).filter(p => aulasIds.has(p.aula_id))
+  justificativas.value = (justificativasData || []).filter(j => aulasIds.has(j.aula_id)) // NOVO
   loading.value = false
 })
 
@@ -187,21 +227,34 @@ const aulasRealizadas = computed(() =>
   aulas.value.filter(a => a.status === 'REALIZADA')
 )
 
-const tabelaAlunos = computed(() =>
-  alunos.value.map(aluno => {
+const tabelaAlunos = computed(() => {
+  const lista = alunos.value.map(aluno => {
     const presencasPorAula = {}
+
     aulasRealizadas.value.forEach(aula => {
-      presencasPorAula[aula.id] = presencas.value.some(
-        p => p.aluno_id === aluno.id && p.aula_id === aula.id
-      )
+      const presente = presencas.value.some(p => p.aluno_id === aluno.id && p.aula_id === aula.id)
+      const justificada = justificativas.value.some(j => j.aluno_id === aluno.id && j.aula_id === aula.id)
+      // 'P' = presente, 'J' = justificada, false = falta
+      presencasPorAula[aula.id] = presente ? 'P' : justificada ? 'J' : false
     })
-    const totalPresencas = Object.values(presencasPorAula).filter(Boolean).length
-    const frequencia = aulasRealizadas.value.length > 0
-      ? Math.round((totalPresencas / aulasRealizadas.value.length) * 100)
-      : 0
-    return { ...aluno, presencasPorAula, totalPresencas, frequencia }
+
+    const aulasIds = aulasRealizadas.value.map(a => a.id)
+    const freq = calcularFrequenciaSync(aluno.id, aulasIds, presencas.value, justificativas.value)
+
+    return {
+      ...aluno,
+      presencasPorAula,
+      totalPresencas: freq.totalValidas, // presenças + justificadas aceitas
+      frequencia: freq.frequencia,
+    }
   })
-)
+
+  return lista.sort((a, b) => {
+    const dir = ordemDirecao.value === 'asc' ? 1 : -1
+    if (ordemColuna.value === 'nome') return a.nome.localeCompare(b.nome) * dir
+    return (a.frequencia - b.frequencia) * dir
+  })
+})
 
 const frequenciaMedia = computed(() => {
   if (tabelaAlunos.value.length === 0) return 0
@@ -209,8 +262,10 @@ const frequenciaMedia = computed(() => {
   return Math.round(soma / tabelaAlunos.value.length)
 })
 
+const meta = computed(() => turma.value?.meta_frequencia ?? 75)
+
 const alunosEmRisco = computed(() =>
-  tabelaAlunos.value.filter(a => a.frequencia < 75).length
+  tabelaAlunos.value.filter(a => a.frequencia < meta.value).length
 )
 
 // ─── Helpers ──────────────────────────────────────────────────────
@@ -224,14 +279,19 @@ function exportarCSV() {
   const cabecalho = [
     'Aluno',
     ...aulasRealizadas.value.map(a => formatarDataCurta(a.data)),
-    'Presenças',
+    'Válidas', // presença + justificadas
     'Faltas',
     'Frequência (%)'
   ]
 
   const linhas = tabelaAlunos.value.map(aluno => [
     aluno.nome,
-    ...aulasRealizadas.value.map(aula => aluno.presencasPorAula[aula.id] ? 'P' : 'F'),
+    ...aulasRealizadas.value.map(aula => {
+      const v = aluno.presencasPorAula[aula.id]
+      if (v === 'P') return 'P'
+      if (v === 'J') return 'J'
+      return 'F'
+    }),
     aluno.totalPresencas,
     aulasRealizadas.value.length - aluno.totalPresencas,
     aluno.frequencia + '%'
@@ -252,22 +312,163 @@ function exportarCSV() {
 
 // ─── Imprimir PDF ─────────────────────────────────────────────────
 function imprimirPDF() {
-  window.print()
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+
+  const turmaName = turma.value?.nome ?? 'Turma'
+  const dataAtual = new Date().toLocaleDateString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  })
+
+  doc.setFontSize(18)
+  doc.setTextColor(22, 163, 74)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Linguesc', 14, 18)
+
+  doc.setFontSize(13)
+  doc.setTextColor(31, 41, 55)
+  doc.text(`Relatório de Presença — ${turmaName}`, 14, 26)
+
+  doc.setFontSize(9)
+  doc.setTextColor(107, 114, 128)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Professor(a): ${nomeProfessor.value}`, 14, 32)
+  doc.text(`Gerado em: ${dataAtual}`, 14, 37)
+
+  doc.setDrawColor(229, 231, 235)
+  doc.setLineWidth(0.3)
+  doc.line(14, 40, 283, 40)
+
+  const cards = [
+    { label: 'Total de alunos', valor: String(alunos.value.length) },
+    { label: 'Aulas realizadas', valor: String(aulasRealizadas.value.length) },
+    { label: 'Frequência média', valor: `${frequenciaMedia.value}%` },
+    { label: 'Alunos em risco', valor: String(alunosEmRisco.value) },
+  ]
+
+  const cardW = 60, cardH = 16, cardY = 40, cardGap = 5
+
+  cards.forEach((card, i) => {
+    const x = 14 + i * (cardW + cardGap)
+    doc.setFillColor(249, 250, 251)
+    doc.setDrawColor(229, 231, 235)
+    doc.setLineWidth(0.2)
+    doc.roundedRect(x, cardY, cardW, cardH, 2, 2, 'FD')
+
+    doc.setFontSize(7)
+    doc.setTextColor(156, 163, 175)
+    doc.setFont('helvetica', 'normal')
+    doc.text(card.label, x + 4, cardY + 5.5)
+
+    doc.setFontSize(13)
+    doc.setFont('helvetica', 'bold')
+
+    if (card.label === 'Alunos em risco' && alunosEmRisco.value > 0) {
+      doc.setTextColor(220, 38, 38)
+    } else if (card.label === 'Frequência média' && frequenciaMedia.value < meta.value) {
+      doc.setTextColor(220, 38, 38)
+    } else {
+      doc.setTextColor(22, 163, 74)
+    }
+
+    doc.text(card.valor, x + 4, cardY + 13)
+  })
+
+  const cabecalho = [
+    'Aluno',
+    ...aulasRealizadas.value.map(a => formatarDataCurta(a.data)),
+    'Válidas',
+    '%',
+  ]
+
+  const linhas = tabelaAlunos.value.map(aluno => [
+    aluno.nome + (aluno.ativo ? '' : ' (inativo)'),
+    ...aulasRealizadas.value.map(aula => {
+      const v = aluno.presencasPorAula[aula.id]
+      if (v === 'P') return '✓'
+      if (v === 'J') return 'J'
+      return '✗'
+    }),
+    `${aluno.totalPresencas}/${aulasRealizadas.value.length}`,
+    `${aluno.frequencia}%`,
+  ])
+
+  autoTable(doc, {
+    head: [cabecalho],
+    body: linhas,
+    startY: cardY + cardH + 8,
+    margin: { left: 14, right: 14 },
+    tableWidth: 'auto',
+    styles: {
+      fontSize: 8,
+      cellPadding: 2.5,
+      font: 'helvetica',
+      textColor: [31, 41, 55],
+    },
+    headStyles: {
+      fillColor: [249, 250, 251],
+      textColor: [107, 114, 128],
+      fontStyle: 'bold',
+      fontSize: 7,
+      halign: 'center',
+      lineColor: [229, 231, 235],
+      lineWidth: 0.2,
+    },
+    columnStyles: {
+      0: { halign: 'left', cellWidth: 45 },
+      [cabecalho.length - 1]: { halign: 'center', fontStyle: 'bold' },
+    },
+    didParseCell(data) {
+      const isAulaCol = data.column.index > 0 && data.column.index < cabecalho.length - 2
+
+      if (isAulaCol && data.section === 'body') {
+        data.cell.styles.halign = 'center'
+        if (data.cell.raw === '✓') {
+          data.cell.styles.textColor = [22, 163, 74]
+        } else if (data.cell.raw === 'J') {
+          data.cell.styles.textColor = [37, 99, 235] // azul — justificada
+        } else if (data.cell.raw === '✗') {
+          data.cell.styles.textColor = [220, 38, 38]
+        }
+      }
+
+      if (data.column.index === cabecalho.length - 1 && data.section === 'body') {
+        const freq = parseInt(data.cell.raw)
+        data.cell.styles.textColor = freq < meta.value ? [220, 38, 38] : [22, 163, 74]
+      }
+    },
+    didDrawPage(data) {
+      const pageCount = doc.getNumberOfPages()
+      doc.setFontSize(7)
+      doc.setTextColor(156, 163, 175)
+      doc.setFont('helvetica', 'normal')
+      doc.text(
+        `Linguesc · ${turmaName} · Página ${data.pageNumber} de ${pageCount}`,
+        14,
+        doc.internal.pageSize.height - 8
+      )
+      doc.text(
+        dataAtual,
+        doc.internal.pageSize.width - 14,
+        doc.internal.pageSize.height - 8,
+        { align: 'right' }
+      )
+    },
+  })
+
+  doc.save(`presenca_${turmaName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`)
+}
+
+function alternarOrdem(coluna) {
+  if (ordemColuna.value === coluna) {
+    ordemDirecao.value = ordemDirecao.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    ordemColuna.value = coluna
+    ordemDirecao.value = coluna === 'frequencia' ? 'desc' : 'asc'
+  }
 }
 </script>
-
 <style>
-/* Estilos de impressão */
-@media print {
-  .no-print { display: none !important; }
-  .hidden-screen { display: block !important; }
-  body { background: white !important; }
-  .print-area { padding: 0 !important; }
-  .print-card { border: 1px solid #e5e7eb !important; box-shadow: none !important; }
-  table { font-size: 11px !important; }
-  th, td { padding: 6px 10px !important; }
-}
-
 @media screen {
   .hidden-screen { display: none; }
 }

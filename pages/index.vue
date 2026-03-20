@@ -62,14 +62,11 @@
 <script setup>
 definePageMeta({ layout: 'auth' })
 
-import { supabase } from '@/utils/supabase'
-
-const { $toast } = useNuxtApp()
 const { login } = useAuth()
+const { $toast } = useNuxtApp()
 
 const email = ref('')
 const senha = ref('')
-const carregando = ref(false)
 
 async function verificarUsuario() {
   if (!email.value || !senha.value) {
@@ -77,37 +74,17 @@ async function verificarUsuario() {
     return
   }
 
-  carregando.value = true
+  const erro = await login(email.value, senha.value)
 
-  try {
-    const { data: usuario, error } = await supabase
-      .from('usuarios')
-      .select('id, nome, email, tipoUsuario')
-      .eq('email', email.value)
-      .eq('senha', senha.value)
-      .eq('ativo', true)
-      .single()
-
-    if (error || !usuario) {
-      $toast.error('Email ou senha incorretos.')
-      return
-    }
-
-    // Salva sessão via useAuth (useState + cookie)
-    login({
-      id: usuario.id,
-      nome: usuario.nome,
-      email: usuario.email,
-      tipoUsuario: usuario.tipoUsuario
-    })
-
-    navigateTo('/hub')
-
-  } catch (err) {
-    console.error(err)
-    $toast.error('Erro ao conectar com o servidor.')
-  } finally {
-    carregando.value = false
+  if (erro) {
+    $toast.error(erro)
+    return
   }
+
+  navigateTo('/hub')
+}
+
+function goToProfile() {
+  navigateTo('/register')
 }
 </script>

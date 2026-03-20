@@ -1,46 +1,68 @@
 // composables/useAuth.ts
-// Gerencia a sessão do usuário com useState (reativo + SSR-safe) + cookie (persistência)
+import { supabase } from '~/utils/supabase'
 
 export interface AuthUser {
-  id: number
+  id: string
   nome: string
   email: string
   tipoUsuario: 'ALUNO' | 'PROFESSOR' | 'ADMIN'
+  ativo: boolean
 }
 
-const COOKIE_NAME = 'linguesc_session'
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 7 // 7 dias
-
 export const useAuth = () => {
-  // useState é compartilhado entre todos os componentes (SSR-safe)
   const user = useState<AuthUser | null>('auth_user', () => null)
 
-  // Reidrata o estado a partir do cookie (chamado nos middlewares e no app.vue)
-  function reidratar() {
-    if (import.meta.client) {
-      const cookie = useCookie<AuthUser | null>(COOKIE_NAME)
-      if (cookie.value && !user.value) {
-        user.value = cookie.value
+  // Carrega o usuário da sessão ativa do Supabase
+  async function reidratar() {
+    if (user.value) return
+
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+
+    const { data: perfil } = await supabase
+      .from('usuarios')
+      .select('id, nome, tipo_usuario, ativo')
+      .eq('id', session.user.id)
+      .single()
+
+    if (perfil) {
+      user.value = {
+        id: perfil.id,
+        nome: perfil.nome,
+        email: session.user.email ?? '',
+        tipoUsuario: perfil.tipo_usuario, 
+        ativo: perfil.ativo,
       }
     }
   }
 
-  // Login: salva no useState e no cookie
-  function login(userData: AuthUser) {
-    user.value = userData
-    const cookie = useCookie<AuthUser | null>(COOKIE_NAME, {
-      maxAge: COOKIE_MAX_AGE,
-      sameSite: 'lax',
-      path: '/',
-    })
-    cookie.value = userData
+  async function login(email: string, senha: string): Promise<string | null> {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha })
+    if (error || !data.session) return error?.message ?? 'Erro ao fazer login'
+
+    const { data: perfil } = await supabase
+      .from('usuarios')
+      .select('id, nome, tipo_usuario, ativo')
+      .eq('id', data.user.id)
+      .single()
+
+    if (!perfil) return 'Usuário não encontrado'
+    if (!perfil.ativo) return 'Usuário inativo'
+
+    user.value = {
+      id: perfil.id,
+      nome: perfil.nome,
+      email: data.user.email ?? '',
+      tipoUsuario: perfil.tipo_usuario, 
+      ativo: perfil.ativo,
+    }
+
+    return null // null = sucesso
   }
 
-  // Logout: limpa o useState e o cookie
-  function logout() {
+  async function logout() {
+    await supabase.auth.signOut()
     user.value = null
-    const cookie = useCookie<AuthUser | null>(COOKIE_NAME)
-    cookie.value = null
     navigateTo('/')
   }
 

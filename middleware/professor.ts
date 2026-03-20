@@ -1,10 +1,9 @@
 // middleware/professor.ts
-// Verifica se o usuário é PROFESSOR ou ADMIN
-// Redireciona para /hub se logado sem permissão, para / se não logado
+export default defineNuxtRouteMiddleware(async () => {
+  if (import.meta.server) return
 
-export default defineNuxtRouteMiddleware(() => {
   const { user, reidratar } = useAuth()
-  reidratar()
+  await reidratar()
 
   if (!user.value) {
     return navigateTo('/')
