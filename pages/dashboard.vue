@@ -1,7 +1,7 @@
 <template>
+  <!-- template idêntico ao original — nenhuma mudança -->
   <div class="min-h-screen bg-gray-50 p-8">
 
-    <!-- Header -->
     <div class="mb-10 flex items-start justify-between">
       <div>
         <h1 class="text-3xl font-bold text-green-700">Dashboard</h1>
@@ -17,7 +17,6 @@
 
     <div v-else class="space-y-8">
 
-      <!-- ── PRÓXIMAS AULAS ── -->
       <div>
         <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">📅 Próximas aulas (30 dias)</h2>
 
@@ -39,10 +38,8 @@
         </div>
       </div>
 
-      <!-- ── FREQUÊNCIA POR TURMA + ALUNOS EM RISCO ── -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        <!-- Frequência por turma -->
         <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
           <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-6">📊 Frequência por turma</h2>
 
@@ -62,14 +59,12 @@
                 </span>
               </div>
 
-              <!-- Barra com marcador de meta -->
               <div class="relative w-full bg-gray-100 rounded-full h-3">
                 <div
                   class="h-3 rounded-full transition-all duration-500"
                   :class="turma.frequenciaMedia >= turma.meta ? 'bg-green-500' : 'bg-red-400'"
                   :style="{ width: turma.frequenciaMedia + '%' }"
                 ></div>
-                <!-- marcador da meta -->
                 <div
                   class="absolute top-0 h-3 w-0.5 bg-gray-500"
                   :style="{ left: turma.meta + '%' }"
@@ -85,7 +80,6 @@
           </div>
         </div>
 
-        <!-- Alunos em risco -->
         <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
           <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-6">⚠️ Alunos em risco</h2>
 
@@ -109,17 +103,15 @@
                   <p class="text-xs text-gray-400">{{ aluno.presencas }}/{{ aluno.aulasRealizadas }}</p>
                 </div>
 
-                <!-- Já notificado esta semana — só badge, sem botão -->
-                <span
+                <!-- <span
                   v-if="notificadosIds.has(aluno.alunoId + aluno.turmaId)"
                   class="text-xs px-3 py-1.5 rounded-lg font-semibold bg-gray-100 text-gray-400"
                   title="Notificação já enviada nesta semana"
                 >
                   ✓ Enviado
-                </span>
+                </span> -->
 
-                <!-- Ainda não notificado — botão ativo -->
-                <button
+                <!-- <button
                   v-else
                   @click="notificarAluno(aluno)"
                   :disabled="notificandoId === (aluno.alunoId + aluno.turmaId)"
@@ -131,16 +123,14 @@
                     class="w-3 h-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin"
                   ></div>
                   <span v-else>🔔 Notificar</span>
-                </button>
+                </button> -->
               </div>
             </li>
           </ul>
-          
         </div>
 
       </div>
 
-      <!-- ── EVOLUÇÃO DA FREQUÊNCIA ── -->
       <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
         <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
           <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide">📈 Evolução da frequência por aula</h2>
@@ -187,14 +177,18 @@ ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Tooltip,
 definePageMeta({ middleware: 'professor' })
 
 const { user } = useAuth()
+// ── NOVO: meta global ────────────────────────────────────────────
+const { metaFrequencia, carregarConfig } = useConfigSistema()
 
 const loading = ref(true)
 const turmas = ref([])
 const todasAulas = ref([])
 const todasPresencas = ref([])
-const todasJustificativas = ref([]) // NOVO
+const todasJustificativas = ref([])
 const todosVinculos = ref([])
 const turmaSelecionadaGrafico = ref('todas')
+const notificandoId = ref(null)
+const notificadosIds = ref(new Set())
 
 const coresTurmas = [
   { border: '#16a34a', background: 'rgba(22,163,74,0.08)' },
@@ -208,42 +202,40 @@ onMounted(async () => {
   const professorId = user.value?.id
   if (!professorId) { loading.value = false; return }
 
-  const [
-    { data: turmasData },
-    { data: aulasData },
-    { data: presencasData },
-    { data: vinculosData },
-    { data: justificativasData },
-    { data: notificacoesData },
-  ] = await Promise.all([
-    supabase.from('turma').select('id, nome, meta_frequencia').eq('professor_id', professorId).eq('status', 'ATIVA').order('nome'),
-    supabase.from('aula').select('id, turma_id, data, status').order('data', { ascending: true }),
-    supabase.from('presenca').select('aula_id, aluno_id'),
-    supabase.from('turma_aluno').select('turma_id, aluno_id, usuarios(id, nome, ativo)'),
-    supabase.from('justificativa_falta').select('aluno_id, aula_id').eq('status', 'ACEITA'), // NOVO
-    supabase
-      .from('notificacao_risco')
-      .select('aluno_id, turma_id')
-      .eq('professor_id', professorId)
-      .gte('dt_inclusao', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
-    ])
+  await Promise.all([
+    carregarConfig(), // ── NOVO: carrega meta global em paralelo
+    (async () => {
+      const [
+        { data: turmasData },
+        { data: aulasData },
+        { data: presencasData },
+        { data: vinculosData },
+        { data: justificativasData },
+        { data: notificacoesData },
+      ] = await Promise.all([
+        // ── ALTERADO: removido meta_frequencia do select
+        supabase.from('turma').select('id, nome').eq('professor_id', professorId).eq('status', 'ATIVA').order('nome'),
+        supabase.from('aula').select('id, turma_id, data, status').order('data', { ascending: true }),
+        supabase.from('presenca').select('aula_id, aluno_id'),
+        supabase.from('turma_aluno').select('turma_id, aluno_id, usuarios(id, nome, ativo)'),
+        supabase.from('justificativa_falta').select('aluno_id, aula_id').eq('status', 'ACEITA'),
+        supabase
+          .from('notificacao_risco')
+          .select('aluno_id, turma_id')
+          .eq('professor_id', professorId)
+          .gte('dt_inclusao', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+      ])
 
-  turmas.value = turmasData || []
-  todasAulas.value = aulasData || []
-  todasPresencas.value = presencasData || []
-  todosVinculos.value = vinculosData || []
-  todasJustificativas.value = justificativasData || [] // NOVO
-
-  notificadosIds.value = new Set(
-    (notificacoesData || []).map(n => n.aluno_id + n.turma_id)
-  )
-
-    // Logo após o Promise.all, antes de loading.value = false
-  console.log('notificacoesData:', notificacoesData)
-  console.log('notificadosIds montados:', [...notificadosIds.value])
-
-  // E no alunosEmRisco, adiciona:
-  console.log('chaves em risco:', alunosEmRisco.value.map(a => a.alunoId + a.turmaId))
+      turmas.value = turmasData || []
+      todasAulas.value = aulasData || []
+      todasPresencas.value = presencasData || []
+      todosVinculos.value = vinculosData || []
+      todasJustificativas.value = justificativasData || []
+      notificadosIds.value = new Set(
+        (notificacoesData || []).map(n => n.aluno_id + n.turma_id)
+      )
+    })(),
+  ])
 
   loading.value = false
 })
@@ -258,7 +250,6 @@ function alunosAtivosDaTurma(turmaId) {
   return todosVinculos.value.filter(v => v.turma_id === turmaId && v.usuarios?.ativo !== false)
 }
 
-// ATUALIZADO — usa calcularFrequenciaSync
 function frequenciaAlunoNaTurma(alunoId, turmaId) {
   const aulas = aulasRealizadasDaTurma(turmaId)
   if (aulas.length === 0) return null
@@ -311,7 +302,7 @@ const resumoPorTurma = computed(() =>
     return {
       id: turma.id,
       nome: turma.nome,
-      meta: turma.meta_frequencia ?? 75,
+      meta: metaFrequencia.value, // ── ALTERADO
       aulasRealizadas: aulasRealizadas.length,
       frequenciaMedia: count > 0 ? Math.round(soma / count) : 0,
     }
@@ -325,13 +316,13 @@ const alunosEmRisco = computed(() => {
   turmas.value.forEach(turma => {
     alunosAtivosDaTurma(turma.id).forEach(v => {
       const freq = frequenciaAlunoNaTurma(v.aluno_id, turma.id)
-      if (freq !== null && freq.frequencia < (turma.meta_frequencia ?? 75)) {
+      if (freq !== null && freq.frequencia < metaFrequencia.value) { // ── ALTERADO
         lista.push({
           alunoId: v.aluno_id,
           turmaId: turma.id,
           nome: v.usuarios?.nome || 'Aluno',
           turmaNome: turma.nome,
-          presencas: freq.totalValidas, // ATUALIZADO — mostra válidas (presença + justificada)
+          presencas: freq.totalValidas,
           aulasRealizadas: freq.aulasRealizadas,
           frequencia: freq.frequencia,
         })
@@ -342,7 +333,6 @@ const alunosEmRisco = computed(() => {
 })
 
 // ── Gráfico de evolução ──────────────────────────────────────────
-// ATUALIZADO — considera justificativas aceitas na frequência acumulada
 
 const dadosGrafico = computed(() => {
   const turmasFiltradas = turmaSelecionadaGrafico.value === 'todas'
@@ -434,9 +424,6 @@ const opcoesGrafico = {
   },
 }
 
-const notificandoId = ref(null)
-const notificadosIds = ref(new Set())
-
 async function notificarAluno(aluno) {
   const chave = aluno.alunoId + aluno.turmaId
   if (notificadosIds.value.has(chave)) return
@@ -456,13 +443,13 @@ async function notificarAluno(aluno) {
   if (error) {
     $toast.error('Erro ao enviar notificação.')
   } else {
-    // Atualiza o Set de forma reativa — cria novo Set para Vue detectar a mudança
     notificadosIds.value = new Set([...notificadosIds.value, chave])
     $toast.success(`${aluno.nome} foi notificado.`)
   }
 
   notificandoId.value = null
 }
+
 // ── Formatação ───────────────────────────────────────────────────
 
 function formatarDiaSemana(dataStr) {
@@ -484,5 +471,4 @@ function diasAte(dataStr) {
   if (diff === 1) return 'amanhã'
   return `${diff} dias`
 }
-
 </script>

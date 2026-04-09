@@ -176,7 +176,7 @@
 
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="text-sm text-gray-600 font-medium mb-2 block">Início:</label>
+                <label class="text-sm text-gray-600 font-medium mb-2 block">Data inicial:</label>
                 <input
                   v-model="recorrenciaInicio"
                   type="date"
@@ -184,10 +184,13 @@
                 />
               </div>
               <div>
-                <label class="text-sm text-gray-600 font-medium mb-2 block">Fim:</label>
+                <label class="text-sm text-gray-600 font-medium mb-2 block">Número de aulas:</label>
                 <input
-                  v-model="recorrenciaFim"
-                  type="date"
+                  v-model.number="quantidadeAulas"
+                  type="number"
+                  min="1"
+                  max="52"
+                  placeholder="Ex: 4"
                   class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
                 />
               </div>
@@ -195,7 +198,7 @@
 
             <button
               @click="gerarRecorrencia"
-              :disabled="diaSemana === null || !recorrenciaInicio || !recorrenciaFim"
+              :disabled="diaSemana === null || !recorrenciaInicio || !quantidadeAulas"
               class="w-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 font-semibold py-2 rounded-xl transition text-sm"
             >
               🔍 Pré-visualizar datas
@@ -254,7 +257,7 @@ const dataManual = ref('')
 const datasManual = ref([])
 const diaSemana = ref(null)
 const recorrenciaInicio = ref('')
-const recorrenciaFim = ref('')
+const quantidadeAulas = ref(null)
 const datasRecorrencia = ref([])
 
 const diasSemana = [
@@ -302,31 +305,25 @@ function adicionarDataManual() {
 }
 
 function gerarRecorrencia() {
-  if (diaSemana.value === null || !recorrenciaInicio.value || !recorrenciaFim.value) return
+  if (diaSemana.value === null || !recorrenciaInicio.value || !quantidadeAulas.value) return
 
-  const inicio = new Date(recorrenciaInicio.value + 'T12:00:00')
-  const fim = new Date(recorrenciaFim.value + 'T12:00:00')
-
-  if (inicio > fim) {
-    $toast.warning('A data de início deve ser anterior à data de fim.')
+  const quantidade = parseInt(quantidadeAulas.value)
+  if (quantidade < 1) {
+    $toast.warning('Informe ao menos 1 aula.')
     return
   }
 
-  const datas = []
-  const atual = new Date(inicio)
+  const atual = new Date(recorrenciaInicio.value + 'T12:00:00')
 
+  // Avança até o dia da semana escolhido
   while (atual.getDay() !== diaSemana.value) {
     atual.setDate(atual.getDate() + 1)
   }
 
-  while (atual <= fim) {
+  const datas = []
+  for (let i = 0; i < quantidade; i++) {
     datas.push(atual.toISOString().split('T')[0])
     atual.setDate(atual.getDate() + 7)
-  }
-
-  if (datas.length === 0) {
-    $toast.warning('Nenhuma data encontrada no período selecionado.')
-    return
   }
 
   datasRecorrencia.value = datas

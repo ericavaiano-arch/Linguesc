@@ -24,7 +24,7 @@
 
         <p class="text-xs text-gray-400 mb-4 font-medium">
           {{ turma.nome }}
-          <span class="ml-2">· Meta: {{ turma.meta_frequencia }}%</span>
+          <span class="ml-2">· Meta: {{ metaFrequencia }}%</span>
         </p>
 
         <div class="grid grid-cols-3 gap-4 mb-5">
@@ -39,8 +39,8 @@
             <p class="text-3xl font-bold text-red-500">{{ totalFaltas }}</p>
             <p class="text-xs text-gray-400 mt-1 font-medium uppercase tracking-wide">Faltas</p>
           </div>
-          <div class="text-center p-4 rounded-xl" :class="freq.frequencia >= turma.meta_frequencia ? 'bg-green-50' : 'bg-red-50'">
-            <p class="text-3xl font-bold" :class="freq.frequencia >= turma.meta_frequencia ? 'text-green-700' : 'text-red-500'">
+          <div class="text-center p-4 rounded-xl" :class="freq.frequencia >= metaFrequencia ? 'bg-green-50' : 'bg-red-50'">
+            <p class="text-3xl font-bold" :class="freq.frequencia >= metaFrequencia ? 'text-green-700' : 'text-red-500'">
               {{ freq.frequencia }}%
             </p>
             <p class="text-xs text-gray-400 mt-1 font-medium uppercase tracking-wide">Frequência</p>
@@ -50,14 +50,14 @@
         <div class="relative w-full bg-gray-100 rounded-full h-2.5 mb-1">
           <div
             class="h-2.5 rounded-full transition-all duration-500"
-            :class="freq.frequencia >= turma.meta_frequencia ? 'bg-green-500' : 'bg-red-400'"
+            :class="freq.frequencia >= metaFrequencia ? 'bg-green-500' : 'bg-red-400'"
             :style="{ width: Math.min(freq.frequencia, 100) + '%' }"
           ></div>
-          <div class="absolute top-0 h-2.5 w-0.5 bg-gray-400" :style="{ left: turma.meta_frequencia + '%' }"></div>
+          <div class="absolute top-0 h-2.5 w-0.5 bg-gray-400" :style="{ left: metaFrequencia + '%' }"></div>
         </div>
         <div class="flex justify-between text-xs text-gray-400 mb-4">
           <span>0%</span>
-          <span>meta {{ turma.meta_frequencia }}%</span>
+          <span>meta {{ metaFrequencia }}%</span>
           <span>100%</span>
         </div>
 
@@ -323,6 +323,7 @@ definePageMeta({ middleware: 'auth' })
 
 const { user } = useAuth()
 const { $toast } = useNuxtApp()
+const { metaFrequencia, carregarConfig } = useConfigSistema()
 
 // ── Tabs ─────────────────────────────────────────────────────────
 const tabs = [
@@ -407,7 +408,7 @@ const totalFaltas = computed(() =>
 )
 
 const statusMeta = computed(() => {
-  const meta = turma.value?.meta_frequencia ?? 75
+  const meta = metaFrequencia.value ?? 75
   const total = aulasRealizadas.value.length
   const frequencia = freq.value.frequencia
 
@@ -439,7 +440,7 @@ function toggleAulaSimulada(aulaId) {
 }
 
 const projecao = computed(() => {
-  const meta = turma.value?.meta_frequencia ?? 75
+  const meta = metaFrequencia.value ?? 75
   const faltasSimuladas = aulasSimuladasFalta.value.size
   const presencasFuturas = proximasAulas.value.length - faltasSimuladas
   const totalAulasComFuturas = aulasRealizadas.value.length + proximasAulas.value.length

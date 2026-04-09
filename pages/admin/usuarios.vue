@@ -61,16 +61,20 @@
             <td class="px-6 py-4 font-medium text-gray-800">{{ usuario.nome }}</td>
             <td class="px-6 py-4 text-gray-500">{{ usuario.email }}</td>
             <td class="px-6 py-4 text-center">
-              <span
-                class="text-xs font-semibold px-2.5 py-1 rounded-full"
-                :class="{
-                  'bg-purple-100 text-purple-700': usuario.tipo_usuario === 'ADMIN',
-                  'bg-blue-100 text-blue-700': usuario.tipo_usuario === 'PROFESSOR',
-                  'bg-green-100 text-green-700': usuario.tipo_usuario === 'ALUNO',
-                }"
-              >
-                {{ usuario.tipo_usuario }}
-              </span>
+              <div class="flex flex-wrap gap-1 justify-center">
+                <span
+                  v-for="papel in usuario.papeis"
+                  :key="papel"
+                  class="text-xs font-semibold px-2.5 py-1 rounded-full"
+                  :class="{
+                    'bg-purple-100 text-purple-700': papel === 'ADMIN',
+                    'bg-blue-100 text-blue-700': papel === 'PROFESSOR',
+                    'bg-green-100 text-green-700': papel === 'ALUNO',
+                  }"
+                >
+                  {{ papel }}
+                </span>
+              </div>
             </td>
             <td class="px-6 py-4 text-center">
               <span
@@ -141,6 +145,58 @@
               <option value="ADMIN">Admin</option>
             </select>
           </div>
+
+          <!-- Papéis (só na edição) -->
+          <div v-if="modo === 'editar'">
+            <label class="text-sm font-medium text-gray-700 mb-3 block">Papéis</label>
+
+            <!-- Papéis ativos -->
+            <div class="flex flex-wrap gap-2 mb-3">
+              <div
+                v-for="p in papeisUsuario.filter(p => p.ativo)"
+                :key="p.id"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+                :class="{
+                  'bg-purple-100 text-purple-700': p.papel === 'ADMIN',
+                  'bg-blue-100 text-blue-700': p.papel === 'PROFESSOR',
+                  'bg-green-100 text-green-700': p.papel === 'ALUNO',
+                }"
+              >
+                {{ p.papel }}
+                <button
+                  @click="removerPapel(p.id)"
+                  class="hover:opacity-60 transition font-bold text-sm leading-none"
+                >×</button>
+              </div>
+              <span v-if="papeisUsuario.filter(p => p.ativo).length === 0" class="text-xs text-gray-400">
+                Nenhum papel ativo.
+              </span>
+            </div>
+
+            <!-- Adicionar papel -->
+            <div class="flex gap-2">
+              <select
+                v-model="novoPapel"
+                class="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+              >
+                <option value="">Selecionar papel...</option>
+                <option
+                  v-for="opcao in ['ALUNO', 'PROFESSOR', 'ADMIN'].filter(o =>
+                    !papeisUsuario.some(p => p.papel === o && p.ativo)
+                  )"
+                  :key="opcao"
+                  :value="opcao"
+                >{{ opcao }}</option>
+              </select>
+              <button
+                @click="adicionarPapel(novoPapel); novoPapel = ''"
+                :disabled="!novoPapel"
+                class="px-4 py-2 bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-sm font-semibold transition"
+              >
+                + Adicionar
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="p-6 border-t">
@@ -175,6 +231,8 @@ const painelAberto = ref(false)
 const modo = ref('criar')
 const salvando = ref(false)
 const usuarioEditando = ref(null)
+const papeisUsuario = ref([])
+const novoPapel = ref('')
 
 const form = ref({
   nome: '',
@@ -195,22 +253,25 @@ const usuariosFiltrados = computed(() => {
 
 async function carregarUsuarios() {
   loading.value = true
-  // Usa a view usuarios_completo que já traz o email de auth.users
+
   const { data, error } = await supabase
     .from('usuarios_completo')
-    .select('*')
+    .select('*, usuario_papel(papel, ativo)')
     .order('nome')
 
   if (error) {
     $toast.error('Erro ao carregar usuários.')
-    console.error(error)
   } else {
-    usuarios.value = data || []
+    usuarios.value = (data || []).map(u => ({
+      ...u,
+      papeis: (u.usuario_papel || [])
+        .filter(p => p.ativo)
+        .map(p => p.papel),
+    }))
   }
 
   loading.value = false
 }
-
 function abrirCriacao() {
   modo.value = 'criar'
   form.value = { nome: '', email: '', senha: '', tipo_usuario: 'ALUNO' }
@@ -226,6 +287,7 @@ function abrirEdicao(usuario) {
     senha: '',
     tipo_usuario: usuario.tipo_usuario,
   }
+  carregarPapeisUsuario(usuario.id) // adicionar
   painelAberto.value = true
 }
 
@@ -311,6 +373,38 @@ async function toggleAtivo(usuario) {
     $toast.success(usuario.ativo ? 'Usuário desativado.' : 'Usuário ativado.')
     await carregarUsuarios()
   }
+}
+
+async function carregarPapeisUsuario(usuarioId) {
+  const { data } = await supabase
+    .from('usuario_papel')
+    .select('id, papel, ativo')
+    .eq('usuario_id', usuarioId)
+
+  papeisUsuario.value = data || []
+}
+
+async function adicionarPapel(papel) {
+  const existente = papeisUsuario.value.find(p => p.papel === papel)
+
+  if (existente && !existente.ativo) {
+    // Reativa papel existente
+    await supabase.from('usuario_papel').update({ ativo: true }).eq('id', existente.id)
+  } else if (!existente) {
+    await supabase.from('usuario_papel').insert({ usuario_id: usuarioEditando.value.id, papel })
+  }
+
+  await carregarPapeisUsuario(usuarioEditando.value.id)
+}
+
+async function removerPapel(papelId) {
+  const total = papeisUsuario.value.filter(p => p.ativo).length
+  if (total <= 1) {
+    $toast.warning('O usuário precisa ter pelo menos um papel.')
+    return
+  }
+  await supabase.from('usuario_papel').update({ ativo: false }).eq('id', papelId)
+  await carregarPapeisUsuario(usuarioEditando.value.id)
 }
 
 onMounted(carregarUsuarios)

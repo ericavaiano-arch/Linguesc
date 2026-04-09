@@ -101,6 +101,12 @@
           >
             🚫 Ninguém presente
           </button>
+          <button
+            @click="registrarAulaCancelada"
+            class="text-sm px-4 py-2 rounded-xl border border-yellow-200 text-yellow-600 hover:bg-orange-50 transition"
+          >
+           ⚠️ Aula cancelada
+          </button>
         </div>
 
         <!-- Lista de alunos -->
@@ -156,6 +162,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/utils/supabase'
+import { verificarENotificarRisco } from '~/composables/useNotificacaoRisco'
+const { metaFrequencia, carregarConfig } = useConfigSistema()
+const { user } = useAuth()
+
 
 definePageMeta({ middleware: 'professor' })
 
@@ -287,6 +297,16 @@ async function salvarChamada() {
       : `Chamada salva! ${presentes.value.size} presença(s) registrada(s).`
 
     $toast.success(msg)
+
+    await verificarENotificarRisco({
+      turmaId: aulaSelecionada.value.turma_id,
+      professorId: user.value?.id ?? '',
+      metaFrequencia: metaFrequencia.value,
+    }).catch(err => console.error('Erro ao verificar risco:', err))
+
+    await verificarNotificacaoProfessor()
+    .catch(err => console.error('Erro ao emitir notificação:', err));
+
     router.push('/chamada-manual')
 
   } catch (err) {
@@ -294,6 +314,37 @@ async function salvarChamada() {
     $toast.error('Erro ao salvar chamada.')
   } finally {
     salvando.value = false
+  }
+}
+
+async function verificarNotificacaoProfessor(){
+  const dataLimite = new Date()
+  dataLimite.setDate(dataLimite.getDate() - 7)
+
+  const dataLimiteFormatada = dataLimite.toISOString().slice(0, 10)
+
+  const alterouDepoisDe7Dias =
+    aulaSelecionada.value.data < dataLimiteFormatada
+
+  if (alterouDepoisDe7Dias){
+    const { data: admins } = await supabase
+      .from('usuarios')
+      .select('id')
+      .eq('tipo_usuario', 'ADMIN')
+      .eq('ativo', true)
+
+    const notificacoesAdmin = admins.map(admin => ({
+      aluno_id: admin.id,
+      professor_id: user.value?.id ?? '',
+      turma_id: aulaSelecionada.value.turma_id,
+      mensagem: `O professor ${user.value?.nome} alterou a chamada da aula do dia ${aulaSelecionada.value.data}, após o prazo de 7 dias.`,
+    }))
+
+    if (notificacoesAdmin.length) {
+      await supabase
+        .from('notificacao_risco')
+        .insert(notificacoesAdmin)
+    }
   }
 }
 
@@ -305,6 +356,31 @@ async function registrarAulaVazia() {
     await supabase.from('aula').update({ status: 'REALIZADA' }).eq('id', aulaSelecionada.value.id)
 
     $toast.success('Aula registrada sem presenças.')
+    
+    await verificarENotificarRisco({
+      turmaId: aulaSelecionada.value.turma_id,
+      professorId: user.value?.id ?? '',
+      metaFrequencia: metaFrequencia.value,
+    }).catch(err => console.error('Erro ao verificar risco:', err))
+
+    router.push('/chamada-manual')
+  } catch (err) {
+    console.error(err)
+    $toast.error('Erro ao registrar aula.')
+  } finally {
+    salvando.value = false
+  }
+}
+
+async function registrarAulaCancelada() {
+  salvando.value = true
+  try {
+    await supabase.from('presenca').delete().eq('aula_id', aulaSelecionada.value.id)
+
+    await supabase.from('aula').update({ status: 'CANCELADA' }).eq('id', aulaSelecionada.value.id)
+
+    $toast.success('Aula registrada como cancelada.')
+
     router.push('/chamada-manual')
   } catch (err) {
     console.error(err)

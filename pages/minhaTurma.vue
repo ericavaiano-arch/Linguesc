@@ -42,7 +42,7 @@
             <p class="text-xs text-gray-400 mt-0.5">Alunos</p>
           </div>
           <div class="bg-gray-50 rounded-xl p-3 text-center">
-            <p class="text-lg font-bold text-gray-800">{{ turma.meta_frequencia }}%</p>
+            <p class="text-lg font-bold text-gray-800">{{ metaFrequencia }}%</p>
             <p class="text-xs text-gray-400 mt-0.5">Meta de frequência</p>
           </div>
           <div class="bg-gray-50 rounded-xl p-3 text-center col-span-2 sm:col-span-1">
@@ -140,7 +140,7 @@
                 <div class="flex-1 bg-gray-100 rounded-full h-1.5">
                   <div
                     class="h-1.5 rounded-full transition-all duration-500"
-                    :class="aluno.frequencia >= turma.meta_frequencia
+                    :class="aluno.frequencia >= metaFrequencia
                       ? 'bg-green-500'
                       : aluno.frequencia >= 50
                         ? 'bg-yellow-400'
@@ -155,7 +155,7 @@
             <div class="text-right flex-shrink-0">
               <span
                 class="text-sm font-bold"
-                :class="aluno.frequencia >= turma.meta_frequencia
+                :class="aluno.frequencia >= metaFrequencia
                   ? 'text-green-600'
                   : aluno.frequencia >= 50
                     ? 'text-yellow-600'
@@ -186,6 +186,8 @@ import { supabase } from '~/utils/supabase'
 definePageMeta({ middleware: 'auth' })
 
 const { user } = useAuth()
+const { metaFrequencia, carregarConfig } = useConfigSistema()
+
 
 const loading = ref(true)
 const turma = ref(null)
@@ -194,6 +196,7 @@ const todosAlunos = ref([])
 const todasPresencas = ref([])
 const totalAulas = ref(0)
 const proximaAula = ref(null)
+const todasJustificativas = ref([])
 
 onMounted(async () => {
   const alunoId = user.value?.id
@@ -211,7 +214,7 @@ onMounted(async () => {
 
   const turmaId = turma.value.id
   const professorId = turma.value.professor_id
-
+  
   const [
     { data: professorData },
     { data: vinculosData },
@@ -243,14 +246,23 @@ onMounted(async () => {
     .sort((a, b) => a.data.localeCompare(b.data))[0] ?? null
 
   if (alunosIds.length > 0 && aulasRealizadasIds.length > 0) {
-    const { data: presencasData } = await supabase
+  const [{ data: presencasData }, { data: justData }] = await Promise.all([
+    supabase
       .from('presenca')
       .select('aluno_id, aula_id')
       .in('aluno_id', alunosIds)
+      .in('aula_id', aulasRealizadasIds),
+    supabase
+      .from('justificativa_falta')
+      .select('aluno_id, aula_id, status')
+      .in('aluno_id', alunosIds)
       .in('aula_id', aulasRealizadasIds)
+      .eq('status', 'ACEITA'),   // só as aceitas
+  ])
 
-    todasPresencas.value = presencasData || []
-  }
+  todasPresencas.value = presencasData || []
+  todasJustificativas.value = justData || []
+}
 
   loading.value = false
 })
@@ -273,22 +285,32 @@ const rankingAtivos = computed(() => {
 
   const lista = todosAlunos.value
     .filter(a => a.ativo)
-    .map((aluno, index) => {
-      const presencas = todasPresencas.value.filter(p => p.aluno_id === aluno.id).length
+    .map((aluno) => {
+      const presencas = todasPresencas.value
+        .filter(p => p.aluno_id === aluno.id).length
+
+      // Justificativas aceitas que não têm presença já registrada
+      const justAceitas = todasJustificativas.value
+        .filter(j =>
+          j.aluno_id === aluno.id &&
+          !todasPresencas.value.some(p => p.aluno_id === aluno.id && p.aula_id === j.aula_id)
+        ).length
+
+      const totalValidas = presencas + justAceitas
+
       const frequencia = aulasRealizadas.value > 0
-        ? Math.round((presencas / aulasRealizadas.value) * 100)
+        ? Math.round((totalValidas / aulasRealizadas.value) * 100)
         : 0
 
       return {
         id: aluno.id,
         isVoce: aluno.id === meuId,
-        presencas,
+        presencas: totalValidas,   // mostra o total válido (presença + just. aceita)
         frequencia,
       }
     })
     .sort((a, b) => b.frequencia - a.frequencia)
 
-  // Atribui nomes anônimos preservando posição (exceto o próprio aluno)
   let contador = 1
   return lista.map(aluno => ({
     ...aluno,

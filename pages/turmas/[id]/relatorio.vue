@@ -50,7 +50,7 @@
         </div>
         <div class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm print-card">
           <p class="text-xs text-gray-400 mb-1">Frequência média</p>
-          <p class="text-2xl font-bold" :class="frequenciaMedia >= 75 ? 'text-green-700' : 'text-red-600'">{{ frequenciaMedia }}%</p>
+          <p class="text-2xl font-bold" :class="frequenciaMedia >= metaFrequencia ? 'text-green-700' : 'text-red-600'">{{ frequenciaMedia }}%</p>
         </div>
         <div class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm print-card">
           <p class="text-xs text-gray-400 mb-1">Alunos em risco</p>
@@ -137,15 +137,35 @@
                 <td class="text-center px-6 py-3">
                   <span
                     class="font-bold text-sm"
-                    :class="aluno.frequencia >= 75 ? 'text-green-600' : aluno.frequencia >= 50 ? 'text-yellow-600' : 'text-red-600'"
+                    :class="aluno.frequencia >= metaFrequencia ? 'text-green-600' : aluno.frequencia >= 50 ? 'text-yellow-600' : 'text-red-600'"
                   >
                     {{ aluno.frequencia }}%
                   </span>
-                  <span v-if="aluno.frequencia < 75" class="ml-1 text-xs">⚠️</span>
+                  <span v-if="aluno.frequencia < metaFrequencia" class="ml-1 text-xs">⚠️</span>
                 </td>
               </tr>
             </tbody>
           </table>
+
+          <div class="px-6 py-3 border-t border-gray-50 flex items-center flex-wrap gap-4 text-xs text-gray-400">
+            <span class="flex items-center gap-1.5">
+              <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 text-green-700 font-bold text-xs">✓</span>
+              Presente
+            </span>
+            <span class="flex items-center gap-1.5">
+              <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold text-xs">J</span>
+              Justificada
+            </span>
+            <span class="flex items-center gap-1.5">
+              <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-yellow-100 text-yellow-700 font-bold text-xs">⏳</span>
+              Aguardando
+            </span>
+            <span class="flex items-center gap-1.5">
+              <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-100 text-red-600 font-bold text-xs">✗</span>
+              Falta
+            </span>
+          </div>
+
         </div>
       </div>
 
@@ -180,6 +200,7 @@ const loading = ref(true)
 const ordemColuna = ref('nome')
 const ordemDirecao = ref('asc')
 const nomeProfessor = ref('')
+const { metaFrequencia, carregarConfig } = useConfigSistema()
 
 const dataGeracao = new Date().toLocaleDateString('pt-BR', {
   day: '2-digit', month: '2-digit', year: 'numeric',
@@ -192,7 +213,7 @@ onMounted(async () => {
     { data: vinculosData },
     { data: aulasData },
   ] = await Promise.all([
-    supabase.from('turma').select('id, nome, status, meta_frequencia, professor_id').eq('id', turmaId).single(),
+    supabase.from('turma').select('id, nome, status, meta_frequencia, professor_id, sala').eq('id', turmaId).single(),
     supabase.from('turma_aluno').select('aluno_id, usuarios(id, nome, ativo)').eq('turma_id', turmaId),
     supabase.from('aula').select('id, data, status').eq('turma_id', turmaId).order('data', { ascending: true }),
   ])
@@ -277,10 +298,8 @@ const frequenciaMedia = computed(() => {
   return Math.round(soma / tabelaAlunos.value.length)
 })
 
-const meta = computed(() => turma.value?.meta_frequencia ?? 75)
-
 const alunosEmRisco = computed(() =>
-  tabelaAlunos.value.filter(a => a.frequencia < meta.value).length
+  tabelaAlunos.value.filter(a => a.frequencia < metaFrequencia.value).length
 )
 
 // ─── Helpers ──────────────────────────────────────────────────────
@@ -382,7 +401,7 @@ function imprimirPDF() {
 
     if (card.label === 'Alunos em risco' && alunosEmRisco.value > 0) {
       doc.setTextColor(220, 38, 38)
-    } else if (card.label === 'Frequência média' && frequenciaMedia.value < meta.value) {
+    } else if (card.label === 'Frequência média' && frequenciaMedia.value < metaFrequencia.value) {
       doc.setTextColor(220, 38, 38)
     } else {
       doc.setTextColor(22, 163, 74)
@@ -455,7 +474,7 @@ function imprimirPDF() {
 
       if (data.column.index === cabecalho.length - 1 && data.section === 'body') {
         const freq = parseInt(data.cell.raw)
-        data.cell.styles.textColor = freq < meta.value ? [220, 38, 38] : [22, 163, 74]
+        data.cell.styles.textColor = freq < metaFrequencia.value ? [220, 38, 38] : [22, 163, 74]
         data.cell.styles.fontStyle = 'bold'
       }
     },
@@ -483,7 +502,7 @@ function imprimirPDF() {
   doc.setFontSize(7)
   doc.setTextColor(156, 163, 175)
   doc.setFont('helvetica', 'normal')
-  doc.text('Legenda: P = Presente · J = Justificada · ? = Aguardando avaliação · F = Falta', 14, legendaY)
+  doc.text('Legenda: P = Presente; J = Justificada; ? = Aguardando avaliação; F = Falta', 14, legendaY)
 
   doc.save(`presenca_${turmaName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`)
 }

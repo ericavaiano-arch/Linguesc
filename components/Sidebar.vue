@@ -21,7 +21,7 @@
         <SidebarItem v-if="isProfessor" to="/turmas" label="Minhas Turmas" icon="📚" :open="true" @click="$emit('toggle')" />
         <!-- <SidebarItem v-if="isProfessor" to="/qrCodeTurmas" label="Chamada por QR Code" icon="🧾" :open="true" @click="$emit('toggle')" /> -->
         <SidebarItem v-if="isProfessor" to="/chamada-manual" label="Chamada" icon="✅" :open="true" @click="$emit('toggle')" />
-        <SidebarItem v-if="isProfessor" to="/justificativas" label="Justificativas" icon="📝" :open="true" @click="$emit('toggle')" />
+        <!-- <SidebarItem v-if="isProfessor" to="/justificativas" label="Justificativas" icon="📝" :open="true" @click="$emit('toggle')" /> -->
 
         <!-- ADMIN -->
         <template v-if="isAdmin">
@@ -29,9 +29,10 @@
             <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Admin</p>
           </div>
           <SidebarItem to="/admin" label="Dashboard Global" icon="📊" :open="true" @click="$emit('toggle')" />
+          <SidebarItem to="/turmas" label="Turmas" icon="📚" :open="true" @click="$emit('toggle')" />
           <SidebarItem to="/admin/usuarios" label="Usuários" icon="👥" :open="true" @click="$emit('toggle')" />
-          <SidebarItem to="/admin/configuracoes" label="Configurações" icon="⚙️" :open="true" @click="$emit('toggle')" />
           <SidebarItem to="/justificativas" label="Justificativas" icon="📝" :open="true" @click="$emit('toggle')" />
+          <SidebarItem to="/admin/configuracoes" label="Configurações" icon="⚙️" :open="true" @click="$emit('toggle')" />
 
         </template>
       </nav>

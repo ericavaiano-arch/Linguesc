@@ -4,8 +4,12 @@
     <!-- Header -->
     <div class="mb-10 flex items-start justify-between">
       <div>
-        <h1 class="text-3xl font-bold text-green-700">Minhas Turmas</h1>
-        <p class="text-gray-500 mt-2">Gerencie suas turmas e aulas.</p>
+        <h1 class="text-3xl font-bold text-green-700">
+          {{ isAdmin ? 'Todas as Turmas' : 'Minhas Turmas' }}
+        </h1>
+        <p class="text-gray-500 mt-2">
+          {{ isAdmin ? 'Gerencie as turmas de todos os professores.' : 'Gerencie suas turmas e aulas.' }}
+        </p>
         <div class="w-20 h-1 bg-green-600 mt-4 rounded"></div>
       </div>
       <button
@@ -16,6 +20,20 @@
       </button>
     </div>
 
+    <!-- Filtro de professor (admin apenas) -->
+    <div v-if="isAdmin" class="mb-8 flex items-center gap-3">
+      <label class="text-sm font-medium text-gray-600">Filtrar por professor:</label>
+      <select
+        v-model="professorFiltro"
+        class="border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+      >
+        <option value="">Todos os professores</option>
+        <option v-for="prof in professores" :key="prof.id" :value="prof.id">
+          {{ prof.nome }}
+        </option>
+      </select>
+    </div>
+
     <div v-if="loading" class="flex items-center gap-3 text-green-700">
       <div class="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
       <span>Carregando turmas...</span>
@@ -23,130 +41,182 @@
 
     <div v-else class="space-y-10">
 
-      <!-- ── TURMAS ATIVAS ── -->
-      <div>
-        <div v-if="turmasAtivas.length === 0" class="bg-white border border-dashed border-gray-300 rounded-2xl p-12 text-center">
-          <p class="text-4xl mb-4">📚</p>
-          <p class="text-gray-500 font-medium">Nenhuma turma ativa.</p>
-          <button @click="abrirCriacao" class="mt-4 text-green-600 font-semibold hover:underline text-sm">
-            Criar minha primeira turma →
-          </button>
-        </div>
+      <!-- ── VISÃO ADMIN: agrupado por professor ── -->
+      <template v-if="isAdmin">
+        <div v-for="grupo in gruposFiltrados" :key="grupo.professorId" class="space-y-4">
 
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          <div
-            v-for="turma in turmasAtivas"
-            :key="turma.id"
-            class="group bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-green-400 transition-all duration-200"
-          >
-            <!-- Header do card -->
-          <div
-            class="flex items-start justify-between mb-3 cursor-pointer"
-            @click="navegar(`/turmas/${turma.id}/relatorio`)"
-          >
-            <div class="flex-1 min-w-0 pr-2">
-              <h2 class="text-base font-semibold text-gray-800 group-hover:text-green-700 transition truncate">
-                {{ turma.nome }}
-              </h2>
-              <p class="text-xs text-gray-400 mt-0.5">{{ turma.turma_aluno[0]?.count ?? 0 }} aluno(s)</p>
+          <!-- Cabeçalho do grupo -->
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm flex-shrink-0">
+              {{ grupo.professorNome.charAt(0).toUpperCase() }}
             </div>
-
-            <!-- Ações rápidas + menu -->
-            <div class="flex items-center gap-1 flex-shrink-0">
-              <!-- Chamada (ação principal sempre visível) -->
-              <button
-                @click.stop="$router.push(`/chamada-manual/${turma.id}`)"
-                class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
-                title="Fazer chamada"
-              >
-                Fazer Chamada
-              </button>
-
-              <!-- Menu dropdown -->
-              <div class="relative">
-                <button
-                  @click.stop="toggleMenu(turma.id)"
-                  class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition text-lg"
-                >
-                  ⋮
-                </button>
-
-                <Transition name="dropdown">
-                  <div
-                    v-if="menuAberto === turma.id"
-                    class="absolute right-0 top-9 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-30 py-1 overflow-hidden"
-                  >
-                    <button @click.stop="navegar(`/turmas/${turma.id}/aulas`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
-                      📅 <span>Cadastrar Aulas</span>
-                    </button>
-                    <!-- <button @click.stop="navegar(`/turmas/${turma.id}/historico`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
-                      📋 <span>Histórico</span>
-                    </button> -->
-                    <button @click.stop="navegar(`/turmas/${turma.id}/relatorio`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
-                      📄 <span>Relatório</span>
-                    </button>
-                    <button @click.stop="abrirEdicaoMenu(turma)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
-                      ✏️ <span>Editar turma</span>
-                    </button>
-                    <div class="border-t border-gray-100 my-1"></div>
-                    <button @click.stop="confirmarEncerramentoMenu(turma)" class="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition flex items-center gap-2">
-                      🔒 <span>Encerrar turma</span>
-                    </button>
-                  </div>
-                </Transition>
-              </div>
-            </div>
+            <h2 class="text-base font-semibold text-gray-700">{{ grupo.professorNome }}</h2>
+            <span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+              {{ grupo.turmasAtivas.length }} ativa(s)
+              <template v-if="grupo.turmasFinalizadas.length > 0">
+                · {{ grupo.turmasFinalizadas.length }} finalizada(s)
+              </template>
+            </span>
+            <div class="flex-1 h-px bg-gray-200"></div>
           </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- ── TURMAS FINALIZADAS ── -->
-      <div v-if="turmasFinalizadas.length > 0">
-        <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">🔒 Turmas Finalizadas</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          <div
-            v-for="turma in turmasFinalizadas"
-            :key="turma.id"
-            class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm opacity-70"
-          >
-            <div class="flex items-start justify-between">
-              <div class="flex-1 min-w-0 pr-2">
-                <h2 class="text-base font-semibold text-gray-500 truncate">{{ turma.nome }}</h2>
-                <p class="text-xs text-gray-400 mt-0.5">{{ turma.turma_aluno[0]?.count ?? 0 }} aluno(s)</p>
-              </div>
-              <div class="flex items-center gap-1 flex-shrink-0">
-                <span class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full font-medium">Finalizada</span>
-                <div class="relative">
+          <!-- Turmas ativas -->
+          <div v-if="grupo.turmasAtivas.length === 0" class="ml-11 text-sm text-gray-400 italic">
+            Nenhuma turma ativa.
+          </div>
+          <div v-else class="ml-11 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div
+              v-for="turma in grupo.turmasAtivas"
+              :key="turma.id"
+              class="group bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-green-400 transition-all duration-200"
+            >
+              <div class="flex items-start justify-between mb-3 cursor-pointer" @click="navegar(`/turmas/${turma.id}/relatorio`)">
+                <div class="flex-1 min-w-0 pr-2">
+                  <h2 class="text-base font-semibold text-gray-800 group-hover:text-green-700 transition truncate">{{ turma.nome }}</h2>
+                  <p class="text-xs text-gray-400 mt-0.5">{{ turma.sala != null ? 'Sala ' + turma.sala : '' }}</p>
+                  <p class="text-xs text-gray-400 mt-0.5">{{ turma.turma_aluno[0]?.count ?? 0 }} aluno(s)</p>
+                </div>
+                <div class="flex items-center gap-1 flex-shrink-0">
                   <button
-                    @click.stop="toggleMenu(turma.id)"
-                    class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition text-lg"
+                    @click.stop="$router.push(`/chamada-manual/${turma.id}`)"
+                    class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
                   >
-                    ⋮
+                    Fazer Chamada
                   </button>
-                  <Transition name="dropdown">
-                    <div
-                      v-if="menuAberto === turma.id"
-                      class="absolute right-0 top-9 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-30 py-1 overflow-hidden"
-                    >
-                      <!-- <button @click="navegar(`/turmas/${turma.id}/historico`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
-                        📋 <span>Histórico</span>
-                      </button> -->
-                      <button @click="navegar(`/turmas/${turma.id}/relatorio`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
-                        📄 <span>Relatório</span>
-                      </button>
-                      <div class="border-t border-gray-100 my-1"></div>
-                      <button @click="reativarTurmaMenu(turma)" class="w-full text-left px-4 py-2.5 text-sm text-green-600 hover:bg-green-50 transition flex items-center gap-2">
-                        ↩ <span>Reativar turma</span>
-                      </button>
+                  <div class="relative">
+                    <button @click.stop="toggleMenu(turma.id)" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition text-lg">⋮</button>
+                    <Transition name="dropdown">
+                      <div v-if="menuAberto === turma.id" class="absolute right-0 top-9 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-30 py-1 overflow-hidden">
+                        <button @click.stop="navegar(`/turmas/${turma.id}/aulas`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">📅 <span>Cadastrar Aulas</span></button>
+                        <button @click.stop="navegar(`/turmas/${turma.id}/relatorio`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">📄 <span>Relatório</span></button>
+                        <button @click.stop="abrirEdicaoMenu(turma)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">✏️ <span>Editar turma</span></button>
+                        <div class="border-t border-gray-100 my-1"></div>
+                        <button @click.stop="confirmarEncerramentoMenu(turma)" class="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition flex items-center gap-2">🔒 <span>Encerrar turma</span></button>
+                      </div>
+                    </Transition>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Turmas finalizadas -->
+          <div v-if="grupo.turmasFinalizadas.length > 0" class="ml-11">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">🔒 Finalizadas</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div
+                v-for="turma in grupo.turmasFinalizadas"
+                :key="turma.id"
+                class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm opacity-70"
+              >
+                <div class="flex items-start justify-between">
+                  <div class="flex-1 min-w-0 pr-2">
+                    <h2 class="text-base font-semibold text-gray-500 truncate">{{ turma.nome }}</h2>
+                    <p class="text-xs text-gray-400 mt-0.5">{{ turma.turma_aluno[0]?.count ?? 0 }} aluno(s)</p>
+                  </div>
+                  <div class="flex items-center gap-1 flex-shrink-0">
+                    <span class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full font-medium">Finalizada</span>
+                    <div class="relative">
+                      <button @click.stop="toggleMenu(turma.id)" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition text-lg">⋮</button>
+                      <Transition name="dropdown">
+                        <div v-if="menuAberto === turma.id" class="absolute right-0 top-9 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-30 py-1 overflow-hidden">
+                          <button @click="navegar(`/turmas/${turma.id}/relatorio`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">📄 <span>Relatório</span></button>
+                          <div class="border-t border-gray-100 my-1"></div>
+                          <button @click="reativarTurmaMenu(turma)" class="w-full text-left px-4 py-2.5 text-sm text-green-600 hover:bg-green-50 transition flex items-center gap-2">↩ <span>Reativar turma</span></button>
+                        </div>
+                      </Transition>
                     </div>
-                  </Transition>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Sem resultados -->
+        <div v-if="gruposFiltrados.length === 0" class="text-center py-16 text-gray-400">
+          <p class="text-4xl mb-3">📭</p>
+          <p class="font-medium">Nenhuma turma encontrada.</p>
+        </div>
+      </template>
+
+      <!-- ── VISÃO PROFESSOR: igual ao original ── -->
+      <template v-else>
+        <div>
+          <div v-if="turmasAtivas.length === 0" class="bg-white border border-dashed border-gray-300 rounded-2xl p-12 text-center">
+            <p class="text-4xl mb-4">📚</p>
+            <p class="text-gray-500 font-medium">Nenhuma turma ativa.</p>
+            <button @click="abrirCriacao" class="mt-4 text-green-600 font-semibold hover:underline text-sm">Criar minha primeira turma →</button>
+          </div>
+          <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div
+              v-for="turma in turmasAtivas"
+              :key="turma.id"
+              class="group bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-green-400 transition-all duration-200"
+            >
+              <div class="flex items-start justify-between mb-3 cursor-pointer" @click="navegar(`/turmas/${turma.id}/relatorio`)">
+                <div class="flex-1 min-w-0 pr-2">
+                  <h2 class="text-base font-semibold text-gray-800 group-hover:text-green-700 transition truncate">{{ turma.nome }}</h2>
+                  <p class="text-xs text-gray-400 mt-0.5">{{ turma.sala != null ? 'Sala ' + turma.sala : '' }}</p>
+                  <p class="text-xs text-gray-400 mt-0.5">{{ turma.turma_aluno[0]?.count ?? 0 }} aluno(s)</p>
+                </div>
+                <div class="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    @click.stop="$router.push(`/chamada-manual/${turma.id}`)"
+                    class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
+                  >
+                    Fazer Chamada
+                  </button>
+                  <div class="relative">
+                    <button @click.stop="toggleMenu(turma.id)" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition text-lg">⋮</button>
+                    <Transition name="dropdown">
+                      <div v-if="menuAberto === turma.id" class="absolute right-0 top-9 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-30 py-1 overflow-hidden">
+                        <button @click.stop="navegar(`/turmas/${turma.id}/aulas`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">📅 <span>Cadastrar Aulas</span></button>
+                        <button @click.stop="navegar(`/turmas/${turma.id}/relatorio`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">📄 <span>Relatório</span></button>
+                        <button @click.stop="abrirEdicaoMenu(turma)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">✏️ <span>Editar turma</span></button>
+                        <div class="border-t border-gray-100 my-1"></div>
+                        <button @click.stop="confirmarEncerramentoMenu(turma)" class="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition flex items-center gap-2">🔒 <span>Encerrar turma</span></button>
+                      </div>
+                    </Transition>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+
+        <div v-if="turmasFinalizadas.length > 0">
+          <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">🔒 Turmas Finalizadas</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div
+              v-for="turma in turmasFinalizadas"
+              :key="turma.id"
+              class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm opacity-70"
+            >
+              <div class="flex items-start justify-between">
+                <div class="flex-1 min-w-0 pr-2">
+                  <h2 class="text-base font-semibold text-gray-500 truncate">{{ turma.nome }}</h2>
+                  <p class="text-xs text-gray-400 mt-0.5">{{ turma.turma_aluno[0]?.count ?? 0 }} aluno(s)</p>
+                </div>
+                <div class="flex items-center gap-1 flex-shrink-0">
+                  <span class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full font-medium">Finalizada</span>
+                  <div class="relative">
+                    <button @click.stop="toggleMenu(turma.id)" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition text-lg">⋮</button>
+                    <Transition name="dropdown">
+                      <div v-if="menuAberto === turma.id" class="absolute right-0 top-9 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-30 py-1 overflow-hidden">
+                        <button @click="navegar(`/turmas/${turma.id}/relatorio`)" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">📄 <span>Relatório</span></button>
+                        <div class="border-t border-gray-100 my-1"></div>
+                        <button @click="reativarTurmaMenu(turma)" class="w-full text-left px-4 py-2.5 text-sm text-green-600 hover:bg-green-50 transition flex items-center gap-2">↩ <span>Reativar turma</span></button>
+                      </div>
+                    </Transition>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
 
     </div>
 
@@ -155,16 +225,10 @@
       <div v-if="modalEncerramento" class="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
         <div class="bg-white rounded-2xl p-6 shadow-xl w-full max-w-sm">
           <h3 class="text-lg font-semibold text-gray-800 mb-2">🔒 Encerrar turma?</h3>
-          <p class="text-sm text-gray-500 mb-1">
-            Você está prestes a encerrar a turma <strong>{{ turmaParaEncerrar?.nome }}</strong>.
-          </p>
-          <p class="text-sm text-gray-400 mb-6">
-            Os dados serão preservados, mas a turma ficará bloqueada para novos registros. Você pode reativá-la depois.
-          </p>
+          <p class="text-sm text-gray-500 mb-1">Você está prestes a encerrar a turma <strong>{{ turmaParaEncerrar?.nome }}</strong>.</p>
+          <p class="text-sm text-gray-400 mb-6">Os dados serão preservados, mas a turma ficará bloqueada para novos registros. Você pode reativá-la depois.</p>
           <div class="flex gap-3">
-            <button @click="modalEncerramento = false" class="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">
-              Cancelar
-            </button>
+            <button @click="modalEncerramento = false" class="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">Cancelar</button>
             <button @click="encerrarTurma" :disabled="encerrando" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white text-sm font-semibold transition flex items-center justify-center gap-2">
               <div v-if="encerrando" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               {{ encerrando ? 'Encerrando...' : 'Encerrar' }}
@@ -188,40 +252,66 @@
         </div>
 
         <div class="flex-1 overflow-y-auto p-6 space-y-6">
+
+          <!-- Seletor de professor (admin + modo criar) -->
+          <div v-if="isAdmin && modo === 'criar'">
+            <label class="text-sm font-medium text-gray-700 mb-2 block">Professor responsável</label>
+            <select
+              v-model="professorSelecionadoCriacao"
+              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+            >
+              <option value="">Selecione um professor...</option>
+              <option v-for="prof in professores" :key="prof.id" :value="prof.id">{{ prof.nome }}</option>
+            </select>
+          </div>
+
+          <!-- Professor read-only no modo editar (admin) -->
+          <div v-if="isAdmin && modo === 'editar'" class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+            <p class="text-xs text-gray-400 mb-1">Professor responsável</p>
+            <p class="text-sm font-semibold text-gray-700">{{ turmaSelecionada?.professor_nome ?? '—' }}</p>
+          </div>
+
           <div>
-            <label class="text-sm font-medium text-gray-700 mb-2 block">Nome da Turma</label>
-            <input v-model="edicaoNome" type="text" placeholder="Ex: Inglês A1 — 2026/1" class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+            <label class="text-sm font-medium text-gray-700 mb-2 block">Identificador da Turma</label>
+            <input
+              v-model="edicaoIdentificador"
+              type="text"
+              placeholder="Ex: Básico 1, Intermediário 2B..."
+              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-sm font-medium text-gray-700 mb-2 block">Ano</label>
+              <select v-model="edicaoAno" class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition">
+                <option v-for="ano in anosDisponiveis" :key="ano" :value="ano">{{ ano }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-gray-700 mb-2 block">Semestre</label>
+              <select v-model="edicaoSemestre" class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition">
+                <option value="01">1º semestre</option>
+                <option value="02">2º semestre</option>
+              </select>
+            </div>
+          </div>
+
+          <div v-if="edicaoIdentificador.trim()" class="bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+            <p class="text-xs text-gray-400 mb-1">Nome gerado:</p>
+            <p class="text-sm font-semibold text-green-800">{{ nomeGerado }}</p>
           </div>
 
           <div>
             <label class="text-sm font-medium text-gray-700 mb-2 block">
-              Meta de Frequência
+              Sala de Aula <span class="text-gray-400 font-normal">(opcional)</span>
             </label>
-            <div class="flex items-center gap-3 mb-2">
-              <input
-                v-model.number="edicaoMeta"
-                type="range"
-                min="1"
-                max="100"
-                step="1"
-                class="flex-1 accent-green-600"
-              />
-              <div class="flex items-center gap-1">
-                <input
-                  v-model.number="edicaoMeta"
-                  type="number"
-                  min="1"
-                  max="100"
-                  class="w-16 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-500 transition"
-                  @blur="edicaoMeta = Math.min(100, Math.max(1, edicaoMeta || 1))"
-                />
-                <span class="text-sm text-gray-500">%</span>
-              </div>
-            </div>
-            <div class="flex justify-between text-xs text-gray-400">
-              <span>1%</span>
-              <span>100%</span>
-            </div>
+            <input
+              v-model="edicaoSala"
+              type="text"
+              placeholder="Ex: Sala 3, Lab 2..."
+              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+            />
           </div>
 
           <div v-if="modo === 'editar'">
@@ -262,13 +352,23 @@
             </div>
             <ul class="border border-gray-200 rounded-xl overflow-hidden max-h-64 overflow-y-auto divide-y divide-gray-100">
               <li v-if="todosAlunosFiltrados.length === 0" class="px-4 py-3 text-sm text-gray-400 text-center">Nenhum aluno encontrado.</li>
-              <li v-for="aluno in todosAlunosFiltrados" :key="aluno.id" class="flex items-center justify-between px-4 py-3 transition" :class="jaMatriculadoEmOutraTurma(aluno.id) || edicaoAlunos.some(a => a.id === aluno.id) ? 'bg-gray-50' : 'hover:bg-gray-50'">
+              <li
+                v-for="aluno in todosAlunosFiltrados"
+                :key="aluno.id"
+                class="flex items-center justify-between px-4 py-3 transition"
+                :class="jaMatriculadoEmOutraTurma(aluno.id) || edicaoAlunos.some(a => a.id === aluno.id) ? 'bg-gray-50' : 'hover:bg-gray-50'"
+              >
                 <div>
                   <p class="text-sm font-medium" :class="jaMatriculadoEmOutraTurma(aluno.id) ? 'text-gray-400' : 'text-gray-800'">{{ aluno.nome }}</p>
                   <p class="text-xs text-gray-400">{{ aluno.email }}</p>
                   <p v-if="jaMatriculadoEmOutraTurma(aluno.id)" class="text-xs text-orange-500 font-medium mt-0.5">⚠️ Já matriculado em "{{ nomeTurmaDoAluno(aluno.id) }}"</p>
                 </div>
-                <button @click="adicionarAluno(aluno)" :disabled="jaMatriculadoEmOutraTurma(aluno.id) || edicaoAlunos.some(a => a.id === aluno.id)" class="text-xs px-3 py-1.5 rounded-lg font-semibold transition flex-shrink-0 ml-3" :class="jaMatriculadoEmOutraTurma(aluno.id) ? 'bg-orange-50 text-orange-400 cursor-not-allowed' : edicaoAlunos.some(a => a.id === aluno.id) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-green-100 text-green-700 hover:bg-green-200'">
+                <button
+                  @click="adicionarAluno(aluno)"
+                  :disabled="jaMatriculadoEmOutraTurma(aluno.id) || edicaoAlunos.some(a => a.id === aluno.id)"
+                  class="text-xs px-3 py-1.5 rounded-lg font-semibold transition flex-shrink-0 ml-3"
+                  :class="jaMatriculadoEmOutraTurma(aluno.id) ? 'bg-orange-50 text-orange-400 cursor-not-allowed' : edicaoAlunos.some(a => a.id === aluno.id) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-green-100 text-green-700 hover:bg-green-200'"
+                >
                   {{ jaMatriculadoEmOutraTurma(aluno.id) ? 'Bloqueado' : edicaoAlunos.some(a => a.id === aluno.id) ? '✓' : '+ Adicionar' }}
                 </button>
               </li>
@@ -277,7 +377,11 @@
         </div>
 
         <div class="p-6 border-t">
-          <button @click="salvar" :disabled="salvando || !edicaoNome.trim()" class="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition active:scale-95 flex items-center justify-center gap-2">
+          <button
+            @click="salvar"
+            :disabled="salvando || !edicaoIdentificador.trim() || (isAdmin && modo === 'criar' && !professorSelecionadoCriacao)"
+            class="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition active:scale-95 flex items-center justify-center gap-2"
+          >
             <div v-if="salvando" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             {{ salvando ? 'Salvando...' : (modo === 'criar' ? '✅ Criar Turma' : '💾 Salvar Alterações') }}
           </button>
@@ -295,9 +399,10 @@ definePageMeta({ middleware: 'professor' })
 
 const { $toast } = useNuxtApp()
 const router = useRouter()
-const { user } = useAuth()
+const { user, isAdmin } = useAuth()
 
 const turmas = ref([])
+const professores = ref([])
 const loading = ref(true)
 const menuAberto = ref(null)
 
@@ -310,28 +415,72 @@ const modo = ref('criar')
 const salvando = ref(false)
 const loadingAlunos = ref(false)
 const turmaSelecionada = ref(null)
-const edicaoNome = ref('')
 const edicaoAlunos = ref([])
 const alunosOriginais = ref([])
 const todosAlunos = ref([])
 const filtroEdicao = ref('')
 const mapaMatriculas = ref({})
-const edicaoMeta = ref(75)
 
+const edicaoIdentificador = ref('')
+const edicaoAno = ref(new Date().getFullYear())
+const edicaoSemestre = ref(new Date().getMonth() < 6 ? '01' : '02')
+const edicaoSala = ref('')
+const professorSelecionadoCriacao = ref('')
+
+const professorFiltro = ref('')
+
+const anosDisponiveis = computed(() => {
+  const atual = new Date().getFullYear()
+  return [atual - 3, atual - 2, atual - 1, atual, atual + 1, atual + 2, atual + 3]
+})
+
+const nomeGerado = computed(() =>
+  edicaoIdentificador.value.trim()
+    ? `${edicaoIdentificador.value.trim()} - ${edicaoAno.value}/${edicaoSemestre.value}`
+    : ''
+)
+
+// Visão professor
 const turmasAtivas = computed(() => turmas.value.filter(t => t.status !== 'FINALIZADA'))
 const turmasFinalizadas = computed(() => turmas.value.filter(t => t.status === 'FINALIZADA'))
 
+// Visão admin: agrupado por professor
+const grupos = computed(() => {
+  const mapa = {}
+  for (const turma of turmas.value) {
+    const pid = turma.professor_id
+    if (!mapa[pid]) {
+      mapa[pid] = {
+        professorId: pid,
+        professorNome: turma.professor_nome ?? 'Professor desconhecido',
+        turmasAtivas: [],
+        turmasFinalizadas: [],
+      }
+    }
+    if (turma.status === 'FINALIZADA') {
+      mapa[pid].turmasFinalizadas.push(turma)
+    } else {
+      mapa[pid].turmasAtivas.push(turma)
+    }
+  }
+  return Object.values(mapa).sort((a, b) => a.professorNome.localeCompare(b.professorNome))
+})
+
+const gruposFiltrados = computed(() => {
+  if (!professorFiltro.value) return grupos.value
+  return grupos.value.filter(g => g.professorId === professorFiltro.value)
+})
+
 const todosAlunosFiltrados = computed(() => {
   const termo = filtroEdicao.value.trim().toLowerCase()
+  const disponiveis = todosAlunos.value.filter(a => !jaMatriculadoEmOutraTurma(a.id))
   const lista = termo
-    ? todosAlunos.value.filter(a => a.nome.toLowerCase().includes(termo) || a.email.toLowerCase().includes(termo))
-    : todosAlunos.value
-  return [...lista].sort((a, b) => {
-    const aB = jaMatriculadoEmOutraTurma(a.id)
-    const bB = jaMatriculadoEmOutraTurma(b.id)
-    if (aB !== bB) return aB ? 1 : -1
-    return a.nome.localeCompare(b.nome)
-  })
+    ? disponiveis.filter(a =>
+        a.nome.toLowerCase().includes(termo) ||
+        a.email.toLowerCase().includes(termo)
+      )
+    : disponiveis
+  return [...lista].sort((a, b) => a.nome.localeCompare(b.nome))
 })
 
 function toggleMenu(turmaId) {
@@ -344,7 +493,6 @@ function navegar(rota) {
 }
 
 function abrirEdicaoMenu(turma) {
-  edicaoMeta.value = turma.meta_frequencia ?? 75
   menuAberto.value = null
   abrirEdicao(turma)
 }
@@ -373,18 +521,45 @@ function jaMatriculadoEmOutraTurma(alunoId) {
 function nomeTurmaDoAluno(alunoId) { return mapaMatriculas.value[alunoId]?.turmaNome || '' }
 
 async function carregarTurmas() {
+  loading.value = true
   const professorId = user.value?.id
   if (!professorId) { loading.value = false; return }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('turma')
-    .select('*, turma_aluno(count)')
-    .eq('professor_id', professorId)
+    .select(`
+      *,
+      turma_aluno(count),
+      usuarios_completo!professor_id(id, nome)
+    `)
     .order('nome', { ascending: true })
 
+  if (!isAdmin.value) {
+    query = query.eq('professor_id', professorId)
+  }
+
+  const { data, error } = await query
+
   if (error) console.error(error.message)
-  else turmas.value = data
+  else {
+    turmas.value = (data || []).map(t => ({
+      ...t,
+      professor_nome: t.usuarios_completo?.nome ?? null,
+    }))
+  }
+
   loading.value = false
+}
+
+async function carregarProfessores() {
+  const { data } = await supabase
+    .from('usuarios_completo')
+    .select('id, nome')
+    .eq('tipo_usuario', 'PROFESSOR')
+    .eq('ativo', true)
+    .order('nome', { ascending: true })
+
+  professores.value = data || []
 }
 
 async function carregarMatriculas() {
@@ -400,7 +575,6 @@ async function carregarMatriculas() {
 }
 
 async function carregarTodosAlunos() {
-  // usuarios_completo traz email + tipo_usuario
   const { data } = await supabase
     .from('usuarios_completo')
     .select('id, nome, email, tipo_usuario, ativo')
@@ -446,12 +620,15 @@ async function reativarTurma(turma) {
 }
 
 async function abrirCriacao() {
-  edicaoMeta.value = 75
   modo.value = 'criar'
-  edicaoNome.value = ''
+  edicaoIdentificador.value = ''
+  edicaoAno.value = new Date().getFullYear()
+  edicaoSemestre.value = new Date().getMonth() < 6 ? '01' : '02'
+  edicaoSala.value = ''
   edicaoAlunos.value = []
   alunosOriginais.value = []
   filtroEdicao.value = ''
+  professorSelecionadoCriacao.value = ''
   painelAberto.value = true
   loadingAlunos.value = true
   await Promise.all([carregarTodosAlunos(), carregarMatriculas()])
@@ -461,14 +638,20 @@ async function abrirCriacao() {
 async function abrirEdicao(turma) {
   modo.value = 'editar'
   turmaSelecionada.value = turma
-  edicaoNome.value = turma.nome
   edicaoAlunos.value = []
   filtroEdicao.value = ''
   painelAberto.value = true
   loadingAlunos.value = true
 
+  const partes = turma.nome.split(' - ')
+  edicaoIdentificador.value = partes[0] ?? turma.nome
+  const sufixo = partes[1] ?? ''
+  const [ano, sem] = sufixo.split('/')
+  edicaoAno.value = Number(ano) || new Date().getFullYear()
+  edicaoSemestre.value = sem || '01'
+  edicaoSala.value = turma.sala ?? ''
+
   const [{ data: vinculos }, { data: todos }] = await Promise.all([
-    // join com usuarios_completo para trazer email
     supabase
       .from('turma_aluno')
       .select('aluno_id, usuarios_completo(id, nome, email)')
@@ -508,7 +691,8 @@ function adicionarAluno(aluno) {
 function removerAluno(id) { edicaoAlunos.value = edicaoAlunos.value.filter(a => a.id !== id) }
 
 async function salvar() {
-  if (!edicaoNome.value.trim()) return
+  if (!edicaoIdentificador.value.trim()) return
+  if (isAdmin.value && modo.value === 'criar' && !professorSelecionadoCriacao.value) return
   salvando.value = true
   try {
     if (modo.value === 'criar') await salvarCriacao()
@@ -522,8 +706,11 @@ async function salvar() {
 }
 
 async function salvarCriacao() {
-  const professorId = user.value?.id
-  const nomeTrimmed = edicaoNome.value.trim()
+  const professorId = isAdmin.value
+    ? professorSelecionadoCriacao.value
+    : user.value?.id
+
+  const nomeTrimmed = nomeGerado.value.trim()
 
   if (turmas.value.some(t => t.nome.toLowerCase() === nomeTrimmed.toLowerCase())) {
     $toast.error('Já existe uma turma com este nome.')
@@ -532,7 +719,7 @@ async function salvarCriacao() {
 
   const { data: novaTurma, error } = await supabase
     .from('turma')
-    .insert([{ nome: nomeTrimmed, professor_id: professorId, meta_frequencia: edicaoMeta.value }])
+    .insert([{ nome: nomeTrimmed, professor_id: professorId, sala: edicaoSala.value.trim() || null }])
     .select()
     .single()
 
@@ -551,7 +738,7 @@ async function salvarCriacao() {
 }
 
 async function salvarEdicao() {
-  const nomeTrimmed = edicaoNome.value.trim()
+  const nomeTrimmed = nomeGerado.value.trim()
   const turmaId = turmaSelecionada.value.id
 
   if (turmas.value.some(t => t.nome.toLowerCase() === nomeTrimmed.toLowerCase() && t.id !== turmaId)) {
@@ -561,8 +748,8 @@ async function salvarEdicao() {
 
   const promessas = []
 
-  if (nomeTrimmed !== turmaSelecionada.value.nome || edicaoMeta.value !== turmaSelecionada.value.meta_frequencia) {
-    promessas.push(supabase.from('turma').update({ nome: nomeTrimmed, meta_frequencia: edicaoMeta.value }).eq('id', turmaId))
+  if (nomeTrimmed !== turmaSelecionada.value.nome || edicaoSala.value.trim() !== (turmaSelecionada.value.sala ?? '')) {
+    promessas.push(supabase.from('turma').update({ nome: nomeTrimmed, sala: edicaoSala.value.trim() || null }).eq('id', turmaId))
   }
 
   const idsAtuais = edicaoAlunos.value.map(a => a.id)
@@ -590,8 +777,11 @@ async function salvarEdicao() {
   await carregarTurmas()
 }
 
-onMounted(() => {
-  carregarTurmas()
+onMounted(async () => {
+  await carregarTurmas()
+  if (isAdmin.value) {
+    await carregarProfessores()
+  }
 })
 </script>
 

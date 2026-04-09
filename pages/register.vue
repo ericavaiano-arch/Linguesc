@@ -168,13 +168,15 @@ async function cadastrarUsuario() {
     .insert({
       id: data.user.id,
       nome: nome.value,
-      tipo_usuario: tipoUsuario.value, // era tipoUsuario, agora é tipo_usuario
     })
+    
 
   if (dbError) {
     $toast.error('Erro ao salvar perfil.')
     return
   }
+
+  await supabase.from('usuario_papel').insert({ usuario_id: data.user.id, papel: tipoUsuario.value })
 
   $toast.success('Cadastro realizado! Faça login para continuar.')
   navigateTo('/')

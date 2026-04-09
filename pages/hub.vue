@@ -49,33 +49,6 @@
         </div>
       </div>
 
-            <!-- Banner de notificações de risco -->
-      <div
-        v-if="isAluno && notificacoes.length > 0"
-        class="mb-6"
-      >
-        <div
-          v-for="notif in notificacoesNaoLidas"
-          :key="notif.id"
-          class="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 mb-3 flex items-start justify-between gap-4"
-        >
-          <div class="flex items-start gap-3">
-            <span class="text-xl flex-shrink-0 mt-0.5">⚠️</span>
-            <div>
-              <p class="text-sm font-semibold text-red-700 mb-0.5">Alerta de frequência</p>
-              <p class="text-sm text-red-600">{{ notif.mensagem }}</p>
-              <p class="text-xs text-red-400 mt-1">{{ formatarDataHora(notif.dt_inclusao) }}</p>
-            </div>
-          </div>
-          <button
-            @click="marcarLidas(user?.id)"
-            class="text-xs text-red-400 hover:text-red-600 transition flex-shrink-0 font-medium"
-          >
-            Fechar
-          </button>
-        </div>
-      </div>
-
       <!-- PROFESSOR -->
       <div v-if="isProfessor" @click="irPara('/dashboard')" class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
@@ -114,8 +87,60 @@
       </div>
 
       <!-- JUSTIFICATIVAS - PROFESSOR -->
-      <div
+      <!-- <div
         v-if="isProfessor || isAdmin"
+        @click="irPara('/justificativas')"
+        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">
+            📝 Justificativas
+          </h2>
+          <span v-if="pendentes > 0" class="text-xs bg-red-500 text-white px-3 py-1 rounded-full font-semibold">
+            {{ pendentes }} pendente(s)
+          </span>
+          <span v-else class="text-xs bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
+            Em dia
+          </span>
+        </div>
+        <p class="text-gray-500 text-sm leading-relaxed">
+          Avalie as justificativas de falta enviadas pelos alunos.
+        </p>
+        <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">
+          Acessar →
+        </div>
+      </div> -->
+
+      <!-- ADMIN -->
+      <div v-if="isAdmin" @click="irPara('/admin')" class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">📊 Dashboard Global</h2>
+          <span class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full">Visão geral</span>
+        </div>
+        <p class="text-gray-500 text-sm leading-relaxed">Visão completa de todos os professores, turmas e alunos.</p>
+        <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">Acessar →</div>
+      </div>
+
+      <div v-if="isAdmin" @click="irPara('/turmas')" class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">📚 Turmas</h2>
+          <span class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full">Gestão</span>
+        </div>
+        <p class="text-gray-500 text-sm leading-relaxed">Crie turmas, adicione alunos e gerencie as datas de aula.</p>
+        <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">Acessar →</div>
+      </div>
+
+      <div v-if="isAdmin" @click="irPara('/admin/usuarios')" class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">👥 Usuários</h2>
+          <span class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full">Gestão</span>
+        </div>
+        <p class="text-gray-500 text-sm leading-relaxed">Crie, edite e gerencie todos os professores e alunos cadastrados.</p>
+        <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">Acessar →</div>
+      </div>
+
+      <div
+        v-if="isAdmin"
         @click="irPara('/justificativas')"
         class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer"
       >
@@ -138,25 +163,6 @@
         </div>
       </div>
 
-      <!-- ADMIN -->
-      <div v-if="isAdmin" @click="irPara('/admin')" class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">📊 Dashboard Global</h2>
-          <span class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full">Visão geral</span>
-        </div>
-        <p class="text-gray-500 text-sm leading-relaxed">Visão completa de todos os professores, turmas e alunos.</p>
-        <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">Acessar →</div>
-      </div>
-
-      <div v-if="isAdmin" @click="irPara('/admin/usuarios')" class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">👥 Usuários</h2>
-          <span class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full">Gestão</span>
-        </div>
-        <p class="text-gray-500 text-sm leading-relaxed">Crie, edite e gerencie todos os professores e alunos cadastrados.</p>
-        <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">Acessar →</div>
-      </div>
-
       <div v-if="isAdmin" @click="irPara('/admin/configuracoes')" class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">⚙️ Configurações</h2>
@@ -176,6 +182,33 @@
         <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">Acessar →</div>
       </div> -->
 
+                  <!-- Banner de notificações de risco -->
+      <div
+        v-if="notificacoes.length > 0"
+        class="mb-6"
+      >
+        <div
+          v-for="notif in notificacoesNaoLidas"
+          :key="notif.id"
+          class="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 mb-3 flex items-start justify-between gap-4"
+        >
+          <div class="flex items-start gap-3">
+            <span class="text-xl flex-shrink-0 mt-0.5">⚠️</span>
+            <div>
+              <p class="text-sm font-semibold text-red-700 mb-0.5">Alerta de frequência</p>
+              <p class="text-sm text-red-600">{{ notif.mensagem }}</p>
+              <p class="text-xs text-red-400 mt-1">{{ formatarDataHora(notif.dt_inclusao) }}</p>
+            </div>
+          </div>
+          <button
+            @click="marcarLidas(user?.id)"
+            class="text-xs text-red-400 hover:text-red-600 transition flex-shrink-0 font-medium"
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
@@ -189,22 +222,18 @@ const { count: pendentes, carregar: carregarPendentes } = useJustificativasPende
 
 function irPara(rota) { router.push(rota) }
 
-onMounted(() => {
-  if (user.value?.tipoUsuario === 'PROFESSOR') {
-    carregarPendentes(user.value.id)
-  }
-})
-
 const { notificacoes, carregar: carregarNotificacoes, marcarLidas } = useNotificacoes()
 
 const notificacoesNaoLidas = computed(() =>
   notificacoes.value.filter(n => !n.lida)
 )
 
-// Dentro do onMounted existente, adiciona:
-if (user.value?.tipoUsuario === 'ALUNO') {
-  carregarNotificacoes(user.value.id)
-}
+onMounted(() => {
+  if (isProfessor.value) {
+    carregarPendentes(user.value.id)
+  }
+  carregarNotificacoes(user.value?.id)
+})
 
 function formatarDataHora(dtStr) {
   if (!dtStr) return ''

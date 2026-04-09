@@ -70,15 +70,15 @@
                   </span>
                 </div>
                 <p class="text-xs text-gray-400 mb-3">
-                  {{ turma.totalAlunos }} aluno(s) · {{ turma.aulasRealizadas }} aula(s) · meta {{ turma.meta_frequencia }}%
+                  {{ turma.totalAlunos }} aluno(s) · {{ turma.aulasRealizadas }} aula(s) · meta {{ metaFrequencia }}%
                 </p>
                 <div class="flex gap-2">
-                  <button
+                  <!-- <button
                     @click="$router.push(`/turmas/${turma.id}/historico`)"
                     class="flex-1 text-xs font-semibold py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition"
                   >
                     📋 Histórico
-                  </button>
+                  </button> -->
                   <button
                     @click="$router.push(`/turmas/${turma.id}/relatorio`)"
                     class="flex-1 text-xs font-semibold py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
@@ -107,6 +107,7 @@ const professores = ref([])
 const todasTurmas = ref([])
 const todasAulas = ref([])
 const todosVinculos = ref([])
+const { metaFrequencia, carregarConfig } = useConfigSistema()
 
 onMounted(async () => {
   const [
