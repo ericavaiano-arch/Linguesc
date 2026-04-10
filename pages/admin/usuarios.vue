@@ -136,14 +136,54 @@
             <input v-model="form.senha" type="password" placeholder="Mínimo 8 caracteres"
               class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
           </div>
-          <div>
-            <label class="text-sm font-medium text-gray-700 mb-2 block">Tipo de Usuário</label>
-            <select v-model="form.tipo_usuario"
-              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition">
-              <option value="ALUNO">Aluno</option>
-              <option value="PROFESSOR">Professor</option>
-              <option value="ADMIN">Admin</option>
-            </select>
+          
+         <div v-if="modo === 'criar'">
+            <label class="text-sm font-medium text-gray-700 mb-3 block">Papéis</label>
+
+            <!-- Papéis selecionados -->
+            <div class="flex flex-wrap gap-2 mb-3">
+              <div
+                v-for="papel in papeisCriacao"
+                :key="papel"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+                :class="{
+                  'bg-purple-100 text-purple-700': papel === 'ADMIN',
+                  'bg-blue-100 text-blue-700': papel === 'PROFESSOR',
+                  'bg-green-100 text-green-700': papel === 'ALUNO',
+                }"
+              >
+                {{ papel }}
+                <button
+                  @click="removerPapelCriacao(papel)"
+                  class="hover:opacity-60 transition font-bold text-sm leading-none"
+                >×</button>
+              </div>
+              <span v-if="papeisCriacao.length === 0" class="text-xs text-gray-400">
+                Nenhum papel selecionado.
+              </span>
+            </div>
+
+            <!-- Adicionar papel -->
+            <div class="flex gap-2">
+              <select
+                v-model="novoPapel"
+                class="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+              >
+                <option value="">Selecionar papel...</option>
+                <option
+                  v-for="opcao in ['ALUNO', 'PROFESSOR', 'ADMIN'].filter(o => !papeisCriacao.includes(o))"
+                  :key="opcao"
+                  :value="opcao"
+                >{{ opcao }}</option>
+              </select>
+              <button
+                @click="adicionarPapelCriacao(novoPapel)"
+                :disabled="!novoPapel"
+                class="px-4 py-2 bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-sm font-semibold transition"
+              >
+                + Adicionar
+              </button>
+            </div>
           </div>
 
           <!-- Papéis (só na edição) -->
@@ -238,14 +278,15 @@ const form = ref({
   nome: '',
   email: '',
   senha: '',
-  tipo_usuario: 'ALUNO',
 })
+const papeisCriacao = ref([])
 
+// ── Filtro corrigido ──────────────────────────────────────────────
 const usuariosFiltrados = computed(() => {
   return usuarios.value.filter(u => {
     const termo = filtro.value.trim().toLowerCase()
     const matchTexto = !termo || u.nome.toLowerCase().includes(termo) || u.email.toLowerCase().includes(termo)
-    const matchTipo = !filtroTipo.value || u.tipo_usuario === filtroTipo.value
+    const matchTipo = !filtroTipo.value || u.papeis.includes(filtroTipo.value) // ✅ array
     const matchAtivo = filtroAtivo.value === '' || String(u.ativo) === filtroAtivo.value
     return matchTexto && matchTipo && matchAtivo
   })
@@ -253,7 +294,6 @@ const usuariosFiltrados = computed(() => {
 
 async function carregarUsuarios() {
   loading.value = true
-
   const { data, error } = await supabase
     .from('usuarios_completo')
     .select('*, usuario_papel(papel, ativo)')
@@ -269,31 +309,43 @@ async function carregarUsuarios() {
         .map(p => p.papel),
     }))
   }
-
   loading.value = false
 }
+
 function abrirCriacao() {
   modo.value = 'criar'
-  form.value = { nome: '', email: '', senha: '', tipo_usuario: 'ALUNO' }
+  form.value = { nome: '', email: '', senha: '' }
   painelAberto.value = true
 }
 
 function abrirEdicao(usuario) {
   modo.value = 'editar'
   usuarioEditando.value = usuario
-  form.value = {
-    nome: usuario.nome,
-    email: usuario.email,
-    senha: '',
-    tipo_usuario: usuario.tipo_usuario,
-  }
-  carregarPapeisUsuario(usuario.id) // adicionar
+  form.value = { nome: usuario.nome, email: usuario.email, senha: '' }
+  carregarPapeisUsuario(usuario.id)
   painelAberto.value = true
 }
 
 function fecharPainel() {
   painelAberto.value = false
   usuarioEditando.value = null
+  papeisUsuario.value = []
+  papeisCriacao.value = []
+  novoPapel.value = ''
+}
+
+function adicionarPapelCriacao(papel) {
+  if (!papel || papeisCriacao.value.includes(papel)) return
+  papeisCriacao.value.push(papel)
+  novoPapel.value = ''
+}
+
+function removerPapelCriacao(papel) {
+  if (papeisCriacao.value.length <= 1) {
+    $toast.warning('O usuário precisa ter pelo menos um papel.')
+    return
+  }
+  papeisCriacao.value = papeisCriacao.value.filter(p => p !== papel)
 }
 
 async function salvar() {
@@ -307,7 +359,6 @@ async function salvar() {
         return
       }
 
-      // 1. Cria no Auth
       const { data, error: authError } = await supabase.auth.signUp({
         email: form.value.email.trim(),
         password: form.value.senha,
@@ -318,14 +369,11 @@ async function salvar() {
         return
       }
 
-      // 2. Insere perfil
+      const novoId = data.user.id
+
       const { error: dbError } = await supabase
         .from('usuarios')
-        .insert({
-          id: data.user.id,
-          nome: form.value.nome.trim(),
-          tipo_usuario: form.value.tipo_usuario,
-        })
+        .insert({ id: novoId, nome: form.value.nome.trim() })
 
       if (dbError) {
         $toast.error('Erro ao salvar perfil do usuário.')
@@ -333,21 +381,21 @@ async function salvar() {
         return
       }
 
+      // Insere o papel selecionado após ter o id
+      await supabase
+        .from('usuario_papel')
+        .insert(papeisCriacao.value.map(papel => ({ usuario_id: novoId, papel, ativo: true })))
+
       $toast.success('Usuário criado com sucesso!')
 
     } else {
-      // Edição: só atualiza nome e tipo_usuario em usuarios
-      // Email e senha são gerenciados pelo Supabase Auth separadamente
+      // Edição: só nome, sem tipo_usuario
       const { error } = await supabase
         .from('usuarios')
-        .update({
-          nome: form.value.nome.trim(),
-          tipo_usuario: form.value.tipo_usuario,
-        })
+        .update({ nome: form.value.nome.trim() })
         .eq('id', usuarioEditando.value.id)
 
       if (error) throw error
-
       $toast.success('Usuário atualizado!')
     }
 
@@ -388,10 +436,9 @@ async function adicionarPapel(papel) {
   const existente = papeisUsuario.value.find(p => p.papel === papel)
 
   if (existente && !existente.ativo) {
-    // Reativa papel existente
     await supabase.from('usuario_papel').update({ ativo: true }).eq('id', existente.id)
   } else if (!existente) {
-    await supabase.from('usuario_papel').insert({ usuario_id: usuarioEditando.value.id, papel })
+    await supabase.from('usuario_papel').insert({ usuario_id: usuarioEditando.value.id, papel, ativo: true })
   }
 
   await carregarPapeisUsuario(usuarioEditando.value.id)

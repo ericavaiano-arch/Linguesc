@@ -33,6 +33,7 @@
             @input="validarEmail"
             type="email"
             placeholder="Digite o e-mail"
+            disabled
             :class="[
               'w-full rounded-lg px-4 py-2 focus:outline-none focus:ring-2 transition',
               emailInvalido

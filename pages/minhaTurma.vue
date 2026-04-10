@@ -27,6 +27,9 @@
             <p class="text-sm text-gray-500 mt-1">
               👨‍🏫 {{ nomeProfessor }}
             </p>
+            <p v-if="turma.sala" class="text-sm text-gray-500 mt-0.5">
+              🚪 Sala {{ turma.sala }}
+            </p>
           </div>
           <span
             class="text-xs font-semibold px-3 py-1 rounded-full"
@@ -203,9 +206,11 @@ onMounted(async () => {
   if (!alunoId) { loading.value = false; return }
 
   // Busca vínculo + turma
+
   const { data: vinculo } = await supabase
     .from('turma_aluno')
-    .select('turma_id, turma(id, nome, status, meta_frequencia, professor_id)')
+    .select('turma_id, turma(id, nome, status, meta_frequencia, professor_id, sala)')
+    // adicione aqui qualquer campo extra que precisar ↑
     .eq('aluno_id', alunoId)
     .single()
 

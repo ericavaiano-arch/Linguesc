@@ -17,9 +17,6 @@
       <!-- Meta padrão -->
       <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
         <h2 class="text-lg font-semibold text-gray-800 mb-1">🎯 Meta de Frequência Padrão</h2>
-        <p class="text-sm text-gray-400 mb-5">
-          Valor padrão ao criar novas turmas. Cada turma pode ter sua própria meta após a criação.
-        </p>
 
         <label class="text-sm font-medium text-gray-700 mb-2 block">
           Meta padrão

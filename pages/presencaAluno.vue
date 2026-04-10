@@ -121,7 +121,7 @@
                     <span
                       v-else-if="justificativaStatus(aula.id) === 'PENDENTE'"
                       class="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700"
-                      title="Aguardando avaliação"
+                      title="Pendente Justificativa"
                     >⏳</span>
                     <button
                       v-else-if="justificativaStatus(aula.id) === 'REJEITADA'"
@@ -153,7 +153,7 @@
             </span>
             <span class="flex items-center gap-1.5">
               <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-yellow-100 text-yellow-700 font-bold text-xs">⏳</span>
-              Aguardando
+              Pendente Justificativa
             </span>
             <span class="flex items-center gap-1.5">
               <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-100 text-red-600 font-bold text-xs">✗</span>

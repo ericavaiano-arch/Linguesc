@@ -81,7 +81,7 @@
         </div>
 
         <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-          <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-6">⚠️ Alunos em risco</h2>
+          <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-6">⚠️ Frequência abaixo da meta</h2>
 
           <div v-if="alunosEmRisco.length === 0" class="text-sm text-gray-400 text-center py-8">
             🎉 Nenhum aluno abaixo da meta.

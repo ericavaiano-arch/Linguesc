@@ -1,45 +1,45 @@
 <template>
-  <div class="min-h-screen bg-gray-50 p-8">
+  <div class="min-h-screen bg-gray-50 p-4 md:p-8">
 
-    <!-- Header (não imprime) -->
+    <!-- Header -->
     <div class="mb-8">
       <button @click="$router.back()" class="text-sm text-gray-400 hover:text-gray-600 transition mb-4 flex items-center gap-1">
         ← Voltar
       </button>
-      <div class="flex items-start justify-between">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 class="text-3xl font-bold text-green-700">Relatório — {{ turma?.nome }}</h1>
-          <p class="text-gray-500 mt-2">Lista completa de presença por aluno.</p>
+          <h1 class="text-2xl md:text-3xl font-bold text-green-700">{{ turma?.nome }}</h1>
+          <p class="text-md md:text-lg font-bold text-green-600">{{ turma?.sala != null ? 'Sala ' + turma?.sala : '' }}</p>
+          <p class="text-gray-500 mt-2 text-sm">Lista completa de presença por aluno.</p>
           <div class="w-20 h-1 bg-green-600 mt-4 rounded"></div>
         </div>
-        <div class="flex gap-3" v-if="!loading">
-          <button @click="exportarCSV" class="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">
+        <div class="flex gap-3 flex-wrap" v-if="!loading">
+          <button @click="exportarCSV" class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">
             📥 Exportar CSV
           </button>
-          <button @click="imprimirPDF" class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition">
+          <button @click="imprimirPDF" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition">
             🖨️ Imprimir / PDF
           </button>
         </div>
       </div>
     </div>
 
-    <div v-if="loading" class="flex items-center gap-3 text-green-700 no-print">
+    <div v-if="loading" class="flex items-center gap-3 text-green-700">
       <div class="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
       <span>Carregando...</span>
     </div>
 
-    <!-- ── RELATÓRIO (imprimível) ── -->
     <div v-else class="print-area">
 
-      <!-- Cabeçalho do relatório impresso -->
+      <!-- Cabeçalho impresso -->
       <div class="print-header hidden-screen mb-8">
         <h1 class="text-2xl font-bold text-gray-800">{{ turma?.nome }}</h1>
         <p class="text-sm text-gray-500 mt-1">Relatório de Presença · Gerado em {{ dataGeracao }}</p>
         <div class="w-full border-b border-gray-300 mt-4"></div>
       </div>
 
-      <!-- Resumo -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <!-- Cards de resumo -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
         <div class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm print-card">
           <p class="text-xs text-gray-400 mb-1">Total de alunos</p>
           <p class="text-2xl font-bold text-green-700">{{ alunos.length }}</p>
@@ -58,70 +58,71 @@
         </div>
       </div>
 
-      <!-- Tabela principal -->
+      <!-- Tabela -->
       <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div class="px-4 md:px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <h2 class="text-base font-semibold text-gray-800">Frequência por Aluno</h2>
-          <span class="text-xs text-gray-400">{{ aulasRealizadas.length }} aula(s) considerada(s)</span>
+          <span class="text-xs text-gray-400">{{ aulasRealizadas.length }} aula(s)</span>
         </div>
 
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
-          <thead>
-            <tr class="bg-gray-50 border-b border-gray-100">
-              <th
-                class="text-left px-6 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide cursor-pointer hover:text-gray-800 transition select-none"
-                @click="alternarOrdem('nome')"
-              >
-                Aluno
-                <span class="ml-1 text-gray-300">
-                  {{ ordemColuna === 'nome' ? (ordemDirecao === 'asc' ? '↑' : '↓') : '↕' }}
-                </span>
-              </th>
-              <th
-                v-for="aula in aulasRealizadas"
-                :key="aula.id"
-                class="text-center px-3 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide whitespace-nowrap"
-              >
-                {{ formatarDataCurta(aula.data) }}
-              </th>
-              <th class="text-center px-6 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">
-                Presenças
-              </th>
-              <th
-                class="text-center px-6 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide cursor-pointer hover:text-gray-800 transition select-none"
-                @click="alternarOrdem('frequencia')"
-              >
-                %
-                <span class="ml-1 text-gray-300">
-                  {{ ordemColuna === 'frequencia' ? (ordemDirecao === 'asc' ? '↑' : '↓') : '↕' }}
-                </span>
-              </th>
-            </tr>
-          </thead>
+            <thead>
+              <tr class="bg-gray-50 border-b border-gray-100">
+                <th
+                  class="text-left px-4 md:px-6 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide cursor-pointer hover:text-gray-800 transition select-none sticky left-0 bg-gray-50 z-10"
+                  @click="alternarOrdem('nome')"
+                >
+                  Aluno
+                  <span class="ml-1 text-gray-300">
+                    {{ ordemColuna === 'nome' ? (ordemDirecao === 'asc' ? '↑' : '↓') : '↕' }}
+                  </span>
+                </th>
+                <!-- Colunas de datas: ocultas no mobile -->
+                <th
+                  v-for="aula in aulasRealizadas"
+                  :key="aula.id"
+                  class="text-center px-3 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide whitespace-nowrap hidden md:table-cell"
+                >
+                  {{ formatarDataCurta(aula.data) }}
+                </th>
+                <th class="text-center px-4 md:px-6 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">
+                  Presenças
+                </th>
+                <th
+                  class="text-center px-4 md:px-6 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide cursor-pointer hover:text-gray-800 transition select-none"
+                  @click="alternarOrdem('frequencia')"
+                >
+                  %
+                  <span class="ml-1 text-gray-300">
+                    {{ ordemColuna === 'frequencia' ? (ordemDirecao === 'asc' ? '↑' : '↓') : '↕' }}
+                  </span>
+                </th>
+              </tr>
+            </thead>
             <tbody class="divide-y divide-gray-50">
               <tr
                 v-for="aluno in tabelaAlunos"
                 :key="aluno.id"
                 class="hover:bg-gray-50 transition"
               >
-                <td class="px-6 py-3 font-medium text-gray-800 whitespace-nowrap">
+                <td class="px-4 md:px-6 py-3 font-medium text-gray-800 whitespace-nowrap sticky left-0 bg-white z-10">
                   {{ aluno.nome }}
                   <span v-if="!aluno.ativo" class="ml-1 text-xs bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full">Inativo</span>
                 </td>
-                <!-- Substitui o <span> dentro do v-for de aulasRealizadas no tbody -->
+                <!-- Células de datas: ocultas no mobile -->
                 <td
                   v-for="aula in aulasRealizadas"
                   :key="aula.id"
-                  class="text-center px-3 py-3"
+                  class="text-center px-3 py-3 hidden md:table-cell"
                 >
                   <span
                     class="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold"
                     :class="{
-                      'bg-green-100 text-green-700':  aluno.presencasPorAula[aula.id] === 'P',
-                      'bg-blue-100 text-blue-700':    aluno.presencasPorAula[aula.id] === 'J',
+                      'bg-green-100 text-green-700':   aluno.presencasPorAula[aula.id] === 'P',
+                      'bg-blue-100 text-blue-700':     aluno.presencasPorAula[aula.id] === 'J',
                       'bg-yellow-100 text-yellow-700': aluno.presencasPorAula[aula.id] === 'PENDENTE',
-                      'bg-red-100 text-red-600':      aluno.presencasPorAula[aula.id] === 'F',
+                      'bg-red-100 text-red-600':       aluno.presencasPorAula[aula.id] === 'F',
                     }"
                   >
                     {{
@@ -131,10 +132,10 @@
                     }}
                   </span>
                 </td>
-                <td class="text-center px-6 py-3 font-semibold text-gray-700">
+                <td class="text-center px-4 md:px-6 py-3 font-semibold text-gray-700">
                   {{ aluno.totalPresencas }}/{{ aulasRealizadas.length }}
                 </td>
-                <td class="text-center px-6 py-3">
+                <td class="text-center px-4 md:px-6 py-3">
                   <span
                     class="font-bold text-sm"
                     :class="aluno.frequencia >= metaFrequencia ? 'text-green-600' : aluno.frequencia >= 50 ? 'text-yellow-600' : 'text-red-600'"
@@ -147,7 +148,12 @@
             </tbody>
           </table>
 
-          <div class="px-6 py-3 border-t border-gray-50 flex items-center flex-wrap gap-4 text-xs text-gray-400">
+          <!-- Aviso mobile sobre colunas ocultas -->
+          <div class="md:hidden px-4 py-2 bg-yellow-50 border-t border-yellow-100 text-xs text-yellow-700 flex items-center gap-1.5">
+            ℹ️ Detalhe por aula disponível apenas em telas maiores ou no PDF.
+          </div>
+
+          <div class="px-4 md:px-6 py-3 border-t border-gray-50 flex items-center flex-wrap gap-3 md:gap-4 text-xs text-gray-400">
             <span class="flex items-center gap-1.5">
               <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 text-green-700 font-bold text-xs">✓</span>
               Presente
@@ -158,14 +164,32 @@
             </span>
             <span class="flex items-center gap-1.5">
               <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-yellow-100 text-yellow-700 font-bold text-xs">⏳</span>
-              Aguardando
+              Pendente
             </span>
             <span class="flex items-center gap-1.5">
               <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-100 text-red-600 font-bold text-xs">✗</span>
               Falta
             </span>
           </div>
+        </div>
+      </div>
 
+      <!-- Gráfico -->
+      <div class="mt-8 bg-white border border-gray-200 rounded-2xl p-4 md:p-6 shadow-sm">
+        <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-6">
+          📈 Evolução da frequência por aula
+        </h2>
+
+        <div v-if="dadosGraficoTurma.labels.length === 0" class="text-sm text-gray-400 text-center py-12">
+          Nenhuma aula realizada para exibir evolução.
+        </div>
+
+        <div v-else class="h-56 md:h-64">
+          <Line
+            ref="graficoRef"
+            :data="dadosGraficoTurma"
+            :options="opcoesGraficoTurma"
+          />
         </div>
       </div>
 
@@ -185,6 +209,19 @@ import { supabase } from '@/utils/supabase'
 import { calcularFrequenciaSync } from '~/composables/usePresenca'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { Line } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js'
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler)
 
 definePageMeta({ middleware: 'professor' })
 
@@ -202,10 +239,84 @@ const ordemDirecao = ref('asc')
 const nomeProfessor = ref('')
 const { metaFrequencia, carregarConfig } = useConfigSistema()
 
+
 const dataGeracao = new Date().toLocaleDateString('pt-BR', {
   day: '2-digit', month: '2-digit', year: 'numeric',
   hour: '2-digit', minute: '2-digit'
 })
+
+const graficoRef = ref(null)
+
+const dadosGraficoTurma = computed(() => {
+  if (!turma.value) return { labels: [], datasets: [] }
+
+  const aulasRealizadas = aulas.value
+    .filter(a => a.status === 'REALIZADA')
+    .sort((a, b) => a.data.localeCompare(b.data))
+
+  if (aulasRealizadas.length === 0) return { labels: [], datasets: [] }
+
+  const dados = aulasRealizadas.map((_, idx) => {
+    const aulasAte = aulasRealizadas.slice(0, idx + 1).map(a => a.id)
+    let soma = 0, count = 0
+
+    alunos.value.forEach(v => {
+      const freq = calcularFrequenciaSync(
+        v.id,
+        aulasAte,
+        presencas.value.map(p => ({ aluno_id: p.aluno_id, aula_id: p.aula_id })),
+        justificativas.value.filter(j => j.status === 'ACEITA').map(j => ({ aluno_id: j.aluno_id, aula_id: j.aula_id }))
+      )
+      soma += freq.frequencia
+      count++
+    })
+
+    return count > 0 ? Math.round(soma / count) : 0
+  })
+
+  return {
+    labels: aulasRealizadas.map(a => formatarDataCurta(a.data)),
+    datasets: [{
+      label: 'Frequência média da turma',
+      data: dados,
+      borderColor: '#16a34a',
+      backgroundColor: 'rgba(22, 163, 74, 0.1)',
+      borderWidth: 2,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      tension: 0.3,
+      fill: true,
+    }]
+  }
+})
+
+const opcoesGraficoTurma = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: false,
+    },
+    tooltip: {
+      callbacks: {
+        label: ctx => ` Frequência média: ${ctx.parsed.y}%`,
+      },
+    },
+  },
+  scales: {
+    y: {
+      min: 0,
+      max: 100,
+      ticks: { callback: v => v + '%', font: { size: 11 } },
+      grid: { color: 'rgba(0,0,0,0.05)' },
+    },
+    x: {
+      ticks: { font: { size: 10 } },
+      grid: { display: false },
+    },
+  },
+  animation: false, // importante para captura PDF ser síncrona
+}
 
 onMounted(async () => {
   const [
@@ -502,7 +613,31 @@ function imprimirPDF() {
   doc.setFontSize(7)
   doc.setTextColor(156, 163, 175)
   doc.setFont('helvetica', 'normal')
-  doc.text('Legenda: P = Presente; J = Justificada; ? = Aguardando avaliação; F = Falta', 14, legendaY)
+  doc.text('Legenda: P = Presente; J = Justificada; ? = Pendente Justificativa; F = Falta', 14, legendaY)
+
+  // Captura o canvas do gráfico como imagem
+  if (graficoRef.value) {
+    const chartInstance = graficoRef.value.chart
+    if (chartInstance) {
+      const imgData = chartInstance.toBase64Image()
+      const pageWidth = doc.internal.pageSize.getWidth()
+      const margin = 14
+      const imgWidth = pageWidth - margin * 2
+      const imgHeight = imgWidth * (256 / 600) // proporcional ao h-64 aprox
+
+      // Verifica se cabe na página atual ou pula para nova
+      if (doc.internal.getCurrentPageInfo().pageNumber > 0) {
+        doc.addPage()
+      }
+
+      doc.setFontSize(10)
+      doc.setTextColor(100)
+      doc.text('Evolução da frequência por aula', margin, doc.internal.cursor?.y ?? 20)
+
+      const yGrafico = (doc.internal.cursor?.y ?? 20) + 6
+      doc.addImage(imgData, 'PNG', margin, yGrafico, imgWidth, imgHeight)
+    }
+  }
 
   doc.save(`presenca_${turmaName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`)
 }
