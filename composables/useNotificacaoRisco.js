@@ -1,7 +1,6 @@
 import { supabase } from '~/utils/supabase'
 
 export async function verificarENotificarRisco({ turmaId, professorId, metaFrequencia }) {
-  console.log('oii')
   // Busca todos os alunos ativos da turma
   const { data: vinculos } = await supabase
     .from('turma_aluno')
@@ -55,7 +54,6 @@ export async function verificarENotificarRisco({ turmaId, professorId, metaFrequ
     })
     .filter(a => a.frequencia < metaFrequencia)
 
-    console.log('alunosEmRisco', alunosEmRisco)
   if (!alunosEmRisco.length) return
 
   // Busca notificações já enviadas hoje para não duplicar
@@ -65,8 +63,6 @@ export async function verificarENotificarRisco({ turmaId, professorId, metaFrequ
     .select('aluno_id')
     .eq('turma_id', turmaId)
     .gte('dt_inclusao', hoje + 'T00:00:00')
-
-    console.log('jaNotificados', jaNotificados)
 
   const jaNotificadosIds = new Set((jaNotificados || []).map(n => n.aluno_id))
 

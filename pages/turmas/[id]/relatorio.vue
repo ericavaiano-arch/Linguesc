@@ -53,7 +53,7 @@
           <p class="text-2xl font-bold" :class="frequenciaMedia >= metaFrequencia ? 'text-green-700' : 'text-red-600'">{{ frequenciaMedia }}%</p>
         </div>
         <div class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm print-card">
-          <p class="text-xs text-gray-400 mb-1">Alunos em risco</p>
+          <p class="text-xs text-gray-400 mb-1">Alunos com frequência abaixo da média</p>
           <p class="text-2xl font-bold" :class="alunosEmRisco > 0 ? 'text-red-600' : 'text-green-700'">{{ alunosEmRisco }}</p>
         </div>
       </div>
@@ -138,7 +138,7 @@
                 <td class="text-center px-4 md:px-6 py-3">
                   <span
                     class="font-bold text-sm"
-                    :class="aluno.frequencia >= metaFrequencia ? 'text-green-600' : aluno.frequencia >= 50 ? 'text-yellow-600' : 'text-red-600'"
+                    :class="aluno.frequencia >= 80 ? 'text-green-600' : aluno.frequencia >= metaFrequencia ? 'text-yellow-600' : 'text-red-600'"
                   >
                     {{ aluno.frequencia }}%
                   </span>
@@ -424,7 +424,7 @@ function exportarCSV() {
   const cabecalho = [
     'Aluno',
     ...aulasRealizadas.value.map(a => formatarDataCurta(a.data)),
-    'Válidas', // presença + justificadas
+    'Presenças', // presença + justificadas
     'Faltas',
     'Frequência (%)'
   ]
@@ -490,7 +490,7 @@ function imprimirPDF() {
     { label: 'Total de alunos', valor: String(alunos.value.length) },
     { label: 'Aulas realizadas', valor: String(aulasRealizadas.value.length) },
     { label: 'Frequência média', valor: `${frequenciaMedia.value}%` },
-    { label: 'Alunos em risco', valor: String(alunosEmRisco.value) },
+    { label: 'Alunos com frequência abaixo da média', valor: String(alunosEmRisco.value) },
   ]
 
   const cardW = 60, cardH = 16, cardY = 40, cardGap = 5
@@ -510,7 +510,7 @@ function imprimirPDF() {
     doc.setFontSize(13)
     doc.setFont('helvetica', 'bold')
 
-    if (card.label === 'Alunos em risco' && alunosEmRisco.value > 0) {
+    if (card.label === 'Alunos com frequência abaixo da média' && alunosEmRisco.value > 0) {
       doc.setTextColor(220, 38, 38)
     } else if (card.label === 'Frequência média' && frequenciaMedia.value < metaFrequencia.value) {
       doc.setTextColor(220, 38, 38)
@@ -524,7 +524,7 @@ function imprimirPDF() {
   const cabecalho = [
     'Aluno',
     ...aulasRealizadas.value.map(a => formatarDataCurta(a.data)),
-    'Válidas',
+    'Presenças',
     '%',
   ]
 
@@ -608,36 +608,36 @@ function imprimirPDF() {
     },
   })
 
-  // Após o autoTable, antes do doc.save
-  const legendaY = doc.lastAutoTable.finalY + 6
-  doc.setFontSize(7)
-  doc.setTextColor(156, 163, 175)
-  doc.setFont('helvetica', 'normal')
-  doc.text('Legenda: P = Presente; J = Justificada; ? = Pendente Justificativa; F = Falta', 14, legendaY)
+  // // Após o autoTable, antes do doc.save
+  // const legendaY = doc.lastAutoTable.finalY + 6
+  // doc.setFontSize(7)
+  // doc.setTextColor(156, 163, 175)
+  // doc.setFont('helvetica', 'normal')
+  // doc.text('Legenda: P = Presente; J = Justificada; ? = Pendente Justificativa; F = Falta', 14, legendaY)
 
-  // Captura o canvas do gráfico como imagem
-  if (graficoRef.value) {
-    const chartInstance = graficoRef.value.chart
-    if (chartInstance) {
-      const imgData = chartInstance.toBase64Image()
-      const pageWidth = doc.internal.pageSize.getWidth()
-      const margin = 14
-      const imgWidth = pageWidth - margin * 2
-      const imgHeight = imgWidth * (256 / 600) // proporcional ao h-64 aprox
+  // // Captura o canvas do gráfico como imagem
+  // if (graficoRef.value) {
+  //   const chartInstance = graficoRef.value.chart
+  //   if (chartInstance) {
+  //     const imgData = chartInstance.toBase64Image()
+  //     const pageWidth = doc.internal.pageSize.getWidth()
+  //     const margin = 14
+  //     const imgWidth = pageWidth - margin * 2
+  //     const imgHeight = imgWidth * (256 / 600) // proporcional ao h-64 aprox
 
-      // Verifica se cabe na página atual ou pula para nova
-      if (doc.internal.getCurrentPageInfo().pageNumber > 0) {
-        doc.addPage()
-      }
+  //     // Verifica se cabe na página atual ou pula para nova
+  //     if (doc.internal.getCurrentPageInfo().pageNumber > 0) {
+  //       doc.addPage()
+  //     }
 
-      doc.setFontSize(10)
-      doc.setTextColor(100)
-      doc.text('Evolução da frequência por aula', margin, doc.internal.cursor?.y ?? 20)
+  //     doc.setFontSize(10)
+  //     doc.setTextColor(100)
+  //     doc.text('Evolução da frequência por aula', margin, doc.internal.cursor?.y ?? 20)
 
-      const yGrafico = (doc.internal.cursor?.y ?? 20) + 6
-      doc.addImage(imgData, 'PNG', margin, yGrafico, imgWidth, imgHeight)
-    }
-  }
+  //     const yGrafico = (doc.internal.cursor?.y ?? 20) + 6
+  //     doc.addImage(imgData, 'PNG', margin, yGrafico, imgWidth, imgHeight)
+  //   }
+  // }
 
   doc.save(`presenca_${turmaName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`)
 }
