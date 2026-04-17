@@ -90,6 +90,7 @@ const { $toast } = useNuxtApp();
 
 const email = ref("");
 const senha = ref("");
+const carregando = ref(false);
 
 async function verificarUsuario() {
   if (!email.value || !senha.value) {
@@ -97,15 +98,21 @@ async function verificarUsuario() {
     return;
   }
 
-  const erro = await login(email.value, senha.value);
+  carregando.value = true;
+  try {
+    const erro = await login(email.value, senha.value);
 
-  if (erro) {
-    $toast.error(erro);
-    return;
+    if (erro) {
+      $toast.error(erro);
+      return;
+    }
+
+    navigateTo(precisaSelecionarPapel.value ? "/selecionar-papel" : "/hub");
+  } finally {
+    carregando.value = false;
   }
-
-  navigateTo(precisaSelecionarPapel.value ? "/selecionar-papel" : "/hub");
 }
+
 function goToProfile() {
   navigateTo("/register");
 }
