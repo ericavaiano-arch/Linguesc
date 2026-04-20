@@ -656,7 +656,7 @@ const projecao = computed(() => {
   if (frequenciaProjetada >= meta) {
     mensagem =
       faltasRestantes === 0
-        ? `Você atingirá exatamente a meta de ${meta}%. Não pode mais faltar.`
+        ? `Acima da meta. Não pode mais faltar.`
         : `Acima da meta. Pode faltar mais ${faltasRestantes} aula(s) e manter os ${meta}%.`;
   } else {
     const presencasNecessarias =
