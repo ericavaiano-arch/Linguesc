@@ -35,7 +35,7 @@
         <p
           class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1"
         >
-          Alunos
+          Alunos cadastrados
         </p>
         <p class="text-3xl font-bold text-blue-600">{{ stats.alunos }}</p>
       </div>
@@ -43,7 +43,7 @@
         <p
           class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1"
         >
-          Professores
+          Professores cadastrados
         </p>
         <p class="text-3xl font-bold text-purple-600">
           {{ stats.professores }}

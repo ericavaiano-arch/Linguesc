@@ -27,86 +27,93 @@
 
     <div v-else class="space-y-6">
       <!-- ── TOPO FIXO: status rápido ── -->
-      <div class="bg-white border rounded-2xl p-6 shadow-sm" :class="corBorda">
-        <p class="text-xs text-gray-400 mb-4 font-medium">
-          {{ turma.nome }}
-          <span class="ml-2">· Meta: {{ metaFrequencia }}%</span>
-        </p>
+      <div class="bg-white border rounded-2xl px-6 py-5 shadow-sm" :class="corBorda">
 
-        <div class="grid grid-cols-3 gap-4 mb-5">
-          <div class="text-center p-4 rounded-xl bg-green-50">
-            <p class="text-3xl font-bold text-green-700">
-              {{ freq.totalValidas }}
-            </p>
-            <p
-              class="text-xs text-gray-400 mt-1 font-medium uppercase tracking-wide"
-            >
-              Presenças
-            </p>
-            <p
-              v-if="freq.justificativasAceitas > 0"
-              class="text-xs text-green-600 mt-0.5"
-            >
-              ({{ freq.justificativasAceitas }} justificada(s))
-            </p>
+        <!-- Header -->
+        <div class="flex items-start justify-between mb-5">
+          <div>
+            <p class="text-sm font-medium text-gray-800">{{ turma.nome }}</p>
+            <p class="text-xs text-gray-400 mt-0.5">{{ turma.periodo }} · meta de {{ metaFrequencia }}%</p>
           </div>
-          <div class="text-center p-4 rounded-xl bg-red-50">
-            <p class="text-3xl font-bold text-red-500">{{ totalFaltas }}</p>
-            <p
-              class="text-xs text-gray-400 mt-1 font-medium uppercase tracking-wide"
-            >
-              Faltas
-            </p>
-          </div>
-          <div
-            class="text-center p-4 rounded-xl"
-            :class="
-              freq.frequencia >= metaFrequencia ? 'bg-green-50' : 'bg-red-50'
-            "
+          <span
+            class="text-xs font-medium px-3 py-1 rounded-full"
+            :class="freq.frequencia >= metaFrequencia
+              ? 'bg-green-100 text-green-800'
+              : 'bg-red-100 text-red-800'"
           >
+            {{ freq.frequencia >= metaFrequencia ? 'Meta atingida' : 'Abaixo da meta' }}
+          </span>
+        </div>
+
+        <!-- Frequência + barra -->
+        <div class="flex gap-8 items-start mb-5">
+          <div>
             <p
-              class="text-3xl font-bold"
-              :class="
-                freq.frequencia >= metaFrequencia
-                  ? 'text-green-700'
-                  : 'text-red-500'
-              "
+              class="text-4xl font-medium leading-none"
+              :class="freq.frequencia >= metaFrequencia ? 'text-green-700' : 'text-red-500'"
             >
               {{ freq.frequencia }}%
             </p>
-            <p
-              class="text-xs text-gray-400 mt-1 font-medium uppercase tracking-wide"
-            >
-              Frequência
-            </p>
+            <p class="text-xs text-gray-400 mt-1">frequência atual</p>
+          </div>
+          <div class="flex-1">
+            <p class="text-xs text-gray-400 mb-1.5">progresso até a meta</p>
+            <div class="relative w-full bg-gray-100 rounded-full h-1.5">
+              <div
+                class="h-1.5 rounded-full transition-all duration-500"
+                :class="freq.frequencia >= metaFrequencia ? 'bg-green-500' : 'bg-red-400'"
+                :style="{ width: Math.min(freq.frequencia, 100) + '%' }"
+              ></div>
+              <div
+                class="absolute -top-1 h-3.5 w-px bg-gray-400 rounded"
+                :style="{ left: metaFrequencia + '%' }"
+              ></div>
+            </div>
+            <div class="flex justify-between text-[10px] text-gray-400 mt-1">
+              <span>0%</span>
+              <span>{{ metaFrequencia }}% meta</span>
+              <span>100%</span>
+            </div>
           </div>
         </div>
 
-        <div class="relative w-full bg-gray-100 rounded-full h-2.5 mb-1">
-          <div
-            class="h-2.5 rounded-full transition-all duration-500"
-            :class="
-              freq.frequencia >= metaFrequencia ? 'bg-green-500' : 'bg-red-400'
-            "
-            :style="{ width: Math.min(freq.frequencia, 100) + '%' }"
-          ></div>
-          <div
-            class="absolute top-0 h-2.5 w-0.5 bg-gray-400"
-            :style="{ left: metaFrequencia + '%' }"
-          ></div>
-        </div>
-        <div class="flex justify-between text-xs text-gray-400 mb-4">
-          <span>0%</span>
-          <span>meta {{ metaFrequencia }}%</span>
-          <span>100%</span>
+        <div class="h-px bg-gray-100 mb-5"></div>
+
+        <!-- Stats + Histórico -->
+        <div class="flex gap-10 mb-5">
+          <div class="space-y-2.5">
+            <div class="flex items-baseline gap-2">
+              <span class="text-xl font-medium text-gray-700">{{ aulasRealizadas.length }}</span>
+              <span class="text-sm text-gray-400">aulas realizadas</span>
+            </div>
+            <div class="flex items-baseline gap-2">
+              <span class="text-xl font-medium text-green-700">{{ freq.totalValidas }}</span>
+              <span class="text-sm text-gray-400">presenças</span>
+              <span v-if="freq.justificativasAceitas > 0" class="text-xs text-blue-600">
+                ({{ freq.justificativasAceitas }} justificada{{ freq.justificativasAceitas > 1 ? 's' : '' }})
+              </span>
+            </div>
+            <div class="flex items-baseline gap-2">
+              <span class="text-xl font-medium text-red-500">{{ totalFaltas }}</span>
+              <span class="text-sm text-gray-400">falta{{ totalFaltas !== 1 ? 's' : '' }}</span>
+            </div>
+          </div>
         </div>
 
+        <!-- Status -->
         <div
-          class="rounded-xl px-4 py-3 text-sm font-medium"
+          class="rounded-xl px-4 py-3 text-sm font-medium flex items-start gap-2"
           :class="statusMeta.classe"
         >
+          <svg class="w-4 h-4 flex-shrink-0 mt-0.5" viewBox="0 0 16 16" fill="none">
+            <circle v-if="!statusOk" cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.2"/>
+            <path v-if="!statusOk" d="M8 4.5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            <circle v-if="!statusOk" cx="8" cy="11" r="0.8" fill="currentColor"/>
+            <path v-if="statusOk" d="M3 8l3.5 3.5L13 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           {{ statusMeta.mensagem }}
         </div>
+
       </div>
 
       <!-- ── TABS ── -->
@@ -320,7 +327,7 @@
             <div
               class="rounded-xl px-5 py-4 border transition-all"
               :class="
-                projecao.frequencia >= (turma?.meta_frequencia ?? 75)
+                projecao.frequencia >= (turma?.meta_frequencia ?? 70)
                   ? 'bg-green-50 border-green-200'
                   : 'bg-red-50 border-red-200'
               "
@@ -332,7 +339,7 @@
                 <span
                   class="text-2xl font-bold"
                   :class="
-                    projecao.frequencia >= (turma?.meta_frequencia ?? 75)
+                    projecao.frequencia >= (turma?.meta_frequencia ?? 70)
                       ? 'text-green-700'
                       : 'text-red-600'
                   "
@@ -345,7 +352,7 @@
                 <div
                   class="h-2 rounded-full transition-all duration-300"
                   :class="
-                    projecao.frequencia >= (turma?.meta_frequencia ?? 75)
+                    projecao.frequencia >= (turma?.meta_frequencia ?? 70)
                       ? 'bg-green-500'
                       : 'bg-red-400'
                   "
@@ -353,14 +360,14 @@
                 ></div>
                 <div
                   class="absolute top-0 h-2 w-0.5 bg-gray-400"
-                  :style="{ left: (turma?.meta_frequencia ?? 75) + '%' }"
+                  :style="{ left: (turma?.meta_frequencia ?? 70) + '%' }"
                 ></div>
               </div>
 
               <p
                 class="text-sm font-medium"
                 :class="
-                  projecao.frequencia >= (turma?.meta_frequencia ?? 75)
+                  projecao.frequencia >= (turma?.meta_frequencia ?? 70)
                     ? 'text-green-700'
                     : 'text-red-600'
                 "
@@ -489,7 +496,7 @@ const { metaFrequencia, carregarConfig } = useConfigSistema();
 
 // ── Tabs ─────────────────────────────────────────────────────────
 const tabs = [
-  { id: "historico", label: "📋 Histórico" },
+  { id: "historico", label: "📋 Histórico de aulas" },
   { id: "projecao", label: "🔮 Projeção" },
 ];
 const tabAtiva = ref("historico");
@@ -585,7 +592,7 @@ const totalFaltas = computed(
 );
 
 const statusMeta = computed(() => {
-  const meta = metaFrequencia.value ?? 75;
+  const meta = metaFrequencia.value ?? 70;
   const total = aulasRealizadas.value.length;
   const frequencia = freq.value.frequencia;
 
@@ -633,7 +640,7 @@ function toggleAulaSimulada(aulaId) {
 }
 
 const projecao = computed(() => {
-  const meta = metaFrequencia.value ?? 75;
+  const meta = metaFrequencia.value ?? 70;
   const faltasSimuladas = aulasSimuladasFalta.value.size;
   const presencasFuturas = proximasAulas.value.length - faltasSimuladas;
   const totalAulasComFuturas =

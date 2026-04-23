@@ -208,15 +208,14 @@ async function carregarJustificativas() {
 
   // Filtra só as turmas do professor atual (RLS já faz isso, mas filtramos no frontend também para admin)
   justificativas.value = (data || [])
-    .filter(j => isAdmin.value || j.aula?.turma?.professor_id === user.value?.id)
-    .map(j => ({
-      ...j,
-      nomeAluno: nomeMap[j.aluno_id] ?? 'Aluno',
-      nomeTurma: j.aula?.turma?.nome ?? '—',
-      dataAula: j.aula?.data ?? '',
-      _resposta: '',
-      _salvando: null,
-    }))
+  .map(j => ({
+    ...j,
+    nomeAluno: nomeMap[j.aluno_id] ?? 'Aluno',
+    nomeTurma: j.aula?.turma?.nome ?? '—',
+    dataAula: j.aula?.data ?? '',
+    _resposta: '',
+    _salvando: null,
+  }))
 
   loading.value = false
 }

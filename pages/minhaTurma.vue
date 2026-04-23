@@ -26,46 +26,57 @@
     <div v-else class="space-y-6">
       <!-- ── CARD DA TURMA ── -->
       <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-        <div class="flex items-start justify-between mb-4">
+        <div class="flex items-start justify-between">
           <div>
-            <h2 class="text-xl font-bold text-gray-800">{{ turma.nome }}</h2>
-            <p class="text-sm text-gray-500 mt-1">👨‍🏫 {{ nomeProfessor }}</p>
+            <h2 class="text-base font-medium text-gray-800">
+              {{ turma.nome }}
+            </h2>
+            <p class="text-sm text-gray-500 mt-1">{{ nomeProfessor }}</p>
             <p v-if="turma.sala" class="text-sm text-gray-500 mt-0.5">
-              🚪 Sala {{ turma.sala }}
+              Sala {{ turma.sala }}
             </p>
           </div>
           <span
-            class="text-xs font-semibold px-3 py-1 rounded-full"
+            class="text-xs font-medium px-3 py-1 rounded-full flex items-center gap-1.5"
             :class="
               turma.status === 'ATIVA'
                 ? 'bg-green-100 text-green-700'
                 : 'bg-gray-100 text-gray-500'
             "
           >
-            {{ turma.status === "ATIVA" ? "🟢 Ativa" : "🔒 Finalizada" }}
+            <span
+              class="w-1.5 h-1.5 rounded-full"
+              :class="turma.status === 'ATIVA' ? 'bg-green-600' : 'bg-gray-400'"
+            ></span>
+            {{ turma.status === "ATIVA" ? "Ativa" : "Finalizada" }}
           </span>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
-          <div class="bg-gray-50 rounded-xl p-3 text-center">
-            <p class="text-lg font-bold text-gray-800">{{ totalAlunos }}</p>
-            <p class="text-xs text-gray-400 mt-0.5">Alunos</p>
+        <div class="h-px bg-gray-100 my-4"></div>
+
+        <div class="flex items-stretch gap-6">
+          <div class="flex flex-col gap-0.5">
+            <span class="text-[11px] text-gray-400">Alunos</span>
+            <span class="text-sm font-medium text-gray-800">{{
+              totalAlunos
+            }}</span>
           </div>
-          <div class="bg-gray-50 rounded-xl p-3 text-center">
-            <p class="text-lg font-bold text-gray-800">{{ metaFrequencia }}%</p>
-            <p class="text-xs text-gray-400 mt-0.5">Meta de frequência</p>
+          <div class="w-px bg-gray-100"></div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-[11px] text-gray-400">Meta de frequência</span>
+            <span class="text-sm font-medium text-gray-800"
+              >{{ metaFrequencia }}%</span
+            >
           </div>
-          <div
-            class="bg-gray-50 rounded-xl p-3 text-center col-span-2 sm:col-span-1"
-          >
-            <p class="text-lg font-bold text-gray-800">
+          <div class="w-px bg-gray-100"></div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-[11px] text-gray-400">Próxima aula</span>
+            <span class="text-sm font-medium text-gray-800">
               {{ proximaAula ? formatarDataCurta(proximaAula.data) : "—" }}
-            </p>
-            <p class="text-xs text-gray-400 mt-0.5">Próxima aula</p>
+            </span>
           </div>
         </div>
       </div>
-
       <!-- ── SUA POSIÇÃO ── -->
       <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
         <p
