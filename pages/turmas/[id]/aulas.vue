@@ -91,7 +91,7 @@
             </span>
           </div>
           <button
-            @click="deletarAula(aula.id)"
+            @click="solicitarDelecao(aula)"
             class="text-gray-300 hover:text-red-500 transition text-xl font-bold ml-2 flex-shrink-0"
             title="Remover aula"
           >
@@ -99,6 +99,40 @@
           </button>
         </li>
       </ul>
+    </div>
+
+    <!-- Modal de confirmação -->
+    <div
+      v-if="aulaParaDeletar"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      @click.self="aulaParaDeletar = null"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4 space-y-4"
+      >
+        <h3 class="text-lg font-semibold text-gray-800">Remover aula</h3>
+        <p class="text-sm text-gray-600">
+          Tem certeza que deseja remover a aula do dia
+          <span class="font-medium">{{
+            formatarDataCurta(aulaParaDeletar.data)
+          }}</span
+          >? Esta ação não pode ser desfeita.
+        </p>
+        <div class="flex gap-3 justify-end">
+          <button
+            @click="aulaParaDeletar = null"
+            class="px-4 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition"
+          >
+            Cancelar
+          </button>
+          <button
+            @click="confirmarDelecao"
+            class="px-4 py-2 rounded-xl text-sm bg-red-600 text-white hover:bg-red-700 transition"
+          >
+            Remover
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- ── PAINEL LATERAL (drawer) ── -->
@@ -314,8 +348,8 @@ const aulas = ref([]);
 const loadingAulas = ref(true);
 const salvando = ref(false);
 const painelAberto = ref(false);
-
-const modo = ref("recorrencia");
+const aulaParaDeletar = ref(null);
+const modo = ref(isAdmin.value ? "recorrencia" : "manual");
 const dataManual = ref("");
 const datasManual = ref([]);
 const diaSemana = ref(null);
@@ -463,14 +497,26 @@ async function salvarAulas() {
   }
 }
 
-async function deletarAula(aulaId) {
-  const { error } = await supabase.from("aula").delete().eq("id", aulaId);
+function solicitarDelecao(aula) {
+  if (aula.status !== "AGENDADA") {
+    $toast.warning("Apenas aulas agendadas podem ser removidas.");
+    return;
+  }
+  aulaParaDeletar.value = aula;
+}
+
+async function confirmarDelecao() {
+  const aula = aulaParaDeletar.value;
+  if (!aula) return;
+
+  const { error } = await supabase.from("aula").delete().eq("id", aula.id);
   if (error) {
     $toast.error("Erro ao remover aula.");
   } else {
-    aulas.value = aulas.value.filter((a) => a.id !== aulaId);
+    aulas.value = aulas.value.filter((a) => a.id !== aula.id);
     $toast.success("Aula removida.");
   }
+  aulaParaDeletar.value = null;
 }
 
 onMounted(async () => {

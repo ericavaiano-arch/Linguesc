@@ -136,7 +136,7 @@
         <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">Acessar →</div>
       </div> -->
 
-      <div
+      <!-- <div
         v-if="isProfessor"
         @click="irPara('/chamada-manual')"
         class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer"
@@ -159,7 +159,7 @@
         >
           Acessar →
         </div>
-      </div>
+      </div> -->
 
       <!-- JUSTIFICATIVAS - PROFESSOR -->
       <!-- <div

@@ -86,7 +86,7 @@
             </span>
           </div>
           <div class="flex-1 flex flex-col gap-1 px-6 py-5">
-            <span class="text-xs text-gray-500 uppercase tracking-wide">Alunos em risco</span>
+            <span class="text-xs text-gray-500 uppercase tracking-wide">Alunos com frequência abaixo da meta</span>
             <span class="text-3xl font-semibold" :class="alunosEmRisco.length > 0 ? 'text-red-600' : 'text-green-700'">
               {{ alunosEmRisco.length }}
             </span>
@@ -273,7 +273,12 @@ onMounted(async () => {
         supabase.from('presenca').select('aula_id, aluno_id'),
         supabase.from('turma_aluno').select('turma_id, aluno_id, usuarios(id, nome, ativo)'),
         supabase.from('justificativa_falta').select('aluno_id, aula_id').eq('status', 'ACEITA'),
-        supabase.from('usuarios').select('id, nome').eq('tipo_usuario', 'PROFESSOR').order('nome'),
+        supabase
+          .from('usuario_papel')
+          .select('usuarios!inner(id, nome, ativo)')
+          .eq('papel', 'PROFESSOR')
+          .eq('ativo', true)
+          .eq('usuarios.ativo', true),
       ])
 
       todasTurmas.value = turmasData || []
@@ -281,7 +286,7 @@ onMounted(async () => {
       todasPresencas.value = presencasData || []
       todosVinculos.value = vinculosData || []
       todasJustificativas.value = justificativasData || []
-      professores.value = professoresData || []
+      professores.value = professoresData?.map((d) => d.usuarios).filter(Boolean) || []
     })(),
   ])
 

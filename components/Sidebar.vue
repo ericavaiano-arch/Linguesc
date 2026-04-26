@@ -20,7 +20,7 @@
         <SidebarItem v-if="isProfessor" to="/dashboard" label="Dashboard" icon="📊" :open="true" @click="$emit('toggle')" />
         <SidebarItem v-if="isProfessor" to="/turmas" label="Minhas Turmas" icon="📚" :open="true" @click="$emit('toggle')" />
         <!-- <SidebarItem v-if="isProfessor" to="/qrCodeTurmas" label="Chamada por QR Code" icon="🧾" :open="true" @click="$emit('toggle')" /> -->
-        <SidebarItem v-if="isProfessor" to="/chamada-manual" label="Chamada" icon="✅" :open="true" @click="$emit('toggle')" />
+        <!-- <SidebarItem v-if="isProfessor" to="/chamada-manual" label="Chamada" icon="✅" :open="true" @click="$emit('toggle')" /> -->
         <!-- <SidebarItem v-if="isProfessor" to="/justificativas" label="Justificativas" icon="📝" :open="true" @click="$emit('toggle')" /> -->
 
         <!-- ADMIN -->

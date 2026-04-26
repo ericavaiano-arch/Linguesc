@@ -497,7 +497,7 @@ const { metaFrequencia, carregarConfig } = useConfigSistema();
 // ── Tabs ─────────────────────────────────────────────────────────
 const tabs = [
   { id: "historico", label: "📋 Histórico de aulas" },
-  { id: "projecao", label: "🔮 Projeção" },
+  { id: "projecao", label: "🔮 Projeção de aulas" },
 ];
 const tabAtiva = ref("historico");
 

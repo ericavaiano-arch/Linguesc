@@ -411,19 +411,14 @@ const usuariosFiltrados = computed(() => {
 async function carregarUsuarios() {
   loading.value = true;
   const { data, error } = await supabase
-    .from("usuarios_completo")
-    .select("*, usuario_papel(papel, ativo)")
+    .from("vw_usuarios_acessos")
+    .select("id, nome, email, papeis, tipo_usuario, ativo, dt_inclusao")
     .order("nome");
 
   if (error) {
     $toast.error("Erro ao carregar usuários.");
   } else {
-    usuarios.value = (data || []).map((u) => ({
-      ...u,
-      papeis: (u.usuario_papel || [])
-        .filter((p) => p.ativo)
-        .map((p) => p.papel),
-    }));
+    usuarios.value = data || [];
   }
   loading.value = false;
 }
@@ -487,7 +482,7 @@ async function salvar() {
 
       const novoId = data.user.id;
 
-      const { error: dbError } = await supabase
+      const { error: dbError } = await supabaseAdmin
         .from("usuarios")
         .insert({ id: novoId, nome: form.value.nome.trim() });
 
@@ -498,7 +493,7 @@ async function salvar() {
       }
 
       // Insere o papel selecionado após ter o id
-      await supabase
+      await supabaseAdmin  
         .from("usuario_papel")
         .insert(
           papeisCriacao.value.map((papel) => ({
@@ -510,8 +505,7 @@ async function salvar() {
 
       $toast.success("Usuário criado com sucesso!");
     } else {
-      // Edição: só nome, sem tipo_usuario
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from("usuarios")
         .update({ nome: form.value.nome.trim() })
         .eq("id", usuarioEditando.value.id);

@@ -455,28 +455,25 @@ async function salvarChamada() {
 async function verificarNotificacaoProfessor() {
   const dataLimite = new Date();
   dataLimite.setDate(dataLimite.getDate() - 7);
-
   const dataLimiteFormatada = dataLimite.toISOString().slice(0, 10);
 
-  const alterouDepoisDe7Dias = aulaSelecionada.value.data < dataLimiteFormatada;
+  if (aulaSelecionada.value.data >= dataLimiteFormatada) return;
 
-  if (alterouDepoisDe7Dias) {
-    const { data: admins } = await supabase
-      .from("usuarios")
-      .select("id")
-      .eq("tipo_usuario", "ADMIN")
-      .eq("ativo", true);
+  const { data: admins } = await supabase
+    .from("usuario_papel")
+    .select("usuario_id")
+    .eq("papel", "ADMIN")
+    .eq("ativo", true);
 
-    const notificacoesAdmin = admins.map((admin) => ({
-      aluno_id: admin.id,
-      professor_id: user.value?.id ?? "",
-      turma_id: aulaSelecionada.value.turma_id,
-      mensagem: `O professor ${user.value?.nome} alterou a chamada da aula do dia ${aulaSelecionada.value.data}, após o prazo de 7 dias.`,
-    }));
+  const notificacoesAdmin = (admins || []).map((a) => ({
+    aluno_id: a.usuario_id,
+    professor_id: user.value?.id ?? "",
+    turma_id: aulaSelecionada.value.turma_id,
+    mensagem: `O professor ${user.value?.nome} alterou a chamada da aula do dia ${aulaSelecionada.value.data}, após o prazo de 7 dias.`,
+  }));
 
-    if (notificacoesAdmin.length) {
-      await supabase.from("notificacao_risco").insert(notificacoesAdmin);
-    }
+  if (notificacoesAdmin.length) {
+    await supabase.from("notificacao_risco").insert(notificacoesAdmin);
   }
 }
 

@@ -2,7 +2,7 @@ import { useState } from '#app'
 import { supabase } from '@/utils/supabase'
 
 export function useConfigSistema() {
-  const metaFrequencia = useState<number>('meta_frequencia', () => 70)
+  const metaFrequencia = useState<number>('meta_frequencia', () => 75)
   const carregando = useState<boolean>('config_carregando', () => false)
   const carregado = useState<boolean>('config_carregado', () => false)
 

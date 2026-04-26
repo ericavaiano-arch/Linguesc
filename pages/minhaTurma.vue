@@ -160,7 +160,7 @@
           class="px-6 py-4 border-b border-gray-100 flex items-center justify-between"
         >
           <h2 class="text-base font-semibold text-gray-800">
-            🏆 Ranking da Turma
+            🏆 Ranking de frequência da turma
           </h2>
           <span class="text-xs text-gray-400"
             >{{ aulasRealizadas }} aula(s) realizadas</span

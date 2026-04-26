@@ -92,9 +92,7 @@
               :key="turma.id"
               class="group bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-green-400 transition-all duration-200"
             >
-              <div
-                class="flex items-start justify-between mb-3"
-              >
+              <div class="flex items-start justify-between mb-3">
                 <div class="flex-1 min-w-0 pr-2">
                   <h2
                     class="text-base font-semibold text-gray-800 group-hover:text-green-700 transition truncate"
@@ -238,6 +236,11 @@
       <!-- ── VISÃO PROFESSOR: igual ao original ── -->
       <template v-else>
         <div>
+          <h2
+            class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4"
+          >
+            ✅ Turmas Ativas
+          </h2>
           <div
             v-if="turmasAtivas.length === 0"
             class="bg-white border border-dashed border-gray-300 rounded-2xl p-12 text-center"
@@ -887,10 +890,10 @@ async function carregarTurmas() {
     .from("turma")
     .select(
       `
-      *,
-      turma_aluno(count),
-      usuarios_completo!professor_id(id, nome)
-    `,
+    *,
+    turma_aluno(count),
+    usuarios!professor_id(id, nome)
+  `,
     )
     .order("nome", { ascending: true });
 
@@ -904,7 +907,7 @@ async function carregarTurmas() {
   else {
     turmas.value = (data || []).map((t) => ({
       ...t,
-      professor_nome: t.usuarios_completo?.nome ?? null,
+      professor_nome: t.usuarios?.nome ?? null,
     }));
   }
 
@@ -913,13 +916,13 @@ async function carregarTurmas() {
 
 async function carregarProfessores() {
   const { data } = await supabase
-    .from("usuarios_completo")
-    .select("id, nome")
-    .eq("tipo_usuario", "PROFESSOR")
+    .from("usuario_papel")
+    .select("usuarios(id, nome)")
+    .eq("papel", "PROFESSOR")
     .eq("ativo", true)
-    .order("nome", { ascending: true });
+    .order("usuarios(nome)", { ascending: true });
 
-  professores.value = data || [];
+  professores.value = data?.map((d) => d.usuarios).filter(Boolean) || [];
 }
 
 async function carregarMatriculas() {
@@ -935,12 +938,7 @@ async function carregarMatriculas() {
 }
 
 async function carregarTodosAlunos() {
-  const { data } = await supabase
-    .from("usuarios_completo")
-    .select("id, nome, email, tipo_usuario, ativo")
-    .eq("tipo_usuario", "ALUNO")
-    .eq("ativo", true)
-    .order("nome", { ascending: true });
+  const { data } = await supabase.rpc("get_alunos_ativos");
 
   todosAlunos.value = data || [];
 }
@@ -1017,24 +1015,24 @@ async function abrirEdicao(turma) {
   const [{ data: vinculos }, { data: todos }] = await Promise.all([
     supabase
       .from("turma_aluno")
-      .select("aluno_id, usuarios_completo(id, nome, email)")
+      .select("aluno_id, usuarios!inner(id, nome)")
       .eq("turma_id", turma.id),
-    supabase
-      .from("usuarios_completo")
-      .select("id, nome, email, tipo_usuario, ativo")
-      .eq("tipo_usuario", "ALUNO")
-      .eq("ativo", true)
-      .order("nome", { ascending: true }),
+    supabase.rpc("get_alunos_ativos"),
   ]);
+
+  const alunosMap = Object.fromEntries((todos || []).map((a) => [a.id, a]));
 
   await carregarMatriculas();
 
   edicaoAlunos.value = (vinculos || [])
-    .map((v) => ({
-      id: v.aluno_id,
-      nome: v.usuarios_completo?.nome || "",
-      email: v.usuarios_completo?.email || "",
-    }))
+    .map((v) => {
+      const aluno = alunosMap[v.aluno_id];
+      return {
+        id: v.aluno_id,
+        nome: aluno?.nome || v.usuarios?.nome || "",
+        email: aluno?.email || "",
+      };
+    })
     .sort((a, b) => a.nome.localeCompare(b.nome));
 
   alunosOriginais.value = edicaoAlunos.value.map((a) => a.id);
