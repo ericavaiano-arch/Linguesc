@@ -242,7 +242,6 @@ const coresTurmas = [
   { border: '#db2777', background: 'rgba(219,39,119,0.08)' },
 ]
 
-// Retorna semestre atual no formato YYYY/0X
 function semestreAtual() {
   const now = new Date()
   const ano = now.getFullYear()
@@ -250,7 +249,6 @@ function semestreAtual() {
   return `${ano}/${sem}`
 }
 
-// Extrai semestre do nome da turma: "Básico 1 - 2026/01" → "2026/01"
 function extrairSemestre(nome) {
   const match = nome?.match(/(\d{4}\/\d{2})$/)
   return match ? match[1] : null
@@ -293,7 +291,6 @@ onMounted(async () => {
   loading.value = false
 })
 
-// ── Semestres disponíveis extraídos dos nomes das turmas ─────────
 const semestresDisponiveis = computed(() => {
   const set = new Set()
   todasTurmas.value.forEach(t => {
@@ -303,7 +300,6 @@ const semestresDisponiveis = computed(() => {
   return [...set].sort().reverse()
 })
 
-// ── Turmas filtradas pelos 3 filtros ─────────────────────────────
 const turmasFiltradas = computed(() => {
   return todasTurmas.value.filter(t => {
     if (professorFiltro.value && t.professor_id !== professorFiltro.value) return false
@@ -322,7 +318,6 @@ const professoresMap = computed(() =>
   Object.fromEntries(professores.value.map(p => [p.id, p.nome]))
 )
 
-// ── Helpers ──────────────────────────────────────────────────────
 function aulasRealizadasDaTurma(turmaId) {
   return todasAulas.value.filter(a => a.turma_id === turmaId && a.status === 'REALIZADA')
 }
@@ -344,7 +339,6 @@ function frequenciaAlunoNaTurma(alunoId, turmaId) {
   return calcularFrequenciaSync(alunoId, aulasIds, presencasArr, justAceitas)
 }
 
-// ── Totais do resumo ─────────────────────────────────────────────
 const totalAlunosAtivos = computed(() => {
   const ids = new Set()
   turmasFiltradas.value.forEach(t => {
@@ -364,7 +358,6 @@ const frequenciaGeralMedia = computed(() => {
   return count > 0 ? Math.round(soma / count) : 0
 })
 
-// ── Frequência por turma ─────────────────────────────────────────
 const resumoPorTurma = computed(() =>
   turmasFiltradas.value.map(turma => {
     const alunos = alunosAtivosDaTurma(turma.id)
@@ -384,7 +377,6 @@ const resumoPorTurma = computed(() =>
   }).filter(t => t.aulasRealizadas > 0)
 )
 
-// ── Alunos em risco ──────────────────────────────────────────────
 const alunosEmRisco = computed(() => {
   const lista = []
   turmasFiltradas.value.forEach(turma => {
@@ -407,7 +399,6 @@ const alunosEmRisco = computed(() => {
   return lista.sort((a, b) => a.frequencia - b.frequencia)
 })
 
-// ── Gráfico ──────────────────────────────────────────────────────
 const dadosGrafico = computed(() => {
   const turmasParaGrafico = turmaSelecionadaGrafico.value === 'todas'
     ? turmasFiltradas.value

@@ -102,6 +102,12 @@
                   <p class="text-xs text-gray-400 mt-0.5">
                     {{ turma.sala != null ? "Sala " + turma.sala : "" }}
                   </p>
+                  <p
+                    v-if="turma.descricao"
+                    class="text-xs text-gray-400 mt-0.5 line-clamp-2"
+                  >
+                    {{ turma.descricao }}
+                  </p>
                   <p class="text-xs text-gray-400 mt-0.5">
                     {{ turma.turma_aluno[0]?.count ?? 0 }} aluno(s)
                   </p>
@@ -272,6 +278,12 @@
                   </h2>
                   <p class="text-xs text-gray-400 mt-0.5">
                     {{ turma.sala != null ? "Sala " + turma.sala : "" }}
+                  </p>
+                  <p
+                    v-if="turma.descricao"
+                    class="text-xs text-gray-400 mt-0.5 line-clamp-2"
+                  >
+                    {{ turma.descricao }}
                   </p>
                   <p class="text-xs text-gray-400 mt-0.5">
                     {{ turma.turma_aluno[0]?.count ?? 0 }} aluno(s)
@@ -557,6 +569,19 @@
             />
           </div>
 
+          <div>
+            <label class="text-sm font-medium text-gray-700 mb-2 block">
+              Descrição
+              <span class="text-gray-400 font-normal">(opcional)</span>
+            </label>
+            <textarea
+              v-model="edicaoDescricao"
+              placeholder="Ex: Turma voltada para iniciantes sem experiência prévia..."
+              rows="3"
+              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition resize-none"
+            />
+          </div>
+
           <div v-if="modo === 'editar'">
             <p class="text-sm font-medium text-gray-700 mb-3">
               Alunos na turma
@@ -736,16 +761,13 @@ definePageMeta({ middleware: "professor" });
 const { $toast } = useNuxtApp();
 const router = useRouter();
 const { user, isAdmin } = useAuth();
-
 const turmas = ref([]);
 const professores = ref([]);
 const loading = ref(true);
 const menuAberto = ref(null);
-
 const modalEncerramento = ref(false);
 const turmaParaEncerrar = ref(null);
 const encerrando = ref(false);
-
 const painelAberto = ref(false);
 const modo = ref("criar");
 const salvando = ref(false);
@@ -756,13 +778,12 @@ const alunosOriginais = ref([]);
 const todosAlunos = ref([]);
 const filtroEdicao = ref("");
 const mapaMatriculas = ref({});
-
+const edicaoDescricao = ref("");
 const edicaoIdentificador = ref("");
 const edicaoAno = ref(new Date().getFullYear());
 const edicaoSemestre = ref(new Date().getMonth() < 6 ? "01" : "02");
 const edicaoSala = ref("");
 const professorSelecionadoCriacao = ref("");
-
 const professorFiltro = ref("");
 
 const anosDisponiveis = computed(() => {
@@ -987,6 +1008,7 @@ async function abrirCriacao() {
   edicaoSemestre.value = new Date().getMonth() < 6 ? "01" : "02";
   edicaoSala.value = "";
   edicaoAlunos.value = [];
+  edicaoDescricao.value = "";
   alunosOriginais.value = [];
   filtroEdicao.value = "";
   professorSelecionadoCriacao.value = "";
@@ -1011,6 +1033,7 @@ async function abrirEdicao(turma) {
   edicaoAno.value = Number(ano) || new Date().getFullYear();
   edicaoSemestre.value = sem || "01";
   edicaoSala.value = turma.sala ?? "";
+  edicaoDescricao.value = turma.descricao ?? "";
 
   const [{ data: vinculos }, { data: todos }] = await Promise.all([
     supabase
@@ -1099,6 +1122,7 @@ async function salvarCriacao() {
         nome: nomeTrimmed,
         professor_id: professorId,
         sala: edicaoSala.value.trim() || null,
+        descricao: edicaoDescricao.value.trim() || null,
       },
     ])
     .select()
@@ -1139,12 +1163,17 @@ async function salvarEdicao() {
 
   if (
     nomeTrimmed !== turmaSelecionada.value.nome ||
-    edicaoSala.value.trim() !== (turmaSelecionada.value.sala ?? "")
+    edicaoSala.value.trim() !== (turmaSelecionada.value.sala ?? "") ||
+    edicaoDescricao.value.trim() !== (turmaSelecionada.value.descricao ?? "")
   ) {
     promessas.push(
       supabase
         .from("turma")
-        .update({ nome: nomeTrimmed, sala: edicaoSala.value.trim() || null })
+        .update({
+          nome: nomeTrimmed,
+          sala: edicaoSala.value.trim() || null,
+          descricao: edicaoDescricao.value.trim() || null,
+        })
         .eq("id", turmaId),
     );
   }

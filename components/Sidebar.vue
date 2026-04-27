@@ -36,6 +36,8 @@
           <SidebarItem to="/admin/configuracoes" label="Configurações" icon="⚙️" :open="true" @click="$emit('toggle')" />
 
         </template>
+      
+        <SidebarItem :to="`/profile/${user?.id}`" label="Meu Perfil" icon="👤" :open="true" @click="$emit('toggle')" />
       </nav>
     </aside>
   </div>

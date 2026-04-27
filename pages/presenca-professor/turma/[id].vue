@@ -116,7 +116,6 @@ ChartJS.register(
 const route = useRoute()
 const turmaId = route.params.id
 
-// Mock de dados
 const turmas = {
   1: {
     nome: 'Turma A',

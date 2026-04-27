@@ -177,7 +177,6 @@ ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Tooltip,
 definePageMeta({ middleware: 'professor' })
 
 const { user } = useAuth()
-// ── NOVO: meta global ────────────────────────────────────────────
 const { metaFrequencia, carregarConfig } = useConfigSistema()
 
 const loading = ref(true)
@@ -203,7 +202,7 @@ onMounted(async () => {
   if (!professorId) { loading.value = false; return }
 
   await Promise.all([
-    carregarConfig(), // ── NOVO: carrega meta global em paralelo
+    carregarConfig(),
     (async () => {
       const [
         { data: turmasData },
@@ -213,7 +212,6 @@ onMounted(async () => {
         { data: justificativasData },
         { data: notificacoesData },
       ] = await Promise.all([
-        // ── ALTERADO: removido meta_frequencia do select
         supabase.from('turma').select('id, nome').eq('professor_id', professorId).eq('status', 'ATIVA').order('nome'),
         supabase.from('aula').select('id, turma_id, data, status').order('data', { ascending: true }),
         supabase.from('presenca').select('aula_id, aluno_id'),
@@ -302,7 +300,7 @@ const resumoPorTurma = computed(() =>
     return {
       id: turma.id,
       nome: turma.nome,
-      meta: metaFrequencia.value, // ── ALTERADO
+      meta: metaFrequencia.value,
       aulasRealizadas: aulasRealizadas.length,
       frequenciaMedia: count > 0 ? Math.round(soma / count) : 0,
     }
@@ -316,7 +314,7 @@ const alunosEmRisco = computed(() => {
   turmas.value.forEach(turma => {
     alunosAtivosDaTurma(turma.id).forEach(v => {
       const freq = frequenciaAlunoNaTurma(v.aluno_id, turma.id)
-      if (freq !== null && freq.frequencia < metaFrequencia.value) { // ── ALTERADO
+      if (freq !== null && freq.frequencia < metaFrequencia.value) { 
         lista.push({
           alunoId: v.aluno_id,
           turmaId: turma.id,

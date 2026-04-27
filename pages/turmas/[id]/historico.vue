@@ -169,7 +169,7 @@ const turma = ref(null)
 const alunos = ref([])
 const aulas = ref([])
 const presencas = ref([])
-const justificativas = ref([]) // NOVO — { aluno_id, aula_id }
+const justificativas = ref([])
 const loading = ref(true)
 const aulaSelecionada = ref(null)
 
@@ -196,11 +196,11 @@ onMounted(async () => {
 
   const [{ data: presencasData }, { data: justificativasData }] = await Promise.all([
     supabase.from('presenca').select('aula_id, aluno_id').in('aluno_id', alunoIds),
-    supabase.from('justificativa_falta').select('aluno_id, aula_id').eq('status', 'ACEITA').in('aluno_id', alunoIds), // NOVO
+    supabase.from('justificativa_falta').select('aluno_id, aula_id').eq('status', 'ACEITA').in('aluno_id', alunoIds),
   ])
 
   presencas.value = (presencasData || []).filter(p => aulasIds.has(p.aula_id))
-  justificativas.value = (justificativasData || []).filter(j => aulasIds.has(j.aula_id)) // NOVO
+  justificativas.value = (justificativasData || []).filter(j => aulasIds.has(j.aula_id))
   loading.value = false
 })
 

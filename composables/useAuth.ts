@@ -28,7 +28,7 @@ async function carregarPapeis(userId: string): Promise<Papel[]> {
 function resolverPapelInicial(lista: Papel[]): Papel | null {
   if (lista.includes('ADMIN')) return 'ADMIN'
   if (lista.length === 1) return lista[0]
-  return null // múltiplos papéis → aguarda seleção
+  return null
 }
 
 export const useAuth = () => {
@@ -95,6 +95,21 @@ export const useAuth = () => {
     papelAtivo.value = papel
   }
 
+  async function alterarSenha(senhaAtual: string, novaSenha: string): Promise<string | null> {
+  const { error: reAuthError } = await supabase.auth.signInWithPassword({
+    email: user.value!.email,
+    password: senhaAtual,
+  })
+
+  if (reAuthError) return 'Senha atual incorreta'
+
+  const { error } = await supabase.auth.updateUser({ password: novaSenha })
+  if (error) return 'Erro ao atualizar senha'
+
+  return null
+}
+
+
   const isLoggedIn = computed(() => !!user.value)
   const isProfessor = computed(() => papelAtivo.value === 'PROFESSOR')
   const isAluno = computed(() => papelAtivo.value === 'ALUNO')
@@ -116,5 +131,6 @@ export const useAuth = () => {
     logout,
     reidratar,
     selecionarPapel,
+    alterarSenha
   }
 }

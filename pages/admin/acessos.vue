@@ -290,7 +290,6 @@ const registrosFiltrados = computed(() => {
     let va = a[ordemCol.value];
     let vb = b[ordemCol.value];
 
-    // nulos vão pro fim
     if (va == null) return 1;
     if (vb == null) return -1;
 

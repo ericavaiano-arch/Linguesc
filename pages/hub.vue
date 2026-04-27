@@ -349,15 +349,14 @@
         </div>
       </div>
 
-      <!-- TODOS -->
-      <!-- <div @click="irPara(`/profile/${user?.id}`)" class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
+      <div @click="irPara(`/profile/${user?.id}`)" class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">👤 Meu Perfil</h2>
           <span class="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">Conta</span>
         </div>
         <p class="text-gray-500 text-sm leading-relaxed">Atualize seus dados pessoais e informações da conta.</p>
         <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">Acessar →</div>
-      </div> -->
+      </div>
 
       <!-- Banner de notificações de risco -->
       <div v-if="notificacoes.length > 0" class="mb-6">

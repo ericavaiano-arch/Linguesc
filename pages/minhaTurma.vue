@@ -293,14 +293,12 @@ onMounted(async () => {
     return;
   }
 
-  // Busca vínculo + turma
 
   const { data: vinculo } = await supabase
     .from("turma_aluno")
     .select(
       "turma_id, turma(id, nome, status, meta_frequencia, professor_id, sala)",
     )
-    // adicione aqui qualquer campo extra que precisar ↑
     .eq("aluno_id", alunoId)
     .single();
 
@@ -360,7 +358,7 @@ onMounted(async () => {
         .select("aluno_id, aula_id, status")
         .in("aluno_id", alunosIds)
         .in("aula_id", aulasRealizadasIds)
-        .eq("status", "ACEITA"), // só as aceitas
+        .eq("status", "ACEITA"),
     ]);
 
     todasPresencas.value = presencasData || [];
@@ -380,7 +378,6 @@ const totalAlunos = computed(
 
 const inativos = computed(() => todosAlunos.value.filter((a) => !a.ativo));
 
-// Calcula frequência de cada aluno ativo
 const rankingAtivos = computed(() => {
   const meuId = user.value?.id;
 
@@ -391,7 +388,6 @@ const rankingAtivos = computed(() => {
         (p) => p.aluno_id === aluno.id,
       ).length;
 
-      // Justificativas aceitas que não têm presença já registrada
       const justAceitas = todasJustificativas.value.filter(
         (j) =>
           j.aluno_id === aluno.id &&
@@ -410,7 +406,7 @@ const rankingAtivos = computed(() => {
       return {
         id: aluno.id,
         isVoce: aluno.id === meuId,
-        presencas: totalValidas, // mostra o total válido (presença + just. aceita)
+        presencas: totalValidas,
         frequencia,
       };
     })

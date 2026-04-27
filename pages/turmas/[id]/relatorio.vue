@@ -15,10 +15,21 @@
           <h1 class="text-2xl md:text-3xl font-bold text-green-700">
             {{ turma?.nome }}
           </h1>
-          <p class="text-md md:text-lg font-bold text-green-600">
-            {{ turma?.sala != null ? "Sala " + turma?.sala : "" }}
-          </p>
-          <p class="text-gray-500 mt-2 text-sm">
+          <div class="flex flex-wrap items-center gap-2 mt-1.5">
+            <span
+              v-if="turma?.sala"
+              class="text-xs font-medium bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-full"
+            >
+              {{ "Sala " + turma.sala }}
+            </span>
+            <span
+              v-if="turma?.descricao"
+              class="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full"
+            >
+              {{ turma.descricao }}
+            </span>
+          </div>
+          <p class="text-gray-400 mt-2 text-sm">
             Lista completa de presença por aluno.
           </p>
           <div class="w-20 h-1 bg-green-600 mt-4 rounded"></div>
@@ -399,7 +410,7 @@ const turma = ref(null);
 const alunos = ref([]);
 const aulas = ref([]);
 const presencas = ref([]);
-const justificativas = ref([]); // NOVO — { aluno_id, aula_id }
+const justificativas = ref([]);
 const loading = ref(true);
 const ordemColuna = ref("nome");
 const ordemDirecao = ref("asc");
@@ -493,7 +504,7 @@ const opcoesGraficoTurma = {
       grid: { display: false },
     },
   },
-  animation: false, // importante para captura PDF ser síncrona
+  animation: false,
 };
 
 onMounted(async () => {
@@ -501,7 +512,9 @@ onMounted(async () => {
     await Promise.all([
       supabase
         .from("turma")
-        .select("id, nome, status, meta_frequencia, professor_id, sala")
+        .select(
+          "id, nome, status, meta_frequencia, professor_id, sala, descricao",
+        )
         .eq("id", turmaId)
         .single(),
       supabase
@@ -540,12 +553,12 @@ onMounted(async () => {
   const aulasIds = new Set((aulasData || []).map((a) => a.id));
 
   const { data: turmasTotal } = await supabase
-  .from("aula")
-  .select("id, data, status")
-  .eq("turma_id", turma.value?.id)
-  .order("data", { ascending: true });
+    .from("aula")
+    .select("id, data, status")
+    .eq("turma_id", turma.value?.id)
+    .order("data", { ascending: true });
 
-  totalAulas.value = turmasTotal
+  totalAulas.value = turmasTotal;
 
   const [{ data: presencasData }, { data: justificativasData }] =
     await Promise.all([
@@ -555,8 +568,8 @@ onMounted(async () => {
         .in("aluno_id", alunoIds),
       supabase
         .from("justificativa_falta")
-        .select("aluno_id, aula_id, status") // ADICIONADO status
-        .in("aluno_id", alunoIds), // removido o .eq('status', 'ACEITA')
+        .select("aluno_id, aula_id, status")
+        .in("aluno_id", alunoIds), 
     ]);
 
   presencas.value = (presencasData || []).filter((p) =>
@@ -595,7 +608,6 @@ const tabelaAlunos = computed(() => {
       else presencasPorAula[aula.id] = "F";
     });
 
-    // Cálculo usa só aceitas — pendente não conta como presença
     const aulasIds = aulasRealizadas.value.map((a) => a.id);
     const justAceitas = justificativas.value.filter(
       (j) => j.status === "ACEITA",
@@ -645,14 +657,13 @@ function exportarCSV() {
   const cabecalho = [
     "Aluno",
     ...aulasRealizadas.value.map((a) => formatarDataCurta(a.data)),
-    "Presenças", // presença + justificadas
+    "Presenças",
     "Faltas",
     "Frequência (%)",
   ];
 
   const linhas = tabelaAlunos.value.map((aluno) => [
     aluno.nome,
-    // Substitui o map de aulas dentro de linhas no imprimirPDF
     ...aulasRealizadas.value.map((aula) => {
       const v = aluno.presencasPorAula[aula.id];
       if (v === "P") return "P";
@@ -704,6 +715,10 @@ function imprimirPDF() {
   doc.setTextColor(107, 114, 128);
   doc.setFont("helvetica", "normal");
   doc.text(`Professor(a): ${nomeProfessor.value}`, 14, 32);
+  if (turma.value?.descricao) {
+    doc.text(`Descrição: ${turma.value.descricao}`, 14, 42);
+    doc.line(14, 45, 283, 45);
+  }
   doc.text(`Gerado em: ${dataAtual}`, 14, 37);
 
   doc.setDrawColor(229, 231, 235);

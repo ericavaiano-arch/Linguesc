@@ -151,7 +151,6 @@ async function cadastrarUsuario() {
     return
   }
 
-  // 1. Cria o usuário no Supabase Auth
   const { data, error: authError } = await supabase.auth.signUp({
     email: email.value,
     password: senha.value,
@@ -162,7 +161,6 @@ async function cadastrarUsuario() {
     return
   }
 
-  // 2. Insere os dados extras em usuarios
   const { error: dbError } = await supabase
     .from('usuarios')
     .insert({

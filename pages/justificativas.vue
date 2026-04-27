@@ -166,7 +166,6 @@ onMounted(async () => {
 async function carregarJustificativas() {
   loading.value = true
 
-  // Busca justificativas com dados relacionados
   const query = supabase
     .from('justificativa_falta')
     .select(`
@@ -197,7 +196,6 @@ async function carregarJustificativas() {
     return
   }
 
-  // Busca nomes dos alunos
   const alunoIds = [...new Set((data || []).map(j => j.aluno_id))]
   const { data: usuariosData } = await supabase
     .from('usuarios')
@@ -206,7 +204,6 @@ async function carregarJustificativas() {
 
   const nomeMap = Object.fromEntries((usuariosData || []).map(u => [u.id, u.nome]))
 
-  // Filtra só as turmas do professor atual (RLS já faz isso, mas filtramos no frontend também para admin)
   justificativas.value = (data || [])
   .map(j => ({
     ...j,

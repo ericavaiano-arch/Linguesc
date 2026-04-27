@@ -393,7 +393,6 @@ const form = ref({
 });
 const papeisCriacao = ref([]);
 
-// ── Filtro corrigido ──────────────────────────────────────────────
 const usuariosFiltrados = computed(() => {
   return usuarios.value.filter((u) => {
     const termo = filtro.value.trim().toLowerCase();
@@ -401,7 +400,7 @@ const usuariosFiltrados = computed(() => {
       !termo ||
       u.nome.toLowerCase().includes(termo) ||
       u.email.toLowerCase().includes(termo);
-    const matchTipo = !filtroTipo.value || u.papeis.includes(filtroTipo.value); // ✅ array
+    const matchTipo = !filtroTipo.value || u.papeis.includes(filtroTipo.value);
     const matchAtivo =
       filtroAtivo.value === "" || String(u.ativo) === filtroAtivo.value;
     return matchTexto && matchTipo && matchAtivo;
@@ -492,7 +491,6 @@ async function salvar() {
         return;
       }
 
-      // Insere o papel selecionado após ter o id
       await supabaseAdmin  
         .from("usuario_papel")
         .insert(

@@ -426,7 +426,6 @@ function gerarRecorrencia() {
 
   const atual = new Date(recorrenciaInicio.value + "T12:00:00");
 
-  // Avança até o dia da semana escolhido
   while (atual.getDay() !== diaSemana.value) {
     atual.setDate(atual.getDate() + 1);
   }
