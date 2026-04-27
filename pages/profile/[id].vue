@@ -85,7 +85,7 @@
           <input
             v-model="novaSenha"
             type="password"
-            placeholder="Mínimo 6 caracteres"
+            placeholder="Mínimo 8 caracteres"
             class="w-full h-10 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-700 transition"
           />
           <!-- Barra de força -->
@@ -211,13 +211,13 @@ const senhasDivergem = computed(() =>
 
 const podeSalvarSenha = computed(() =>
   !!senhaAtual.value && !!novaSenha.value && !!confirmarSenha.value &&
-  !senhasDivergem.value && novaSenha.value.length >= 6
+  !senhasDivergem.value && novaSenha.value.length >= 8
 )
 
 const forcaSenha = computed(() => {
   if (!novaSenha.value) return 0
   let f = 0
-  if (novaSenha.value.length >= 6) f++
+  if (novaSenha.value.length >= 8) f++
   if (novaSenha.value.length >= 10) f++
   if (/[A-Z]/.test(novaSenha.value) && /[0-9]/.test(novaSenha.value)) f++
   return f
