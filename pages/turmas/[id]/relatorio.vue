@@ -228,15 +228,16 @@
                 :key="aluno.id"
                 class="hover:bg-gray-50 transition"
               >
-                <td
-                  class="px-4 md:px-6 py-3 font-medium text-gray-800 whitespace-nowrap sticky left-0 bg-white z-10"
-                >
-                  {{ aluno.nome }}
-                  <span
-                    v-if="!aluno.ativo"
-                    class="ml-1 text-xs bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full"
-                    >Inativo</span
-                  >
+                <td class="px-4 md:px-6 py-3 sticky left-0 bg-white z-10">
+                  <p class="font-medium text-gray-800 whitespace-nowrap">
+                    {{ aluno.nome }}
+                    <span
+                      v-if="!aluno.ativo"
+                      class="ml-1 text-xs bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full"
+                      >Inativo</span
+                    >
+                  </p>
+                  <p class="text-xs text-gray-400">{{ aluno.email }}</p>
                 </td>
                 <!-- Células de datas: ocultas no mobile -->
                 <td
@@ -439,17 +440,13 @@ const dadosGraficoTurma = computed(() => {
 
   const dados = aulasRealizadas.map((_, idx) => {
     const aulasAte = aulasRealizadas.slice(0, idx + 1).map((a) => a.id);
-    let soma = 0,
-      count = 0;
+    let soma = 0, count = 0;
 
     alunos.value.forEach((v) => {
       const freq = calcularFrequenciaSync(
         v.id,
         aulasAte,
-        presencas.value.map((p) => ({
-          aluno_id: p.aluno_id,
-          aula_id: p.aula_id,
-        })),
+        presencas.value.map((p) => ({ aluno_id: p.aluno_id, aula_id: p.aula_id })),
         justificativas.value
           .filter((j) => j.status === "ACEITA")
           .map((j) => ({ aluno_id: j.aluno_id, aula_id: j.aula_id })),
@@ -483,9 +480,7 @@ const opcoesGraficoTurma = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
-    legend: {
-      display: false,
-    },
+    legend: { display: false },
     tooltip: {
       callbacks: {
         label: (ctx) => ` Frequência média: ${ctx.parsed.y}%`,
@@ -508,25 +503,28 @@ const opcoesGraficoTurma = {
 };
 
 onMounted(async () => {
-  const [{ data: turmaData }, { data: vinculosData }, { data: aulasData }] =
-    await Promise.all([
-      supabase
-        .from("turma")
-        .select(
-          "id, nome, status, meta_frequencia, professor_id, sala, descricao",
-        )
-        .eq("id", turmaId)
-        .single(),
-      supabase
-        .from("turma_aluno")
-        .select("aluno_id, usuarios(id, nome, ativo)")
-        .eq("turma_id", turmaId),
-      supabase
-        .from("aula")
-        .select("id, data, status")
-        .eq("turma_id", turmaId)
-        .order("data", { ascending: true }),
-    ]);
+  const [
+    { data: turmaData },
+    { data: vinculosData },
+    { data: aulasData },
+    { data: todosAlunos },
+  ] = await Promise.all([
+    supabase
+      .from("turma")
+      .select("id, nome, status, meta_frequencia, professor_id, sala, descricao")
+      .eq("id", turmaId)
+      .single(),
+    supabase
+      .from("turma_aluno")
+      .select("aluno_id, usuarios(id, nome, ativo)")
+      .eq("turma_id", turmaId),
+    supabase
+      .from("aula")
+      .select("id, data, status")
+      .eq("turma_id", turmaId)
+      .order("data", { ascending: true }),
+    supabase.rpc("get_alunos_ativos"),
+  ]);
 
   turma.value = turmaData;
 
@@ -539,10 +537,13 @@ onMounted(async () => {
     nomeProfessor.value = profData?.nome ?? "";
   }
 
+  const mapaEmails = Object.fromEntries((todosAlunos || []).map((a) => [a.id, a.email]));
+
   alunos.value = (vinculosData || [])
     .map((v) => ({
       id: v.aluno_id,
       nome: v.usuarios?.nome || "",
+      email: mapaEmails[v.aluno_id] || "",
       ativo: v.usuarios?.ativo ?? true,
     }))
     .sort((a, b) => a.nome.localeCompare(b.nome));
@@ -569,19 +570,13 @@ onMounted(async () => {
       supabase
         .from("justificativa_falta")
         .select("aluno_id, aula_id, status")
-        .in("aluno_id", alunoIds), 
+        .in("aluno_id", alunoIds),
     ]);
 
-  presencas.value = (presencasData || []).filter((p) =>
-    aulasIds.has(p.aula_id),
-  );
-  justificativas.value = (justificativasData || []).filter((j) =>
-    aulasIds.has(j.aula_id),
-  );
+  presencas.value = (presencasData || []).filter((p) => aulasIds.has(p.aula_id));
+  justificativas.value = (justificativasData || []).filter((j) => aulasIds.has(j.aula_id));
   loading.value = false;
 });
-
-// ─── Computeds ────────────────────────────────────────────────────
 
 const aulasRealizadas = computed(() =>
   aulas.value.filter((a) => a.status === "REALIZADA"),
@@ -603,21 +598,13 @@ const tabelaAlunos = computed(() => {
         (j) => j.aluno_id === aluno.id && j.aula_id === aula.id,
       );
       if (just?.status === "ACEITA") presencasPorAula[aula.id] = "J";
-      else if (just?.status === "PENDENTE")
-        presencasPorAula[aula.id] = "PENDENTE";
+      else if (just?.status === "PENDENTE") presencasPorAula[aula.id] = "PENDENTE";
       else presencasPorAula[aula.id] = "F";
     });
 
     const aulasIds = aulasRealizadas.value.map((a) => a.id);
-    const justAceitas = justificativas.value.filter(
-      (j) => j.status === "ACEITA",
-    );
-    const freq = calcularFrequenciaSync(
-      aluno.id,
-      aulasIds,
-      presencas.value,
-      justAceitas,
-    );
+    const justAceitas = justificativas.value.filter((j) => j.status === "ACEITA");
+    const freq = calcularFrequenciaSync(aluno.id, aulasIds, presencas.value, justAceitas);
 
     return {
       ...aluno,
@@ -641,21 +628,18 @@ const frequenciaMedia = computed(() => {
 });
 
 const alunosEmRisco = computed(
-  () =>
-    tabelaAlunos.value.filter((a) => a.frequencia < metaFrequencia.value)
-      .length,
+  () => tabelaAlunos.value.filter((a) => a.frequencia < metaFrequencia.value).length,
 );
 
-// ─── Helpers ──────────────────────────────────────────────────────
 function formatarDataCurta(dataStr) {
   const d = new Date(dataStr + "T12:00:00");
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
 
-// ─── Exportar CSV ─────────────────────────────────────────────────
 function exportarCSV() {
   const cabecalho = [
     "Aluno",
+    "E-mail",
     ...aulasRealizadas.value.map((a) => formatarDataCurta(a.data)),
     "Presenças",
     "Faltas",
@@ -664,6 +648,7 @@ function exportarCSV() {
 
   const linhas = tabelaAlunos.value.map((aluno) => [
     aluno.nome,
+    aluno.email,
     ...aulasRealizadas.value.map((aula) => {
       const v = aluno.presencasPorAula[aula.id];
       if (v === "P") return "P";
@@ -689,7 +674,6 @@ function exportarCSV() {
   URL.revokeObjectURL(url);
 }
 
-// ─── Imprimir PDF ─────────────────────────────────────────────────
 function imprimirPDF() {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
@@ -715,30 +699,27 @@ function imprimirPDF() {
   doc.setTextColor(107, 114, 128);
   doc.setFont("helvetica", "normal");
   doc.text(`Professor(a): ${nomeProfessor.value}`, 14, 32);
-  if (turma.value?.descricao) {
-    doc.text(`Descrição: ${turma.value.descricao}`, 14, 42);
-    doc.line(14, 45, 283, 45);
-  }
   doc.text(`Gerado em: ${dataAtual}`, 14, 37);
 
   doc.setDrawColor(229, 231, 235);
   doc.setLineWidth(0.3);
-  doc.line(14, 40, 283, 40);
 
+  let linhaY = 40;
+  if (turma.value?.descricao) {
+    doc.text(`Descrição: ${turma.value.descricao}`, 14, 42);
+    linhaY = 46;
+  }
+  doc.line(14, linhaY, 283, linhaY);
+
+  const cardY = linhaY + 2;
   const cards = [
     { label: "Total de alunos", valor: String(alunos.value.length) },
     { label: "Aulas realizadas", valor: String(aulasRealizadas.value.length) },
     { label: "Frequência média", valor: `${frequenciaMedia.value}%` },
-    {
-      label: "Alunos com frequência abaixo da média",
-      valor: String(alunosEmRisco.value),
-    },
+    { label: "Alunos com frequência abaixo da média", valor: String(alunosEmRisco.value) },
   ];
 
-  const cardW = 60,
-    cardH = 16,
-    cardY = 40,
-    cardGap = 5;
+  const cardW = 60, cardH = 16, cardGap = 5;
 
   cards.forEach((card, i) => {
     const x = 14 + i * (cardW + cardGap);
@@ -755,15 +736,9 @@ function imprimirPDF() {
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
 
-    if (
-      card.label === "Alunos com frequência abaixo da média" &&
-      alunosEmRisco.value > 0
-    ) {
+    if (card.label === "Alunos com frequência abaixo da média" && alunosEmRisco.value > 0) {
       doc.setTextColor(220, 38, 38);
-    } else if (
-      card.label === "Frequência média" &&
-      frequenciaMedia.value < metaFrequencia.value
-    ) {
+    } else if (card.label === "Frequência média" && frequenciaMedia.value < metaFrequencia.value) {
       doc.setTextColor(220, 38, 38);
     } else {
       doc.setTextColor(22, 163, 74);
@@ -780,7 +755,7 @@ function imprimirPDF() {
   ];
 
   const linhas = tabelaAlunos.value.map((aluno) => [
-    aluno.nome + (aluno.ativo ? "" : " (inativo)"),
+    aluno.nome + (aluno.ativo ? "" : " (inativo)") + (aluno.email ? `\n${aluno.email}` : ""),
     ...aulasRealizadas.value.map((aula) => {
       const v = aluno.presencasPorAula[aula.id];
       if (v === "P") return "P";
@@ -814,7 +789,7 @@ function imprimirPDF() {
       lineWidth: 0.2,
     },
     columnStyles: {
-      0: { halign: "left", cellWidth: 45 },
+      0: { halign: "left", cellWidth: 55 },
       [cabecalho.length - 1]: { halign: "center", fontStyle: "bold" },
     },
     didParseCell(data) {
@@ -824,21 +799,17 @@ function imprimirPDF() {
       if (isAulaCol && data.section === "body") {
         data.cell.styles.halign = "center";
         data.cell.styles.fontStyle = "bold";
-        if (data.cell.raw === "P") {
-          data.cell.styles.textColor = [22, 163, 74];
-        } else if (data.cell.raw === "J") {
-          data.cell.styles.textColor = [37, 99, 235];
-        } else if (data.cell.raw === "?") {
-          data.cell.styles.textColor = [161, 98, 7];
-        } else if (data.cell.raw === "F") {
-          data.cell.styles.textColor = [220, 38, 38];
-        }
+        if (data.cell.raw === "P") data.cell.styles.textColor = [22, 163, 74];
+        else if (data.cell.raw === "J") data.cell.styles.textColor = [37, 99, 235];
+        else if (data.cell.raw === "?") data.cell.styles.textColor = [161, 98, 7];
+        else if (data.cell.raw === "F") data.cell.styles.textColor = [220, 38, 38];
       }
 
-      if (
-        data.column.index === cabecalho.length - 1 &&
-        data.section === "body"
-      ) {
+      if (data.column.index === 0 && data.section === "body") {
+        data.cell.styles.fontSize = 7;
+      }
+
+      if (data.column.index === cabecalho.length - 1 && data.section === "body") {
         const freq = parseInt(data.cell.raw);
         data.cell.styles.textColor =
           freq < metaFrequencia.value ? [220, 38, 38] : [22, 163, 74];
@@ -863,37 +834,6 @@ function imprimirPDF() {
       );
     },
   });
-
-  // // Após o autoTable, antes do doc.save
-  // const legendaY = doc.lastAutoTable.finalY + 6
-  // doc.setFontSize(7)
-  // doc.setTextColor(156, 163, 175)
-  // doc.setFont('helvetica', 'normal')
-  // doc.text('Legenda: P = Presente; J = Justificada; ? = Pendente Justificativa; F = Falta', 14, legendaY)
-
-  // // Captura o canvas do gráfico como imagem
-  // if (graficoRef.value) {
-  //   const chartInstance = graficoRef.value.chart
-  //   if (chartInstance) {
-  //     const imgData = chartInstance.toBase64Image()
-  //     const pageWidth = doc.internal.pageSize.getWidth()
-  //     const margin = 14
-  //     const imgWidth = pageWidth - margin * 2
-  //     const imgHeight = imgWidth * (256 / 600) // proporcional ao h-64 aprox
-
-  //     // Verifica se cabe na página atual ou pula para nova
-  //     if (doc.internal.getCurrentPageInfo().pageNumber > 0) {
-  //       doc.addPage()
-  //     }
-
-  //     doc.setFontSize(10)
-  //     doc.setTextColor(100)
-  //     doc.text('Evolução da frequência por aula', margin, doc.internal.cursor?.y ?? 20)
-
-  //     const yGrafico = (doc.internal.cursor?.y ?? 20) + 6
-  //     doc.addImage(imgData, 'PNG', margin, yGrafico, imgWidth, imgHeight)
-  //   }
-  // }
 
   doc.save(
     `presenca_${turmaName.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`,
