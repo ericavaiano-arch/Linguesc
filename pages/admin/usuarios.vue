@@ -145,11 +145,56 @@
                 >
                   {{ usuario.ativo ? "🚫 Desativar" : "✅ Ativar" }}
                 </button>
+                <div class="w-px h-6 bg-gray-200"></div>
+                <button
+                  v-if="isAdmin"
+                  @click="usuarioParaDeletar = usuario"
+                  class="text-xs px-3 py-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition font-semibold"
+                >
+                  Deletar Usuário
+                </button>
               </div>
             </td>
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Modal de confirmação de deleção -->
+    <div
+      v-if="usuarioParaDeletar"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      @click.self="usuarioParaDeletar = null"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4 space-y-4"
+      >
+        <h3 class="text-lg font-semibold text-gray-800">Deletar usuário</h3>
+        <p class="text-sm text-gray-600">
+          Tem certeza que deseja deletar o usuário
+          <span class="font-medium">{{ usuarioParaDeletar.nome }}</span>?
+          Todos os dados relacionados serão removidos permanentemente. Esta ação não pode ser desfeita.
+        </p>
+        <div class="flex gap-3 justify-end">
+          <button
+            @click="usuarioParaDeletar = null"
+            class="px-4 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition"
+          >
+            Cancelar
+          </button>
+          <button
+            @click="confirmarDelecao"
+            :disabled="deletando"
+            class="px-4 py-2 rounded-xl text-sm bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+          >
+            <div
+              v-if="deletando"
+              class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"
+            ></div>
+            {{ deletando ? 'Deletando...' : 'Deletar' }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Overlay -->
@@ -222,8 +267,6 @@
             <label class="text-sm font-medium text-gray-700 mb-3 block"
               >Papéis</label
             >
-
-            <!-- Papéis selecionados -->
             <div class="flex flex-wrap gap-2 mb-3">
               <div
                 v-for="papel in papeisCriacao"
@@ -250,8 +293,6 @@
                 Nenhum papel selecionado.
               </span>
             </div>
-
-            <!-- Adicionar papel -->
             <div class="flex gap-2">
               <select
                 v-model="novoPapel"
@@ -278,13 +319,10 @@
             </div>
           </div>
 
-          <!-- Papéis (só na edição) -->
           <div v-if="modo === 'editar'">
             <label class="text-sm font-medium text-gray-700 mb-3 block"
               >Papéis</label
             >
-
-            <!-- Papéis ativos -->
             <div class="flex flex-wrap gap-2 mb-3">
               <div
                 v-for="p in papeisUsuario.filter((p) => p.ativo)"
@@ -311,8 +349,6 @@
                 Nenhum papel ativo.
               </span>
             </div>
-
-            <!-- Adicionar papel -->
             <div class="flex gap-2">
               <select
                 v-model="novoPapel"
@@ -368,7 +404,7 @@
 </template>
 
 <script setup>
-import { supabase, supabaseAdmin } from "~/utils/supabase";
+import { supabase } from "~/utils/supabase";
 
 definePageMeta({ middleware: "admin" });
 
@@ -385,6 +421,13 @@ const salvando = ref(false);
 const usuarioEditando = ref(null);
 const papeisUsuario = ref([]);
 const novoPapel = ref("");
+const usuarioParaDeletar = ref(null);
+const deletando = ref(false);
+
+const isAdmin = computed(() => {
+  const user = usuarios.value;
+  return true;
+});
 
 const form = ref({
   nome: "",
@@ -392,6 +435,19 @@ const form = ref({
   senha: "",
 });
 const papeisCriacao = ref([]);
+
+const { data: authData } = await supabase.auth.getSession();
+const usuarioLogadoId = authData?.session?.user?.id;
+
+const { data: papelLogado } = await supabase
+  .from("usuario_papel")
+  .select("papel")
+  .eq("usuario_id", usuarioLogadoId)
+  .eq("ativo", true);
+
+const isAdminLogado = computed(() =>
+  (papelLogado || []).some((p) => p.papel === "ADMIN")
+);
 
 const usuariosFiltrados = computed(() => {
   return usuarios.value.filter((u) => {
@@ -458,6 +514,43 @@ function removerPapelCriacao(papel) {
   papeisCriacao.value = papeisCriacao.value.filter((p) => p !== papel);
 }
 
+async function confirmarDelecao() {
+  if (!usuarioParaDeletar.value) return;
+  deletando.value = true;
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/deletar-usuario`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token ?? ""}`,
+        },
+        body: JSON.stringify({ usuario_id: usuarioParaDeletar.value.id }),
+      }
+    );
+
+    const resultado = await res.json();
+
+    if (!res.ok) {
+      $toast.error(resultado.error ?? "Erro ao deletar usuário.");
+      return;
+    }
+
+    $toast.success("Usuário deletado com sucesso!");
+    usuarioParaDeletar.value = null;
+    await carregarUsuarios();
+  } catch (err) {
+    console.error(err);
+    $toast.error("Erro ao deletar usuário.");
+  } finally {
+    deletando.value = false;
+  }
+}
+
 async function salvar() {
   if (!form.value.nome.trim() || !form.value.email.trim()) return;
   salvando.value = true;
@@ -469,41 +562,36 @@ async function salvar() {
         return;
       }
 
-      const { data, error: authError } = await supabaseAdmin.auth.signUp({
-        email: form.value.email.trim(),
-        password: form.value.senha,
-      });
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (authError || !data.user) {
-        $toast.error(authError?.message ?? "Erro ao criar usuário.");
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/criar-usuario`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token ?? ""}`,
+          },
+          body: JSON.stringify({
+            nome: form.value.nome.trim(),
+            email: form.value.email.trim(),
+            senha: form.value.senha,
+            papeis: papeisCriacao.value,
+          }),
+        }
+      );
+
+      const resultado = await res.json();
+      if (!res.ok) {
+        $toast.error(resultado.error ?? "Erro ao criar usuário.");
         return;
       }
-
-      const novoId = data.user.id;
-
-      const { error: dbError } = await supabaseAdmin
-        .from("usuarios")
-        .insert({ id: novoId, nome: form.value.nome.trim() });
-
-      if (dbError) {
-        $toast.error("Erro ao salvar perfil do usuário.");
-        console.error(dbError);
-        return;
-      }
-
-      await supabaseAdmin  
-        .from("usuario_papel")
-        .insert(
-          papeisCriacao.value.map((papel) => ({
-            usuario_id: novoId,
-            papel,
-            ativo: true,
-          })),
-        );
 
       $toast.success("Usuário criado com sucesso!");
     } else {
-      const { error } = await supabaseAdmin
+      const { error } = await supabase
         .from("usuarios")
         .update({ nome: form.value.nome.trim() })
         .eq("id", usuarioEditando.value.id);
