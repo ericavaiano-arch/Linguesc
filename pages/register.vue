@@ -127,8 +127,6 @@
 </template>
 
 <script setup>
-import { supabase } from '~/utils/supabase'
-
 definePageMeta({ layout: 'auth' })
 
 const { $toast } = useNuxtApp()
@@ -139,6 +137,7 @@ const senha = ref('')
 const tipoUsuario = ref('')
 const emailInvalido = ref(false)
 const senhaCurta = ref(false)
+const carregando = ref(false)
 
 async function cadastrarUsuario() {
   if (!nome.value || !email.value || !senha.value || !tipoUsuario.value) {
@@ -151,33 +150,38 @@ async function cadastrarUsuario() {
     return
   }
 
-  const { data, error: authError } = await supabase.auth.signUp({
-    email: email.value,
-    password: senha.value,
-  })
+  carregando.value = true
 
-  if (authError || !data.user) {
-    $toast.error(authError?.message ?? 'Erro ao cadastrar.')
-    return
+  try {
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cadastrar-usuario`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: nome.value.trim(),
+          email: email.value.trim(),
+          senha: senha.value,
+          papel: tipoUsuario.value,
+        }),
+      }
+    )
+
+    const resultado = await res.json()
+
+    if (!res.ok) {
+      $toast.error(resultado.error ?? 'Erro ao cadastrar.')
+      return
+    }
+
+    $toast.success('Cadastro realizado! Faça login para continuar.')
+    navigateTo('/')
+  } catch (err) {
+    console.error(err)
+    $toast.error('Erro ao cadastrar.')
+  } finally {
+    carregando.value = false
   }
-
-  const { error: dbError } = await supabase
-    .from('usuarios')
-    .insert({
-      id: data.user.id,
-      nome: nome.value,
-    })
-    
-
-  if (dbError) {
-    $toast.error('Erro ao salvar perfil.')
-    return
-  }
-
-  await supabase.from('usuario_papel').insert({ usuario_id: data.user.id, papel: tipoUsuario.value })
-
-  $toast.success('Cadastro realizado! Faça login para continuar.')
-  navigateTo('/')
 }
 
 function voltar() {

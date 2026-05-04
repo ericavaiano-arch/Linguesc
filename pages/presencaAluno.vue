@@ -327,7 +327,7 @@
             <div
               class="rounded-xl px-5 py-4 border transition-all"
               :class="
-                projecao.frequencia >= (turma?.meta_frequencia ?? 70)
+                projecao.frequencia >= (turma?.meta_frequencia ?? 75)
                   ? 'bg-green-50 border-green-200'
                   : 'bg-red-50 border-red-200'
               "
@@ -339,7 +339,7 @@
                 <span
                   class="text-2xl font-bold"
                   :class="
-                    projecao.frequencia >= (turma?.meta_frequencia ?? 70)
+                    projecao.frequencia >= (turma?.meta_frequencia ?? 75)
                       ? 'text-green-700'
                       : 'text-red-600'
                   "
@@ -352,7 +352,7 @@
                 <div
                   class="h-2 rounded-full transition-all duration-300"
                   :class="
-                    projecao.frequencia >= (turma?.meta_frequencia ?? 70)
+                    projecao.frequencia >= (turma?.meta_frequencia ?? 75)
                       ? 'bg-green-500'
                       : 'bg-red-400'
                   "
@@ -360,14 +360,14 @@
                 ></div>
                 <div
                   class="absolute top-0 h-2 w-0.5 bg-gray-400"
-                  :style="{ left: (turma?.meta_frequencia ?? 70) + '%' }"
+                  :style="{ left: (turma?.meta_frequencia ?? 75) + '%' }"
                 ></div>
               </div>
 
               <p
                 class="text-sm font-medium"
                 :class="
-                  projecao.frequencia >= (turma?.meta_frequencia ?? 70)
+                  projecao.frequencia >= (turma?.meta_frequencia ?? 75)
                     ? 'text-green-700'
                     : 'text-red-600'
                 "
@@ -592,7 +592,7 @@ const totalFaltas = computed(
 );
 
 const statusMeta = computed(() => {
-  const meta = metaFrequencia.value ?? 70;
+  const meta = metaFrequencia.value ?? 75;
   const total = aulasRealizadas.value.length;
   const frequencia = freq.value.frequencia;
 
@@ -640,7 +640,7 @@ function toggleAulaSimulada(aulaId) {
 }
 
 const projecao = computed(() => {
-  const meta = metaFrequencia.value ?? 70;
+  const meta = metaFrequencia.value ?? 75;
   const faltasSimuladas = aulasSimuladasFalta.value.size;
   const presencasFuturas = proximasAulas.value.length - faltasSimuladas;
   const totalAulasComFuturas =

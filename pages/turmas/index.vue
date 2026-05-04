@@ -254,6 +254,7 @@
             <p class="text-4xl mb-4">📚</p>
             <p class="text-gray-500 font-medium">Nenhuma turma ativa.</p>
             <button
+              v-if="isAdmin"
               @click="abrirCriacao"
               class="mt-4 text-green-600 font-semibold hover:underline text-sm"
             >

@@ -428,8 +428,8 @@ async function salvarChamada() {
       .eq("id", aulaSelecionada.value.id);
 
     const msg = modoEdicao.value
-      ? `Chamada atualizada! +${aInserir.length} adicionado(s), -${aRemover.length} removido(s).`
-      : `Chamada salva! ${presentes.value.size} presença(s) registrada(s).`;
+      ? `Chamada atualizada!`
+      : `Chamada salva!`;
 
     $toast.success(msg);
 
@@ -443,7 +443,7 @@ async function salvarChamada() {
       console.error("Erro ao emitir notificação:", err),
     );
 
-    router.push("/chamada-manual");
+    router.push("/turmas");
   } catch (err) {
     console.error(err);
     $toast.error("Erro ao salvar chamada.");
