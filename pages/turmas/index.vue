@@ -90,78 +90,89 @@
             <div
               v-for="turma in grupo.turmasAtivas"
               :key="turma.id"
-              class="group bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-green-400 transition-all duration-200"
+              class="bg-white border border-gray-200 rounded-2xl hover:border-gray-300 transition-all duration-150"
             >
-              <div class="flex items-start justify-between mb-3">
-                <div class="flex-1 min-w-0 pr-2">
-                  <h2
-                    class="text-base font-semibold text-gray-800 group-hover:text-green-700 transition truncate"
+              <!-- Corpo -->
+              <div class="px-4 pt-4 pb-3">
+                <h2 class="text-sm font-semibold text-gray-800 truncate">
+                  {{ turma.nome }}
+                </h2>
+                <p class="text-xs text-gray-400 mt-0.5">
+                  {{ turma.sala != null ? "Sala " + turma.sala + " · " : ""
+                  }}{{ turma.turma_aluno[0]?.count ?? 0 }} aluno(s)
+                </p>
+                <p
+                  v-if="turma.descricao"
+                  class="text-xs text-gray-400 mt-1 line-clamp-2"
+                >
+                  {{ turma.descricao }}
+                </p>
+              </div>
+
+              <!-- Rodapé -->
+              <div class="flex items-stretch border-t border-gray-100">
+                <button
+                  @click.stop="$router.push(`/chamada-manual/${turma.id}`)"
+                  class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-green-800 bg-green-50 hover:bg-green-100 transition"
+                >
+                  <svg
+                    class="w-3.5 h-3.5 shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
                   >
-                    {{ turma.nome }}
-                  </h2>
-                  <p class="text-xs text-gray-400 mt-0.5">
-                    {{ turma.sala != null ? "Sala " + turma.sala : "" }}
-                  </p>
-                  <p
-                    v-if="turma.descricao"
-                    class="text-xs text-gray-400 mt-0.5 line-clamp-2"
+                    <path d="M9 11l3 3L22 4" />
+                    <path
+                      d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"
+                    />
+                  </svg>
+                  Fazer Chamada
+                </button>
+
+                <div class="w-px bg-gray-100 self-stretch"></div>
+
+                <div class="relative flex">
+                  <button
+                    @click.stop="toggleMenu(turma.id)"
+                    class="w-10 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition text-lg"
                   >
-                    {{ turma.descricao }}
-                  </p>
-                  <p class="text-xs text-gray-400 mt-0.5">
-                    {{ turma.turma_aluno[0]?.count ?? 0 }} aluno(s)
-                  </p>
-                </div>
-                <div class="flex items-center gap-1 flex-shrink-0">
-                  <div class="relative">
-                    <button
-                      @click.stop="toggleMenu(turma.id)"
-                      class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition text-lg"
+                    ⋮
+                  </button>
+
+                  <Transition name="dropdown">
+                    <div
+                      v-if="menuAberto === turma.id"
+                      class="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-30 py-1 overflow-hidden"
                     >
-                      ⋮
-                    </button>
-                    <Transition name="dropdown">
-                      <div
-                        v-if="menuAberto === turma.id"
-                        class="absolute right-0 top-9 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-30 py-1 overflow-hidden"
+                      <button
+                        @click.stop="navegar(`/turmas/${turma.id}/aulas`)"
+                        class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
                       >
-                        <button
-                          @click.stop="
-                            $router.push(`/chamada-manual/${turma.id}`)
-                          "
-                          class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
-                        >
-                          ✅ <span>Fazer Chamada</span>
-                        </button>
-                        <button
-                          @click.stop="navegar(`/turmas/${turma.id}/aulas`)"
-                          class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
-                        >
-                          📅 <span>Cadastrar Aulas</span>
-                        </button>
-                        <button
-                          @click.stop="navegar(`/turmas/${turma.id}/relatorio`)"
-                          class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
-                        >
-                          📄 <span>Relatório</span>
-                        </button>
-                        <button
-                          v-if="isAdmin"
-                          @click.stop="abrirEdicaoMenu(turma)"
-                          class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
-                        >
-                          ✏️ <span>Editar turma</span>
-                        </button>
-                        <div class="border-t border-gray-100 my-1"></div>
-                        <button
-                          @click.stop="confirmarEncerramentoMenu(turma)"
-                          class="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition flex items-center gap-2"
-                        >
-                          🔒 <span>Encerrar turma</span>
-                        </button>
-                      </div>
-                    </Transition>
-                  </div>
+                        📅 <span>Cadastrar Aulas</span>
+                      </button>
+                      <button
+                        @click.stop="navegar(`/turmas/${turma.id}/relatorio`)"
+                        class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
+                      >
+                        📄 <span>Relatório</span>
+                      </button>
+                      <button
+                        v-if="isAdmin"
+                        @click.stop="abrirEdicaoMenu(turma)"
+                        class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
+                      >
+                        ✏️ <span>Editar turma</span>
+                      </button>
+                      <div class="border-t border-gray-100 my-1"></div>
+                      <button
+                        @click.stop="confirmarEncerramentoMenu(turma)"
+                        class="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition flex items-center gap-2"
+                      >
+                        🔒 <span>Encerrar turma</span>
+                      </button>
+                    </div>
+                  </Transition>
                 </div>
               </div>
             </div>
@@ -268,78 +279,91 @@
             <div
               v-for="turma in turmasAtivas"
               :key="turma.id"
-              class="group bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-green-400 transition-all duration-200"
+              class="bg-white border border-gray-200 rounded-2xl hover:border-gray-300 transition-all duration-150"
             >
-              <div class="flex items-start justify-between mb-3">
-                <div class="flex-1 min-w-0 pr-2">
-                  <h2
-                    class="text-base font-semibold text-gray-800 group-hover:text-green-700 transition truncate"
+              <!-- Corpo -->
+              <div class="px-4 pt-4 pb-3">
+                <h2 class="text-sm font-semibold text-gray-800 truncate">
+                  {{ turma.nome }}
+                </h2>
+                <p class="text-xs text-gray-400 mt-0.5">
+                  {{ turma.sala != null ? "Sala " + turma.sala + " · " : ""
+                  }}{{ turma.turma_aluno[0]?.count ?? 0 }} aluno(s)
+                </p>
+                <p
+                  v-if="turma.descricao"
+                  class="text-xs text-gray-400 mt-1 line-clamp-2"
+                >
+                  {{ turma.descricao }}
+                </p>
+              </div>
+
+              <!-- Rodapé -->
+              <div class="flex items-stretch border-t border-gray-100">
+                <button
+                  @click.stop="$router.push(`/chamada-manual/${turma.id}`)"
+                  class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-green-800 bg-green-50 hover:bg-green-100 transition"
+                >
+                  <svg
+                    class="w-3.5 h-3.5 shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
                   >
-                    {{ turma.nome }}
-                  </h2>
-                  <p class="text-xs text-gray-400 mt-0.5">
-                    {{ turma.sala != null ? "Sala " + turma.sala : "" }}
-                  </p>
-                  <p
-                    v-if="turma.descricao"
-                    class="text-xs text-gray-400 mt-0.5 line-clamp-2"
+                    <path d="M9 11l3 3L22 4" />
+                    <path
+                      d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"
+                    />
+                  </svg>
+                  Fazer Chamada
+                </button>
+
+                <div class="w-px bg-gray-100 self-stretch"></div>
+
+                <div class="relative flex">
+                  <button
+                    @click.stop="toggleMenu(turma.id)"
+                    class="w-10 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition text-lg"
                   >
-                    {{ turma.descricao }}
-                  </p>
-                  <p class="text-xs text-gray-400 mt-0.5">
-                    {{ turma.turma_aluno[0]?.count ?? 0 }} aluno(s)
-                  </p>
-                </div>
-                <div class="flex items-center gap-1 flex-shrink-0">
-                  <div class="relative">
-                    <button
-                      @click.stop="toggleMenu(turma.id)"
-                      class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition text-lg"
+                    ⋮
+                  </button>
+
+                  <Transition name="dropdown">
+                    <div
+                      v-if="menuAberto === turma.id"
+                      class="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-30 py-1 overflow-hidden"
                     >
-                      ⋮
-                    </button>
-                    <Transition name="dropdown">
-                      <div
-                        v-if="menuAberto === turma.id"
-                        class="absolute right-0 top-9 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-30 py-1 overflow-hidden"
+                      <button
+                        @click.stop="$router.push(`/turmas/${turma.id}/aulas`)"
+                        class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
                       >
-                        <button
-                          @click.stop="
-                            $router.push(`/chamada-manual/${turma.id}`)
-                          "
-                          class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
-                        >
-                          ✅ <span>Fazer Chamada</span>
-                        </button>
-                        <button
-                          @click.stop="navegar(`/turmas/${turma.id}/aulas`)"
-                          class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
-                        >
-                          📅 <span>Cadastrar Aulas</span>
-                        </button>
-                        <button
-                          @click.stop="navegar(`/turmas/${turma.id}/relatorio`)"
-                          class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
-                        >
-                          📄 <span>Relatório</span>
-                        </button>
-                        <button
-                          v-if="isAdmin"
-                          @click.stop="abrirEdicaoMenu(turma)"
-                          class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
-                        >
-                          ✏️ <span>Editar turma</span>
-                        </button>
-                        <div class="border-t border-gray-100 my-1"></div>
-                        <button
-                          @click.stop="confirmarEncerramentoMenu(turma)"
-                          class="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition flex items-center gap-2"
-                        >
-                          🔒 <span>Encerrar turma</span>
-                        </button>
-                      </div>
-                    </Transition>
-                  </div>
+                        📅 <span>Cadastrar Aulas</span>
+                      </button>
+                      <button
+                        @click.stop="
+                          $router.push(`/turmas/${turma.id}/relatorio`)
+                        "
+                        class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
+                      >
+                        📄 <span>Relatório</span>
+                      </button>
+                      <button
+                        v-if="isAdmin"
+                        @click.stop="abrirEdicaoMenu(turma)"
+                        class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
+                      >
+                        ✏️ <span>Editar turma</span>
+                      </button>
+                      <div class="border-t border-gray-100 my-1"></div>
+                      <button
+                        @click.stop="confirmarEncerramentoMenu(turma)"
+                        class="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition flex items-center gap-2"
+                      >
+                        🔒 <span>Encerrar turma</span>
+                      </button>
+                    </div>
+                  </Transition>
                 </div>
               </div>
             </div>

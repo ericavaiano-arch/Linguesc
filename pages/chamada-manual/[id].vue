@@ -1,249 +1,162 @@
 <template>
-  <div class="min-h-screen bg-gray-50 p-8">
-    <!-- Header -->
-    <div class="mb-10">
-      <button
-        @click="$router.back()"
-        class="text-sm text-gray-400 hover:text-gray-600 transition mb-4 flex items-center gap-1"
-      >
-        ← Voltar
-      </button>
-      <h1 class="text-3xl font-bold text-green-700">
-        Chamada — {{ turma?.nome }}
-      </h1>
-      <p class="text-gray-500 mt-2">
-        Selecione a aula e marque os alunos presentes.
-      </p>
-      <div class="w-20 h-1 bg-green-600 mt-4 rounded"></div>
-    </div>
+  <div class="min-h-screen bg-gray-50 p-4 sm:p-8">
+    <div class="max-w-3xl mx-auto">
 
-    <div v-if="loading" class="flex items-center gap-3 text-green-700">
-      <div
-        class="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"
-      ></div>
-      <span>Carregando...</span>
-    </div>
-
-    <div v-else>
-      <!-- Seleção de aula -->
-      <div
-        class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-8"
-      >
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">
-          📅 Selecione a Aula
-        </h2>
-
-        <div
-          v-if="aulas.length === 0"
-          class="text-sm text-gray-400 py-4 text-center"
-        >
-          Nenhuma aula cadastrada para esta turma.
-          <br />
-          <button
-            @click="$router.push(`/turmas/${turmaId}/aulas`)"
-            class="mt-2 text-green-600 hover:underline font-medium"
-          >
-            Cadastrar aulas →
-          </button>
-        </div>
-
-        <ul v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <li
-            v-for="aula in aulasOrdenadas"
-            :key="aula.id"
-            @click="!isBloqueada(aula) && selecionarAula(aula)"
-            class="flex items-center justify-between px-4 py-3 rounded-xl border transition-all"
-            :class="[
-              isBloqueada(aula)
-                ? 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
-                : 'cursor-pointer',
-              !isBloqueada(aula) && aulaSelecionada?.id === aula.id
-                ? 'border-green-500 bg-green-50'
-                : !isBloqueada(aula)
-                  ? 'border-gray-200 bg-gray-50 hover:border-green-300'
-                  : '',
-            ]"
-          >
-            <div>
-              <p class="text-sm font-semibold text-gray-800">
-                {{ formatarData(aula.data) }}
-              </p>
-              <span
-                class="text-xs px-2 py-0.5 rounded font-medium"
-                :class="{
-                  'bg-green-200 text-green-800': aula.status === 'REALIZADA',
-                  'bg-yellow-100 text-yellow-800': aula.status === 'AGENDADA',
-                  'bg-red-200 text-red-800': aula.status === 'CANCELADA',
-                }"
-              >
-                {{ aula.status }}
-              </span>
-              <p v-if="isFutura(aula)" class="text-xs text-gray-400 mt-0.5">
-                Aula futura
-              </p>
-            </div>
-            <div
-              v-if="aulaSelecionada?.id === aula.id"
-              class="w-4 h-4 rounded-full bg-green-500"
-            ></div>
-          </li>
-        </ul>
+      <!-- Header -->
+      <div class="mb-6">
+        <button @click="$router.back()" class="text-sm text-gray-400 hover:text-gray-600 transition mb-3 flex items-center gap-1">
+          ← Voltar
+        </button>
+        <h1 class="text-2xl font-bold text-green-700">Chamada — {{ turma?.nome }}</h1>
+        <p class="text-gray-500 text-sm mt-1">Selecione a aula e registre as presenças.</p>
       </div>
 
-      <!-- Grid de alunos (só aparece se tiver aula selecionada) -->
-      <div
-        v-if="aulaSelecionada"
-        class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-8"
-      >
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-lg font-semibold text-gray-800">
-            👥 Alunos da Turma
-          </h2>
-          <div class="flex items-center gap-3">
-            <div
-              v-if="loadingPresencas"
-              class="flex items-center gap-2 text-sm text-green-700"
-            >
-              <div
-                class="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"
-              ></div>
+      <div v-if="loading" class="flex items-center gap-3 text-green-700">
+        <div class="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+        <span class="text-sm">Carregando...</span>
+      </div>
+
+      <div v-else>
+
+        <!-- Dropdown de aulas -->
+        <div class="relative mb-4" ref="dropdownRef">
+          <button
+            @click="dropdownAberto = !dropdownAberto"
+            class="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 flex items-center justify-between text-left shadow-sm hover:border-gray-300 transition"
+          >
+            <div>
+              <p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Aula selecionada</p>
+              <p class="text-sm font-semibold text-gray-800">
+                {{ aulaSelecionada ? formatarData(aulaSelecionada.data) : 'Selecione uma aula...' }}
+              </p>
             </div>
-            <span
-              v-else-if="modoEdicao"
-              class="text-xs bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full font-medium"
+            <svg class="w-4 h-4 text-gray-400 transition-transform" :class="{ 'rotate-180': dropdownAberto }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+
+          <!-- Lista do dropdown -->
+          <div
+            v-if="dropdownAberto"
+            class="absolute top-full left-0 right-0 z-20 bg-white border border-t-0 border-gray-200 rounded-b-2xl shadow-lg overflow-hidden max-h-64 overflow-y-auto"
+          >
+            <div v-if="aulas.length === 0" class="px-4 py-3 text-sm text-gray-400 text-center">
+              Nenhuma aula cadastrada.
+            </div>
+            <button
+              v-for="aula in aulasOrdenadas"
+              :key="aula.id"
+              @click="!isBloqueada(aula) && escolherAula(aula)"
+              class="w-full flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-0 text-left transition"
+              :class="
+                isBloqueada(aula)
+                  ? 'opacity-40 cursor-not-allowed bg-gray-50'
+                  : aulaSelecionada?.id === aula.id
+                    ? 'bg-green-50'
+                    : 'hover:bg-gray-50 cursor-pointer'
+              "
             >
-              ✏️ Editando chamada
-            </span>
-            <span
-              v-else
-              class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-medium"
-            >
-              🆕 Nova chamada
-            </span>
-            <span
-              class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full"
-            >
-              {{ presentesCount }}/{{ alunos.length }}
-            </span>
+              <div>
+                <p class="text-sm font-semibold text-gray-800">{{ formatarData(aula.data) }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">
+                  {{ isFutura(aula) ? 'Aula futura — indisponível' : aula.status === 'CANCELADA' ? 'Cancelada — indisponível' : 'Disponível para chamada' }}
+                </p>
+              </div>
+              <span
+                class="text-xs px-2 py-0.5 rounded-full font-medium ml-3 shrink-0"
+                :class="{
+                  'bg-green-100 text-green-700': aula.status === 'REALIZADA',
+                  'bg-yellow-100 text-yellow-700': aula.status === 'AGENDADA',
+                  'bg-red-100 text-red-600': aula.status === 'CANCELADA',
+                  'bg-gray-100 text-gray-500': isFutura(aula),
+                }"
+              >
+                {{ isFutura(aula) ? 'futura' : aula.status.toLowerCase() }}
+              </span>
+            </button>
           </div>
         </div>
 
-        <!-- Ações rápidas -->
-        <div class="flex gap-3 mb-6">
-          <button
-            @click="marcarTodos"
-            class="text-sm px-4 py-2 rounded-xl border border-green-300 text-green-700 hover:bg-green-50 transition"
-          >
-            ✅ Marcar todos
-          </button>
-          <button
-            @click="desmarcarTodos"
-            class="text-sm px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
-          >
-            ❌ Desmarcar todos
-          </button>
-        </div>
+        <!-- Card de chamada -->
+        <div v-if="aulaSelecionada" class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
 
-        <!-- Lista de alunos -->
-        <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <li
-            v-for="aluno in alunos"
-            :key="aluno.id"
-            @click="aluno.ativo ? togglePresenca(aluno.id) : null"
-            class="flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-150"
-            :class="
-              !aluno.ativo
-                ? 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'
-                : presentes.has(aluno.id)
-                  ? 'border-green-400 bg-green-50 text-green-800 cursor-pointer'
-                  : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 hover:bg-gray-100 cursor-pointer'
-            "
-          >
-            <div
-              class="w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all"
+          <!-- Cabeçalho do card -->
+          <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div class="flex items-center gap-2">
+              <h2 class="text-sm font-semibold text-gray-800">Alunos</h2>
+              <div v-if="loadingPresencas" class="w-3 h-3 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+              <span v-else-if="modoEdicao" class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">editando</span>
+              <span v-else class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">nova chamada</span>
+            </div>
+            <span class="text-xs bg-gray-100 text-gray-500 px-3 py-1 rounded-full font-medium">
+              {{ presentesCount }}/{{ alunos.length }}
+            </span>
+          </div>
+
+          <!-- Ações rápidas -->
+          <div class="flex gap-2 px-5 pt-4 pb-2">
+            <button @click="marcarTodos" class="text-xs px-3 py-1.5 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 transition">
+              marcar todos
+            </button>
+            <button @click="desmarcarTodos" class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition">
+              desmarcar todos
+            </button>
+          </div>
+
+          <!-- Lista de alunos -->
+          <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 px-5 py-3">
+            <li
+              v-for="aluno in alunos"
+              :key="aluno.id"
+              @click="aluno.ativo ? togglePresenca(aluno.id) : null"
+              class="flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all duration-100 select-none"
               :class="
-                presentes.has(aluno.id)
-                  ? 'bg-green-500 border-green-500'
-                  : 'border-gray-300 bg-white'
+                !aluno.ativo
+                  ? 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
+                  : presentes.has(aluno.id)
+                    ? 'border-green-300 bg-green-50 cursor-pointer'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 cursor-pointer'
               "
             >
-              <svg
-                v-if="presentes.has(aluno.id)"
-                class="w-3 h-3 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="3"
+              <div
+                class="w-4 h-4 rounded flex items-center justify-center shrink-0 border-2 transition-all"
+                :class="presentes.has(aluno.id) ? 'bg-green-500 border-green-500' : 'border-gray-300'"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <span
-              class="text-sm font-medium truncate"
-              :class="!aluno.ativo ? 'text-gray-400' : ''"
+                <svg v-if="presentes.has(aluno.id)" class="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <span class="text-sm truncate" :class="presentes.has(aluno.id) ? 'text-green-800 font-medium' : 'text-gray-700'">
+                {{ aluno.nome }}
+              </span>
+            </li>
+          </ul>
+
+          <!-- Rodapé com ações -->
+          <div class="flex items-center gap-2 px-5 py-4 border-t border-gray-100 flex-wrap">
+            <button @click="registrarAulaCancelada" class="text-xs px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition">
+              aula cancelada
+            </button>
+            <button @click="registrarAulaVazia" class="text-xs px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition">
+              ninguém presente
+            </button>
+            <div class="flex-1"></div>
+            <button
+              @click="salvarChamada"
+              :disabled="salvando || nenhumAlunoMarcado"
+              class="text-sm font-semibold px-5 py-2 rounded-xl transition active:scale-95 flex items-center gap-2"
+              :class="
+                salvando || nenhumAlunoMarcado
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
+              "
             >
-              {{ aluno.nome }}
-              <span
-                v-if="!aluno.ativo"
-                class="ml-1 text-xs bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full"
-                >Inativo</span
-              >
-            </span>
-          </li>
-        </ul>
+              <div v-if="salvando" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              {{ salvando ? 'Salvando...' : modoEdicao ? 'Atualizar' : 'Salvar chamada' }}
+            </button>
+          </div>
+        </div>
 
-        <p
-          v-if="alunos.length === 0"
-          class="text-sm text-gray-400 text-center py-8"
-        >
-          Nenhum aluno encontrado nesta turma.
-        </p>
-      </div>
-
-      <!-- Botão salvar -->
-      <div v-if="aulaSelecionada" class="flex justify-end items-center gap-3">
-        <button
-          @click="registrarAulaCancelada"
-          class="text-sm px-4 py-2 rounded-xl border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition flex items-center gap-2"
-        >
-          ⚠️ Aula cancelada
-        </button>
-
-        <div class="w-px h-6 bg-gray-200"></div>
-
-        <button
-          @click="registrarAulaVazia"
-          class="text-sm px-4 py-2 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition flex items-center gap-2"
-        >
-          🚫 Ninguém presente
-        </button>
-
-        <button
-          @click="salvarChamada"
-          :disabled="salvando || nenhumAlunoMarcado"
-          class="text-sm text-white font-semibold px-6 py-2 rounded-xl transition active:scale-95 flex items-center gap-2"
-          :class="
-            salvando || nenhumAlunoMarcado
-              ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
-              : 'bg-green-600 hover:bg-green-700 cursor-pointer'
-          "
-        >
-          <div
-            v-if="salvando"
-            class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
-          ></div>
-          {{
-            salvando
-              ? "Salvando..."
-              : modoEdicao
-                ? "Atualizar Chamada"
-                : "Salvar Chamada"
-          }}
-        </button>
       </div>
     </div>
   </div>
@@ -277,6 +190,25 @@ const presentes = ref(new Set());
 const presentesOriginais = ref(new Set());
 const presencaIds = ref({});
 const modoEdicao = ref(false);
+
+const dropdownAberto = ref(false);
+
+async function escolherAula(aula) {
+  dropdownAberto.value = false;
+  await selecionarAula(aula);
+}
+
+const dropdownRef = ref(null);
+onMounted(async () => {
+  await Promise.all([carregarTurma(), carregarAulas(), carregarAlunos()]);
+  loading.value = false;
+
+  document.addEventListener('click', (e) => {
+    if (dropdownRef.value && !dropdownRef.value.contains(e.target)) {
+      dropdownAberto.value = false;
+    }
+  });
+});
 
 const presentesCount = computed(() => presentes.value.size);
 const aulasOrdenadas = computed(() =>
@@ -498,7 +430,7 @@ async function registrarAulaVazia() {
       metaFrequencia: metaFrequencia.value,
     }).catch((err) => console.error("Erro ao verificar risco:", err));
 
-    router.push("/chamada-manual");
+    router.push("/turmas");
   } catch (err) {
     console.error(err);
     $toast.error("Erro ao registrar aula.");
@@ -522,7 +454,7 @@ async function registrarAulaCancelada() {
 
     $toast.success("Aula registrada como cancelada.");
 
-    router.push("/chamada-manual");
+    router.push("/turmas");
   } catch (err) {
     console.error(err);
     $toast.error("Erro ao registrar aula.");
