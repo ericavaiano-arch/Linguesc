@@ -31,6 +31,7 @@
           <SidebarItem to="/admin" label="Dashboard Global" icon="📊" :open="true" @click="$emit('toggle')" />
           <SidebarItem to="/turmas" label="Turmas" icon="📚" :open="true" @click="$emit('toggle')" />
           <SidebarItem to="/admin/usuarios" label="Usuários" icon="👥" :open="true" @click="$emit('toggle')" />
+          <SidebarItem to="/admin/cadastro-lote" label="Cadastro de Usuários - Lote" icon="📦" :open="true" @click="$emit('toggle')" />
           <SidebarItem to="/justificativas" label="Justificativas" icon="📝" :open="true" @click="$emit('toggle')" />
           <SidebarItem to="/admin/acessos" label="Acessos" icon="🟢" :open="true" @click="$emit('toggle')" />
           <SidebarItem to="/admin/configuracoes" label="Configurações" icon="⚙️" :open="true" @click="$emit('toggle')" />

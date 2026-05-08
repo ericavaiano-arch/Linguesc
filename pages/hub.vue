@@ -13,28 +13,18 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
       <!-- ALUNO -->
 
-      <div
-        v-if="isAluno"
-        @click="irPara('/presencaAluno')"
-        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer"
-      >
+      <div v-if="isAluno" @click="irPara('/presencaAluno')"
+        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
-          <h2
-            class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition"
-          >
+          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">
             📅 Minha Presença
           </h2>
-          <span
-            class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full"
-            >Acompanhamento</span
-          >
+          <span class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full">Acompanhamento</span>
         </div>
         <p class="text-gray-500 text-sm leading-relaxed">
           Visualize sua frequência nas aulas e acompanhe sua meta.
         </p>
-        <div
-          class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition"
-        >
+        <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">
           Acessar →
         </div>
       </div>
@@ -48,81 +38,53 @@
         <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">Acessar →</div>
       </div> -->
 
-      <div
-        v-if="isAluno"
-        @click="irPara('/minhaTurma')"
-        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer"
-      >
+      <div v-if="isAluno" @click="irPara('/minhaTurma')"
+        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
-          <h2
-            class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition"
-          >
+          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">
             👥 Minha Turma
           </h2>
-          <span
-            class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full"
-          >
+          <span class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full">
             Turma
           </span>
         </div>
         <p class="text-gray-500 text-sm leading-relaxed">
           Veja seu professor, colegas e sua posição no ranking de frequência.
         </p>
-        <div
-          class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition"
-        >
+        <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">
           Acessar →
         </div>
       </div>
 
       <!-- PROFESSOR -->
-      <div
-        v-if="isProfessor"
-        @click="irPara('/dashboard')"
-        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer"
-      >
+      <div v-if="isProfessor" @click="irPara('/dashboard')"
+        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
-          <h2
-            class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition"
-          >
+          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">
             📊 Dashboard
           </h2>
-          <span class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full"
-            >Visão geral</span
-          >
+          <span class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full">Visão geral</span>
         </div>
         <p class="text-gray-500 text-sm leading-relaxed">
           Frequência média, alertas e próximas aulas de todas as turmas.
         </p>
-        <div
-          class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition"
-        >
+        <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">
           Acessar →
         </div>
       </div>
 
-      <div
-        v-if="isProfessor"
-        @click="irPara('/turmas')"
-        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer"
-      >
+      <div v-if="isProfessor" @click="irPara('/turmas')"
+        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
-          <h2
-            class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition"
-          >
+          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">
             📚 Minhas Turmas
           </h2>
-          <span
-            class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full"
-            >Gestão</span
-          >
+          <span class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full">Gestão</span>
         </div>
         <p class="text-gray-500 text-sm leading-relaxed">
           Crie turmas, adicione alunos e gerencie as datas de aula.
         </p>
-        <div
-          class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition"
-        >
+        <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">
           Acessar →
         </div>
       </div>
@@ -187,169 +149,125 @@
       </div> -->
 
       <!-- ADMIN -->
-      <div
-        v-if="isAdmin"
-        @click="irPara('/admin')"
-        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer"
-      >
+      <div v-if="isAdmin" @click="irPara('/admin')"
+        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
-          <h2
-            class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition"
-          >
+          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">
             📊 Dashboard Global
           </h2>
-          <span class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full"
-            >Visão geral</span
-          >
+          <span class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full">Visão geral</span>
         </div>
         <p class="text-gray-500 text-sm leading-relaxed">
           Visão completa de todos os professores, turmas e alunos.
         </p>
-        <div
-          class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition"
-        >
+        <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">
           Acessar →
         </div>
       </div>
 
-      <div
-        v-if="isAdmin"
-        @click="irPara('/turmas')"
-        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer"
-      >
+      <div v-if="isAdmin" @click="irPara('/turmas')"
+        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
-          <h2
-            class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition"
-          >
+          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">
             📚 Turmas
           </h2>
-          <span
-            class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full"
-            >Gestão</span
-          >
+          <span class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full">Gestão</span>
         </div>
         <p class="text-gray-500 text-sm leading-relaxed">
           Crie turmas, adicione alunos e gerencie as datas de aula.
         </p>
-        <div
-          class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition"
-        >
+        <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">
           Acessar →
         </div>
       </div>
 
-      <div
-        v-if="isAdmin"
-        @click="irPara('/admin/usuarios')"
-        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer"
-      >
+      <div v-if="isAdmin" @click="irPara('/admin/usuarios')"
+        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
-          <h2
-            class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition"
-          >
+          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">
             👥 Usuários
           </h2>
-          <span
-            class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full"
-            >Gestão</span
-          >
+          <span class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full">Gestão</span>
         </div>
         <p class="text-gray-500 text-sm leading-relaxed">
           Crie, edite e gerencie todos os professores e alunos cadastrados.
         </p>
-        <div
-          class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition"
-        >
+        <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">
           Acessar →
         </div>
       </div>
 
-      <div
-        v-if="isAdmin"
-        @click="irPara('/admin/acessos')"
-        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer"
-      >
+      <div v-if="isAdmin" @click="irPara('/admin/cadastro-lote')"
+        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
-          <h2
-            class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition"
-          >
+          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">
+            📦 Cadastro de Usuários - Lote
+          </h2>
+          <span class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full">Gestão</span>
+        </div>
+        <p class="text-gray-500 text-sm leading-relaxed">
+          Cadastre inúmero usuários de uma vez só, apenas importando um arquivo .csv.
+        </p>
+        <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">
+          Acessar →
+        </div>
+      </div>
+
+      <div v-if="isAdmin" @click="irPara('/admin/acessos')"
+        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">
             🟢 Acessos
           </h2>
-          <span
-            class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full"
-            >Gestão</span
-          >
+          <span class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full">Gestão</span>
         </div>
         <p class="text-gray-500 text-sm leading-relaxed">
           Histórico de logins e atividade dos usuários.
         </p>
-        <div
-          class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition"
-        >
+        <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">
           Acessar →
         </div>
       </div>
 
-      <div
-        v-if="isAdmin"
-        @click="irPara('/justificativas')"
-        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer"
-      >
+      <div v-if="isAdmin" @click="irPara('/justificativas')"
+        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
-          <h2
-            class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition"
-          >
+          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">
             📝 Justificativas
           </h2>
-          <span
-            v-if="pendentes > 0"
-            class="text-xs bg-red-500 text-white px-3 py-1 rounded-full font-semibold"
-          >
+          <span v-if="pendentes > 0" class="text-xs bg-red-500 text-white px-3 py-1 rounded-full font-semibold">
             {{ pendentes }} pendente(s)
           </span>
-          <span
-            v-else
-            class="text-xs bg-gray-100 text-gray-500 px-3 py-1 rounded-full"
-          >
+          <span v-else class="text-xs bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
             Em dia
           </span>
         </div>
         <p class="text-gray-500 text-sm leading-relaxed">
           Avalie as justificativas de falta enviadas pelos alunos.
         </p>
-        <div
-          class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition"
-        >
+        <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">
           Acessar →
         </div>
       </div>
 
-      <div
-        v-if="isAdmin"
-        @click="irPara('/admin/configuracoes')"
-        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer"
-      >
+      <div v-if="isAdmin" @click="irPara('/admin/configuracoes')"
+        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
-          <h2
-            class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition"
-          >
+          <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">
             ⚙️ Configurações
           </h2>
-          <span class="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full"
-            >Sistema</span
-          >
+          <span class="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">Sistema</span>
         </div>
         <p class="text-gray-500 text-sm leading-relaxed">
           Meta padrão de frequência e parâmetros globais do sistema.
         </p>
-        <div
-          class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition"
-        >
+        <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">
           Acessar →
         </div>
       </div>
 
-      <div @click="irPara(`/profile/${user?.id}`)" class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
+      <div @click="irPara(`/profile/${user?.id}`)"
+        class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">👤 Meu Perfil</h2>
           <span class="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">Conta</span>
@@ -360,11 +278,8 @@
 
       <!-- Banner de notificações de risco -->
       <div v-if="notificacoes.length > 0" class="mb-6">
-        <div
-          v-for="notif in notificacoesNaoLidas"
-          :key="notif.id"
-          class="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 mb-3 flex items-start justify-between gap-4"
-        >
+        <div v-for="notif in notificacoesNaoLidas" :key="notif.id"
+          class="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 mb-3 flex items-start justify-between gap-4">
           <div class="flex items-start gap-3">
             <span class="text-xl flex-shrink-0 mt-0.5">⚠️</span>
             <div>
@@ -377,10 +292,8 @@
               </p>
             </div>
           </div>
-          <button
-            @click="marcarLidas(user?.id)"
-            class="text-xs text-red-400 hover:text-red-600 transition flex-shrink-0 font-medium"
-          >
+          <button @click="marcarLidas(user?.id)"
+            class="text-xs text-red-400 hover:text-red-600 transition flex-shrink-0 font-medium">
             Fechar
           </button>
         </div>
