@@ -13,7 +13,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
       <!-- ALUNO -->
 
-      <div v-if="isAluno" @click="irPara('/presencaAluno')"
+      <div v-if="isAluno" @click="irPara('/aluno/turmas?destino=minha-presenca')"
         class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">
@@ -38,7 +38,7 @@
         <div class="mt-6 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">Acessar →</div>
       </div> -->
 
-      <div v-if="isAluno" @click="irPara('/minhaTurma')"
+      <div v-if="isAluno" @click="irPara('/aluno/turmas?destino=minha-turma')"
         class="group bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-green-500 transition-all duration-300 cursor-pointer">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">
