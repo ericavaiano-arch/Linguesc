@@ -207,7 +207,7 @@ async function carregarJustificativas() {
   justificativas.value = (data || [])
   .map(j => ({
     ...j,
-    nomeAluno: nomeMap[j.aluno_id] ?? 'Aluno',
+    nomeAluno: nomeMap[j.aluno_id] ?? 'Estudante',
     nomeTurma: j.aula?.turma?.nome ?? '—',
     dataAula: j.aula?.data ?? '',
     _resposta: '',

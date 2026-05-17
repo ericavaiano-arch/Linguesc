@@ -30,7 +30,6 @@
         <div>
           <label class="block text-sm font-medium text-gray-600 mb-1.5">
             E-mail
-            <span class="ml-2 text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded-full">não editável</span>
           </label>
           <input
             v-model="email"
@@ -38,7 +37,6 @@
             disabled
             class="w-full h-10 rounded-lg border border-gray-200 px-3 text-sm text-gray-400 bg-gray-50 cursor-not-allowed"
           />
-          <p class="text-xs text-gray-400 mt-1.5">O e-mail não pode ser alterado por aqui.</p>
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-2">
@@ -225,11 +223,11 @@ const forcaSenha = computed(() => {
 
 const forcaSenhaLargura = computed(() => {
   if (!novaSenha.value) return '0%'
-  return ['33%', '66%', '100%'][forcaSenha.value - 1] || '10%'
+  return novaSenha.value.length >= 8 ? '100%' : `${(novaSenha.value.length / 8) * 100}%`
 })
 
 const forcaSenhaCor = computed(() =>
-  ['#E24B4A', '#EF9F27', '#639922'][forcaSenha.value - 1] || '#E24B4A'
+  novaSenha.value.length >= 8 ? '#639922' : '#E24B4A'
 )
 
 async function alterarSenhaUsuario() {

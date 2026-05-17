@@ -84,7 +84,7 @@
             class="flex-1 flex flex-col gap-1 px-6 py-5 border-b md:border-b-0 md:border-r border-gray-200"
           >
             <span class="text-xs text-gray-500 uppercase tracking-wide"
-              >Alunos ativos</span
+              >Estudantes ativos</span
             >
             <span class="text-3xl font-semibold text-gray-900">{{
               totalAlunosAtivos
@@ -123,7 +123,7 @@
           </div>
           <div class="flex-1 flex flex-col gap-1 px-6 py-5">
             <span class="text-xs text-gray-500 uppercase tracking-wide"
-              >Alunos com frequência abaixo da meta</span
+              >Estudantes com frequência abaixo da meta</span
             >
             <span
               class="text-3xl font-semibold"
@@ -524,7 +524,7 @@ const alunosEmRisco = computed(() => {
         lista.push({
           alunoId: v.aluno_id,
           turmaId: turma.id,
-          nome: v.usuarios?.nome || "Aluno",
+          nome: v.usuarios?.nome || "Estudante",
           email: mapaEmails.value[v.aluno_id] || "",
           turmaNome: turma.nome,
           professorNome: professoresMap.value[turma.professor_id] ?? "—",

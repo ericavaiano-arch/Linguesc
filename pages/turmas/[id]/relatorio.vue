@@ -82,7 +82,7 @@
             class="flex-1 flex flex-col gap-1 px-6 py-5 border-b md:border-b-0 md:border-r border-gray-200"
           >
             <span class="text-xs text-gray-500 uppercase tracking-wide"
-              >Alunos</span
+              >Estudantes</span
             >
             <span class="text-3xl font-semibold text-gray-900">{{
               alunos.length
@@ -137,7 +137,7 @@
 
           <div class="flex-1 flex flex-col gap-1 px-6 py-5">
             <span class="text-xs text-gray-500 uppercase tracking-wide"
-              >Alunos com frequência abaixo da meta</span
+              >Estudantes com frequência abaixo da meta</span
             >
             <span
               class="text-3xl font-semibold"
@@ -166,7 +166,7 @@
           class="px-4 md:px-6 py-4 border-b border-gray-100 flex items-center justify-between"
         >
           <h2 class="text-base font-semibold text-gray-800">
-            Frequência por Aluno
+            Frequência por Estudante
           </h2>
           <span class="text-xs text-gray-400"
             >{{ aulasRealizadas.length }} aula(s)</span
@@ -181,7 +181,7 @@
                   class="text-left px-4 md:px-6 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide cursor-pointer hover:text-gray-800 transition select-none sticky left-0 bg-gray-50 z-10"
                   @click="alternarOrdem('nome')"
                 >
-                  Aluno
+                  Estudante
                   <span class="ml-1 text-gray-300">
                     {{
                       ordemColuna === "nome"
@@ -638,7 +638,7 @@ function formatarDataCurta(dataStr) {
 
 function exportarCSV() {
   const cabecalho = [
-    "Aluno",
+    "Estudante",
     "E-mail",
     ...aulasRealizadas.value.map((a) => formatarDataCurta(a.data)),
     "Presenças",
@@ -716,7 +716,7 @@ function imprimirPDF() {
     { label: "Total de alunos", valor: String(alunos.value.length) },
     { label: "Aulas realizadas", valor: String(aulasRealizadas.value.length) },
     { label: "Frequência média", valor: `${frequenciaMedia.value}%` },
-    { label: "Alunos com frequência abaixo da média", valor: String(alunosEmRisco.value) },
+    { label: "Estudantes com frequência abaixo da média", valor: String(alunosEmRisco.value) },
   ];
 
   const cardW = 60, cardH = 16, cardGap = 5;
@@ -736,7 +736,7 @@ function imprimirPDF() {
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
 
-    if (card.label === "Alunos com frequência abaixo da média" && alunosEmRisco.value > 0) {
+    if (card.label === "Estudantes com frequência abaixo da média" && alunosEmRisco.value > 0) {
       doc.setTextColor(220, 38, 38);
     } else if (card.label === "Frequência média" && frequenciaMedia.value < metaFrequencia.value) {
       doc.setTextColor(220, 38, 38);
@@ -748,7 +748,7 @@ function imprimirPDF() {
   });
 
   const cabecalho = [
-    "Aluno",
+    "Estudante",
     ...aulasRealizadas.value.map((a) => formatarDataCurta(a.data)),
     "Presenças",
     "%",

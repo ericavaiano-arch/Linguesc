@@ -117,7 +117,7 @@
 
         <!-- ── RESUMO DE FREQUÊNCIA POR ALUNO ── -->
         <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mt-6">
-          <h3 class="text-base font-semibold text-gray-800 mb-5">📊 Frequência por Aluno</h3>
+          <h3 class="text-base font-semibold text-gray-800 mb-5">📊 Frequência por Estudante</h3>
 
           <p v-if="aulasRealizadas.length === 0" class="text-sm text-gray-400 text-center py-4">
             Nenhuma aula realizada ainda.

@@ -22,7 +22,7 @@
           <h2 class="text-lg font-semibold text-gray-800 group-hover:text-green-700 transition">{{ turma.nome }}</h2>
           <div class="w-3 h-3 bg-green-500 rounded-full mt-1"></div>
         </div>
-        <p class="text-xs text-gray-400 mb-1">Alunos</p>
+        <p class="text-xs text-gray-400 mb-1">Estudantes</p>
         <p class="text-sm font-medium text-gray-600 mb-6">{{ turma.turma_aluno[0]?.count ?? 0 }}</p>
         <div class="mt-2 text-green-600 font-medium text-sm group-hover:translate-x-1 transition">Fazer chamada →</div>
       </div>

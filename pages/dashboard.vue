@@ -38,7 +38,8 @@
           <div
             v-for="aula in proximasAulas"
             :key="aula.id"
-            class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex flex-col gap-1"
+            @click="$router.push(`/chamada-manual/${aula.turma_id}`)"
+            class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex flex-col gap-1 cursor-pointer hover:border-gray-300 transition"
           >
             <p
               class="text-xs font-semibold text-green-600 uppercase tracking-wide"
@@ -234,7 +235,7 @@ const todosVinculos = ref([]);
 const turmaSelecionadaGrafico = ref("todas");
 const notificandoId = ref(null);
 const notificadosIds = ref(new Set());
-const mapaEmails = ref({})
+const mapaEmails = ref({});
 
 const coresTurmas = [
   { border: "#16a34a", background: "rgba(22,163,74,0.08)" },
@@ -263,12 +264,32 @@ onMounted(async () => {
         { data: notificacoesData },
         { data: todosAlunos },
       ] = await Promise.all([
-        supabase.from("turma").select("id, nome").eq("professor_id", professorId).eq("status", "ATIVA").order("nome"),
-        supabase.from("aula").select("id, turma_id, data, status").order("data", { ascending: true }),
+        supabase
+          .from("turma")
+          .select("id, nome")
+          .eq("professor_id", professorId)
+          .eq("status", "ATIVA")
+          .order("nome"),
+        supabase
+          .from("aula")
+          .select("id, turma_id, data, status")
+          .order("data", { ascending: true }),
         supabase.from("presenca").select("aula_id, aluno_id"),
-        supabase.from("turma_aluno").select("turma_id, aluno_id, usuarios(id, nome, ativo)"),
-        supabase.from("justificativa_falta").select("aluno_id, aula_id").eq("status", "ACEITA"),
-        supabase.from("notificacao_risco").select("aluno_id, turma_id").eq("professor_id", professorId).gte("dt_inclusao", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+        supabase
+          .from("turma_aluno")
+          .select("turma_id, aluno_id, usuarios(id, nome, ativo)"),
+        supabase
+          .from("justificativa_falta")
+          .select("aluno_id, aula_id")
+          .eq("status", "ACEITA"),
+        supabase
+          .from("notificacao_risco")
+          .select("aluno_id, turma_id")
+          .eq("professor_id", professorId)
+          .gte(
+            "dt_inclusao",
+            new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          ),
         supabase.rpc("get_alunos_ativos"),
       ]);
 
@@ -277,8 +298,12 @@ onMounted(async () => {
       todasPresencas.value = presencasData || [];
       todosVinculos.value = vinculosData || [];
       todasJustificativas.value = justificativasData || [];
-      notificadosIds.value = new Set((notificacoesData || []).map((n) => n.aluno_id + n.turma_id));
-      mapaEmails.value = Object.fromEntries((todosAlunos || []).map((a) => [a.id, a.email]));
+      notificadosIds.value = new Set(
+        (notificacoesData || []).map((n) => n.aluno_id + n.turma_id),
+      );
+      mapaEmails.value = Object.fromEntries(
+        (todosAlunos || []).map((a) => [a.id, a.email]),
+      );
     })(),
   ]);
 
@@ -381,7 +406,7 @@ const alunosEmRisco = computed(() => {
         lista.push({
           alunoId: v.aluno_id,
           turmaId: turma.id,
-          nome: v.usuarios?.nome || "Aluno",
+          nome: v.usuarios?.nome || "Estudante",
           email: mapaEmails.value[v.aluno_id] || "",
           turmaNome: turma.nome,
           presencas: freq.totalValidas,

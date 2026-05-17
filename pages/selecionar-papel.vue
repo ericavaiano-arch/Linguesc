@@ -11,7 +11,7 @@
       @click="entrar('ALUNO')"
       class="w-64 py-4 bg-gray-100 text-gray-700 rounded-2xl font-semibold text-lg"
     >
-      🎓 Como Aluno
+      🎓 Como Estudante
     </button>
   </div>
 </template>

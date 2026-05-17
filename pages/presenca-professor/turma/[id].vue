@@ -16,7 +16,7 @@
     <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 mb-8">
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-lg font-semibold text-gray-800">
-          Alunos da Turma
+          Estudantes da Turma
         </h2>
 
         <span class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full">
@@ -147,7 +147,7 @@ const barData = computed(() => ({
   labels: aulas.map(a => `Aula ${a.aula}`),
   datasets: [
     {
-      label: 'Alunos presentes',
+      label: 'Estudantes presentes',
       data: aulas.map(a => a.presentes),
       backgroundColor: '#3b82f6'
     }
