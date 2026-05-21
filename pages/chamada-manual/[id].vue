@@ -448,6 +448,7 @@ async function salvarChamada() {
 
     await verificarENotificarRisco({
       turmaId: aulaSelecionada.value.turma_id,
+      turmaNome: turma?.value.nome,
       professorId: user.value?.id ?? "",
       metaFrequencia: metaFrequencia.value,
     }).catch((err) => console.error("Erro ao verificar risco:", err));
@@ -507,6 +508,7 @@ async function registrarAulaVazia() {
 
     await verificarENotificarRisco({
       turmaId: aulaSelecionada.value.turma_id,
+      turmaNome: turma?.value.nome,
       professorId: user.value?.id ?? "",
       metaFrequencia: metaFrequencia.value,
     }).catch((err) => console.error("Erro ao verificar risco:", err));

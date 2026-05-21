@@ -1,6 +1,7 @@
 import { supabase } from '~/utils/supabase'
+import { templateAlertaFrequencia  } from "~/server/utils/email-templates";
 
-export async function verificarENotificarRisco({ turmaId, professorId, metaFrequencia }) {
+export async function verificarENotificarRisco({ turmaId, turmaNome, professorId, metaFrequencia }) {
   // Busca todos os alunos ativos da turma
   const { data: vinculos } = await supabase
     .from('turma_aluno')
@@ -11,6 +12,9 @@ export async function verificarENotificarRisco({ turmaId, professorId, metaFrequ
   if (!vinculos?.length) return
 
   const alunosIds = vinculos.map(v => v.aluno_id)
+
+  const { data: todosAlunos } = await supabase.rpc('get_alunos_ativos')
+  const emailMap = Object.fromEntries((todosAlunos || []).map(a => [a.id, a.email]))
 
   // Busca aulas realizadas
   const { data: aulas } = await supabase
@@ -49,8 +53,11 @@ export async function verificarENotificarRisco({ turmaId, professorId, metaFrequ
         ).length
 
       const frequencia = Math.round(((presencasCount + justCount) / totalAulas) * 100)
+      const faltasAtuais = totalAulas - presencasCount - justCount
+      const maxFaltas = Math.floor(totalAulas * (1 - metaFrequencia / 100))
+      const faltasDisponiveis = Math.max(0, maxFaltas - faltasAtuais)
 
-      return { alunoId: v.aluno_id, nome: v.usuarios?.nome, frequencia }
+      return { alunoId: v.aluno_id, nome: v.usuarios?.nome, frequencia, faltasDisponiveis }
     })
     .filter(a => a.frequencia < metaFrequencia)
 
@@ -66,17 +73,39 @@ export async function verificarENotificarRisco({ turmaId, professorId, metaFrequ
 
   const jaNotificadosIds = new Set((jaNotificados || []).map(n => n.aluno_id))
 
-  // Insere notificações apenas para quem ainda não foi notificado hoje
-  const novas = alunosEmRisco
-    .filter(a => !jaNotificadosIds.has(a.alunoId))
-    .map(a => ({
+  const novos = alunosEmRisco.filter(a => !jaNotificadosIds.has(a.alunoId))
+
+  if (!novos.length) return
+
+  // Insere notificações
+  await supabase.from('notificacao_risco').insert(
+    novos.map(a => ({
       aluno_id: a.alunoId,
       professor_id: professorId,
       turma_id: turmaId,
       mensagem: `Sua frequência na turma está em ${a.frequencia}%, abaixo da meta de ${metaFrequencia}%. Procure comparecer às próximas aulas para evitar reprovação por falta.`,
     }))
+  )
 
-  if (novas.length) {
-    await supabase.from('notificacao_risco').insert(novas)
+  // Envia e-mail para cada aluno novo
+  for (const aluno of novos) {
+    const email = emailMap[aluno.alunoId]
+    if (!email) continue
+
+    await $fetch('/api/send-email', {
+      method: 'POST',
+      body: {
+        to: email,
+        subject: `⚠ Frequência abaixo do mínimo — ${turmaNome}`,
+        html: templateAlertaFrequencia(
+          aluno.nome,
+          turmaNome,
+          aluno.frequencia,
+          metaFrequencia,
+          'https://linguesc.vercel.app',
+          aluno.faltasDisponiveis
+        ),
+      },
+    })
   }
 }
