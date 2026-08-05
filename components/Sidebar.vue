@@ -13,6 +13,7 @@
         <!-- ALUNO -->
         <SidebarItem v-if="isAluno" to="/aluno/turmas?destino=minha-presenca" label="Minha Presença" icon="📅" :open="true" @click="$emit('toggle')" />
         <SidebarItem v-if="isAluno" to="/aluno/turmas?destino=minha-turma" label="Minha Turma" icon="👥" :open="true" @click="$emit('toggle')" />
+        <SidebarItem v-if="isAluno" to="/aluno/turmas?destino=minhas-atividades" label="Minhas Atividades" icon="📚" :open="true" @click="$emit('toggle')" />
         <!-- <SidebarItem v-if="isAluno" to="/registroPresenca" label="Marcar Presença" icon="📷" :open="true" @click="$emit('toggle')" /> -->
 
         <!-- PROFESSOR -->

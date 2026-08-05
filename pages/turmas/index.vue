@@ -15,17 +15,24 @@
         </p>
         <div class="w-20 h-1 bg-green-600 mt-4 rounded"></div>
       </div>
-      <button v-if="isAdmin" @click="abrirCriacao"
-        class="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-3 rounded-xl transition active:scale-95 flex items-center gap-2">
+      <button
+        v-if="isAdmin"
+        @click="abrirCriacao"
+        class="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-3 rounded-xl transition active:scale-95 flex items-center gap-2"
+      >
         + Nova Turma
       </button>
     </div>
 
     <!-- Filtro de professor (admin apenas) -->
     <div v-if="isAdmin" class="mb-8 flex items-center gap-3">
-      <label class="text-sm font-medium text-gray-600">Filtrar por professor:</label>
-      <select v-model="professorFiltro"
-        class="border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition">
+      <label class="text-sm font-medium text-gray-600"
+        >Filtrar por professor:</label
+      >
+      <select
+        v-model="professorFiltro"
+        class="border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+      >
         <option value="">Todos os professores</option>
         <option v-for="prof in professores" :key="prof.id" :value="prof.id">
           {{ prof.nome }}
@@ -34,24 +41,33 @@
     </div>
 
     <div v-if="loading" class="flex items-center gap-3 text-green-700">
-      <div class="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+      <div
+        class="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"
+      ></div>
       <span>Carregando turmas...</span>
     </div>
 
     <div v-else class="space-y-10">
       <!-- ── VISÃO ADMIN: agrupado por professor ── -->
       <template v-if="isAdmin">
-        <div v-for="grupo in gruposFiltrados" :key="grupo.professorId" class="space-y-4">
+        <div
+          v-for="grupo in gruposFiltrados"
+          :key="grupo.professorId"
+          class="space-y-4"
+        >
           <!-- Cabeçalho do grupo -->
           <div class="flex items-center gap-3">
             <div
-              class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm flex-shrink-0">
+              class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm flex-shrink-0"
+            >
               {{ grupo.professorNome.charAt(0).toUpperCase() }}
             </div>
             <h2 class="text-base font-semibold text-gray-700">
               {{ grupo.professorNome }}
             </h2>
-            <span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+            <span
+              class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full"
+            >
               {{ grupo.turmasAtivas.length }} ativa(s)
               <template v-if="grupo.turmasFinalizadas.length > 0">
                 · {{ grupo.turmasFinalizadas.length }} finalizada(s)
@@ -61,7 +77,10 @@
           </div>
 
           <!-- Turmas ativas -->
-          <div v-if="grupo.turmasAtivas.length === 0" class="ml-11 text-sm text-gray-400 italic">
+          <div
+            v-if="grupo.turmasAtivas.length === 0"
+            class="ml-11 text-sm text-gray-400 italic"
+          >
             Nenhuma turma ativa.
           </div>
           <div
@@ -124,6 +143,20 @@
                 </button>
               </div>
 
+              <!-- Linha 3: atividades (admin) -->
+              <div
+                class="grid border-t border-gray-100"
+                style="grid-template-columns: 1fr"
+              >
+                <button
+                  @click.stop="navegar(`/turmas/${turma.id}/atividades`)"
+                  class="flex flex-col items-center justify-center gap-1 py-2.5 text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition"
+                >
+                  <span class="text-base leading-none">📝</span>
+                  Atividades
+                </button>
+              </div>
+
               <!-- Linha 2: ações admin -->
               <div
                 class="grid border-t border-gray-100"
@@ -150,7 +183,9 @@
 
           <!-- Turmas finalizadas -->
           <div v-if="grupo.turmasFinalizadas.length > 0" class="ml-11">
-            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+            <p
+              class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3"
+            >
               🔒 Finalizadas
             </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -203,7 +238,10 @@
         </div>
 
         <!-- Sem resultados -->
-        <div v-if="gruposFiltrados.length === 0" class="text-center py-16 text-gray-400">
+        <div
+          v-if="gruposFiltrados.length === 0"
+          class="text-center py-16 text-gray-400"
+        >
           <p class="text-4xl mb-3">📭</p>
           <p class="font-medium">Nenhuma turma encontrada.</p>
         </div>
@@ -218,8 +256,11 @@
           >
             <p class="text-4xl mb-4">📚</p>
             <p class="text-gray-500 font-medium">Nenhuma turma ativa.</p>
-            <button v-if="isAdmin" @click="abrirCriacao"
-              class="mt-4 text-green-600 font-semibold hover:underline text-sm">
+            <button
+              v-if="isAdmin"
+              @click="abrirCriacao"
+              class="mt-4 text-green-600 font-semibold hover:underline text-sm"
+            >
               Criar minha primeira turma →
             </button>
           </div>
@@ -257,7 +298,7 @@
               <!-- Ações -->
               <div
                 class="grid border-t border-gray-100"
-                style="grid-template-columns: 1fr 1px 1fr 1px 1fr"
+                style="grid-template-columns: 1fr 1px 1fr 1px 1fr 1px 1fr"
               >
                 <button
                   @click.stop="$router.push(`/chamada-manual/${turma.id}`)"
@@ -266,9 +307,7 @@
                   <span class="text-base leading-none">🙋</span>
                   Chamada
                 </button>
-
                 <div class="bg-gray-100 self-stretch"></div>
-
                 <button
                   @click.stop="$router.push(`/turmas/${turma.id}/relatorio`)"
                   class="flex flex-col items-center justify-center gap-1 py-2.5 text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition"
@@ -276,15 +315,21 @@
                   <span class="text-base leading-none">📄</span>
                   Relatório
                 </button>
-
                 <div class="bg-gray-100 self-stretch"></div>
-
                 <button
                   @click.stop="$router.push(`/turmas/${turma.id}/aulas`)"
                   class="flex flex-col items-center justify-center gap-1 py-2.5 text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition"
                 >
                   <span class="text-base leading-none">📅</span>
                   Aula extra
+                </button>
+                <div class="bg-gray-100 self-stretch"></div>
+                <button
+                  @click.stop="$router.push(`/turmas/${turma.id}/atividades`)"
+                  class="flex flex-col items-center justify-center gap-1 py-2.5 text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition"
+                >
+                  <span class="text-base leading-none">📝</span>
+                  Atividades
                 </button>
               </div>
             </div>
@@ -295,29 +340,39 @@
 
     <!-- ── MODAL DE CONFIRMAÇÃO ── -->
     <Transition name="fade">
-      <div v-if="modalEncerramento" class="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
+      <div
+        v-if="modalEncerramento"
+        class="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4"
+      >
         <div class="bg-white rounded-2xl p-6 shadow-xl w-full max-w-sm">
           <h3 class="text-lg font-semibold text-gray-800 mb-2">
             🔒 Encerrar turma?
           </h3>
           <p class="text-sm text-gray-500 mb-1">
             Você está prestes a encerrar a turma
-            <strong>{{ turmaParaEncerrar?.nome }}</strong>.
+            <strong>{{ turmaParaEncerrar?.nome }}</strong
+            >.
           </p>
           <p class="text-sm text-gray-400 mb-6">
             Os dados serão preservados, mas a turma ficará bloqueada para novos
             registros. Você pode reativá-la depois.
           </p>
           <div class="flex gap-3">
-            <button @click="modalEncerramento = false"
-              class="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">
+            <button
+              @click="modalEncerramento = false"
+              class="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition"
+            >
               Cancelar
             </button>
-            <button @click="encerrarTurma" :disabled="encerrando"
-              class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white text-sm font-semibold transition flex items-center justify-center gap-2">
-              <div v-if="encerrando"
-                class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin">
-              </div>
+            <button
+              @click="encerrarTurma"
+              :disabled="encerrando"
+              class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white text-sm font-semibold transition flex items-center justify-center gap-2"
+            >
+              <div
+                v-if="encerrando"
+                class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
+              ></div>
               {{ encerrando ? "Encerrando..." : "Encerrar" }}
             </button>
           </div>
@@ -327,19 +382,27 @@
 
     <!-- ── OVERLAY DRAWER ── -->
     <Transition name="fade">
-      <div v-if="painelAberto" class="fixed inset-0 bg-black/40 z-[60]" @click="fecharPainel"></div>
+      <div
+        v-if="painelAberto"
+        class="fixed inset-0 bg-black/40 z-[60]"
+        @click="fecharPainel"
+      ></div>
     </Transition>
 
     <!-- ── DRAWER ── -->
     <Transition name="slide">
-      <div v-if="painelAberto"
-        class="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl z-[70] flex flex-col">
+      <div
+        v-if="painelAberto"
+        class="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl z-[70] flex flex-col"
+      >
         <div class="flex items-center justify-between p-6 border-b">
           <h2 class="text-lg font-semibold text-gray-800">
             {{ modo === "criar" ? "➕ Nova Turma" : "✏️ Editar Turma" }}
           </h2>
-          <button @click="fecharPainel"
-            class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition text-xl">
+          <button
+            @click="fecharPainel"
+            class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition text-xl"
+          >
             ×
           </button>
         </div>
@@ -347,18 +410,29 @@
         <div class="flex-1 overflow-y-auto p-6 space-y-6">
           <!-- Seletor de professor (admin + modo criar) -->
           <div v-if="isAdmin && modo === 'criar'">
-            <label class="text-sm font-medium text-gray-700 mb-2 block">Professor responsável</label>
-            <select v-model="professorSelecionadoCriacao"
-              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition">
+            <label class="text-sm font-medium text-gray-700 mb-2 block"
+              >Professor responsável</label
+            >
+            <select
+              v-model="professorSelecionadoCriacao"
+              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+            >
               <option value="">Selecione um professor...</option>
-              <option v-for="prof in professores" :key="prof.id" :value="prof.id">
+              <option
+                v-for="prof in professores"
+                :key="prof.id"
+                :value="prof.id"
+              >
                 {{ prof.nome }}
               </option>
             </select>
           </div>
 
           <!-- Professor read-only no modo editar (admin) -->
-          <div v-if="isAdmin && modo === 'editar'" class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+          <div
+            v-if="isAdmin && modo === 'editar'"
+            class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3"
+          >
             <p class="text-xs text-gray-400 mb-1">Professor responsável</p>
             <p class="text-sm font-semibold text-gray-700">
               {{ turmaSelecionada?.professor_nome ?? "—" }}
@@ -366,32 +440,49 @@
           </div>
 
           <div>
-            <label class="text-sm font-medium text-gray-700 mb-2 block">Identificador da Turma</label>
-            <input v-model="edicaoIdentificador" type="text" placeholder="Ex: Básico 1, Intermediário 2B..."
-              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+            <label class="text-sm font-medium text-gray-700 mb-2 block"
+              >Identificador da Turma</label
+            >
+            <input
+              v-model="edicaoIdentificador"
+              type="text"
+              placeholder="Ex: Básico 1, Intermediário 2B..."
+              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+            />
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="text-sm font-medium text-gray-700 mb-2 block">Ano</label>
-              <select v-model="edicaoAno"
-                class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition">
+              <label class="text-sm font-medium text-gray-700 mb-2 block"
+                >Ano</label
+              >
+              <select
+                v-model="edicaoAno"
+                class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+              >
                 <option v-for="ano in anosDisponiveis" :key="ano" :value="ano">
                   {{ ano }}
                 </option>
               </select>
             </div>
             <div>
-              <label class="text-sm font-medium text-gray-700 mb-2 block">Semestre</label>
-              <select v-model="edicaoSemestre"
-                class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition">
+              <label class="text-sm font-medium text-gray-700 mb-2 block"
+                >Semestre</label
+              >
+              <select
+                v-model="edicaoSemestre"
+                class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+              >
                 <option value="01">1º semestre</option>
                 <option value="02">2º semestre</option>
               </select>
             </div>
           </div>
 
-          <div v-if="edicaoIdentificador.trim()" class="bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+          <div
+            v-if="edicaoIdentificador.trim()"
+            class="bg-green-50 border border-green-200 rounded-xl px-4 py-3"
+          >
             <p class="text-xs text-gray-400 mb-1">Nome gerado:</p>
             <p class="text-sm font-semibold text-green-800">{{ nomeGerado }}</p>
           </div>
@@ -401,8 +492,12 @@
               Sala de Aula
               <span class="text-gray-400 font-normal">(opcional)</span>
             </label>
-            <input v-model="edicaoSala" type="text" placeholder="Ex: Sala 3, Lab 2..."
-              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+            <input
+              v-model="edicaoSala"
+              type="text"
+              placeholder="Ex: Sala 3, Lab 2..."
+              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+            />
           </div>
 
           <div>
@@ -410,9 +505,12 @@
               Descrição
               <span class="text-gray-400 font-normal">(opcional)</span>
             </label>
-            <textarea v-model="edicaoDescricao"
-              placeholder="Ex: Turma voltada para iniciantes sem experiência prévia..." rows="3"
-              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition resize-none" />
+            <textarea
+              v-model="edicaoDescricao"
+              placeholder="Ex: Turma voltada para iniciantes sem experiência prévia..."
+              rows="3"
+              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition resize-none"
+            />
           </div>
 
           <div v-if="modo === 'editar'">
@@ -422,18 +520,28 @@
                 >({{ edicaoAlunos.length }} matriculado(s))</span
               >
             </p>
-            <div v-if="loadingAlunos" class="flex items-center gap-2 text-green-700 text-sm py-2">
-              <div class="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+            <div
+              v-if="loadingAlunos"
+              class="flex items-center gap-2 text-green-700 text-sm py-2"
+            >
+              <div
+                class="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"
+              ></div>
               Carregando...
             </div>
             <ul v-else-if="edicaoAlunos.length > 0" class="space-y-2 mb-4">
-              <li v-for="aluno in edicaoAlunos" :key="aluno.id"
-                class="flex items-center justify-between px-4 py-2.5 bg-green-50 border border-green-200 rounded-xl">
+              <li
+                v-for="aluno in edicaoAlunos"
+                :key="aluno.id"
+                class="flex items-center justify-between px-4 py-2.5 bg-green-50 border border-green-200 rounded-xl"
+              >
                 <span class="text-sm font-medium text-green-800">{{
                   aluno.nome
                 }}</span>
-                <button @click="removerAluno(aluno.id)"
-                  class="text-gray-300 hover:text-red-500 transition font-bold text-lg leading-none">
+                <button
+                  @click="removerAluno(aluno.id)"
+                  class="text-gray-300 hover:text-red-500 transition font-bold text-lg leading-none"
+                >
                   ×
                 </button>
               </li>
@@ -448,10 +556,16 @@
               {{ edicaoAlunos.length }} aluno(s) selecionado(s):
             </p>
             <ul class="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
-              <li v-for="aluno in edicaoAlunos" :key="aluno.id"
-                class="flex items-center gap-2 bg-green-50 border border-green-200 text-green-800 text-xs px-3 py-1.5 rounded-full">
+              <li
+                v-for="aluno in edicaoAlunos"
+                :key="aluno.id"
+                class="flex items-center gap-2 bg-green-50 border border-green-200 text-green-800 text-xs px-3 py-1.5 rounded-full"
+              >
                 {{ aluno.nome }}
-                <button @click="removerAluno(aluno.id)" class="hover:text-red-500 transition font-bold leading-none">
+                <button
+                  @click="removerAluno(aluno.id)"
+                  class="hover:text-red-500 transition font-bold leading-none"
+                >
                   ×
                 </button>
               </li>
@@ -463,30 +577,58 @@
               Adicionar alunos
             </p>
             <div class="relative mb-3">
-              <input v-model="filtroEdicao" type="text" placeholder="Filtrar por nome ou e-mail..."
-                class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+              <input
+                v-model="filtroEdicao"
+                type="text"
+                placeholder="Filtrar por nome ou e-mail..."
+                class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+              />
               <div v-if="loadingAlunos" class="absolute right-3 top-3.5">
-                <div class="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                <div
+                  class="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"
+                ></div>
               </div>
             </div>
             <ul
-              class="border border-gray-200 rounded-xl overflow-hidden max-h-64 overflow-y-auto divide-y divide-gray-100">
-              <li v-if="todosAlunosFiltrados.length === 0" class="px-4 py-3 text-sm text-gray-400 text-center">
+              class="border border-gray-200 rounded-xl overflow-hidden max-h-64 overflow-y-auto divide-y divide-gray-100"
+            >
+              <li
+                v-if="todosAlunosFiltrados.length === 0"
+                class="px-4 py-3 text-sm text-gray-400 text-center"
+              >
                 Nenhum aluno encontrado.
               </li>
-              <li v-for="aluno in todosAlunosFiltrados" :key="aluno.id"
+              <li
+                v-for="aluno in todosAlunosFiltrados"
+                :key="aluno.id"
                 class="flex items-center justify-between px-4 py-3 transition"
-                :class="edicaoAlunos.some((a) => a.id === aluno.id) ? 'bg-gray-50' : 'hover:bg-gray-50'">
+                :class="
+                  edicaoAlunos.some((a) => a.id === aluno.id)
+                    ? 'bg-gray-50'
+                    : 'hover:bg-gray-50'
+                "
+              >
                 <div>
-                  <p class="text-sm font-medium text-gray-800">{{ aluno.nome }}</p>
+                  <p class="text-sm font-medium text-gray-800">
+                    {{ aluno.nome }}
+                  </p>
                   <p class="text-xs text-gray-400">{{ aluno.email }}</p>
                 </div>
-                <button @click="adicionarAluno(aluno)" :disabled="edicaoAlunos.some((a) => a.id === aluno.id)"
-                  class="text-xs px-3 py-1.5 rounded-lg font-semibold transition flex-shrink-0 ml-3" :class="edicaoAlunos.some((a) => a.id === aluno.id)
+                <button
+                  @click="adicionarAluno(aluno)"
+                  :disabled="edicaoAlunos.some((a) => a.id === aluno.id)"
+                  class="text-xs px-3 py-1.5 rounded-lg font-semibold transition flex-shrink-0 ml-3"
+                  :class="
+                    edicaoAlunos.some((a) => a.id === aluno.id)
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                       : 'bg-green-100 text-green-700 hover:bg-green-200'
-                    ">
-                  {{edicaoAlunos.some((a) => a.id === aluno.id) ? '✓' : '+ Adicionar'}}
+                  "
+                >
+                  {{
+                    edicaoAlunos.some((a) => a.id === aluno.id)
+                      ? "✓"
+                      : "+ Adicionar"
+                  }}
                 </button>
               </li>
             </ul>
@@ -494,13 +636,19 @@
         </div>
 
         <div class="p-6 border-t">
-          <button @click="salvar" :disabled="salvando ||
-            !edicaoIdentificador.trim() ||
-            (isAdmin && modo === 'criar' && !professorSelecionadoCriacao)
+          <button
+            @click="salvar"
+            :disabled="
+              salvando ||
+              !edicaoIdentificador.trim() ||
+              (isAdmin && modo === 'criar' && !professorSelecionadoCriacao)
             "
-            class="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition active:scale-95 flex items-center justify-center gap-2">
-            <div v-if="salvando" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin">
-            </div>
+            class="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition active:scale-95 flex items-center justify-center gap-2"
+          >
+            <div
+              v-if="salvando"
+              class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
+            ></div>
             {{
               salvando
                 ? "Salvando..."
@@ -603,16 +751,16 @@ const gruposFiltrados = computed(() => {
 });
 
 const todosAlunosFiltrados = computed(() => {
-  const termo = filtroEdicao.value.trim().toLowerCase()
+  const termo = filtroEdicao.value.trim().toLowerCase();
   const lista = termo
     ? todosAlunos.value.filter(
-      (a) =>
-        a.nome.toLowerCase().includes(termo) ||
-        a.email.toLowerCase().includes(termo),
-    )
-    : todosAlunos.value
-  return [...lista].sort((a, b) => a.nome.localeCompare(b.nome))
-})
+        (a) =>
+          a.nome.toLowerCase().includes(termo) ||
+          a.email.toLowerCase().includes(termo),
+      )
+    : todosAlunos.value;
+  return [...lista].sort((a, b) => a.nome.localeCompare(b.nome));
+});
 
 function toggleMenu(turmaId) {
   menuAberto.value = menuAberto.value === turmaId ? null : turmaId;
@@ -645,8 +793,10 @@ onMounted(() => document.addEventListener("click", fecharMenuFora));
 onUnmounted(() => document.removeEventListener("click", fecharMenuFora));
 
 function jaMatriculadoNessaTurma(alunoId) {
-  if (modo.value !== 'editar' || !turmaSelecionada.value) return false
-  return (mapaMatriculas.value[alunoId] ?? []).includes(turmaSelecionada.value.id)
+  if (modo.value !== "editar" || !turmaSelecionada.value) return false;
+  return (mapaMatriculas.value[alunoId] ?? []).includes(
+    turmaSelecionada.value.id,
+  );
 }
 
 async function carregarTurmas() {
@@ -698,15 +848,15 @@ async function carregarProfessores() {
 
 async function carregarMatriculas() {
   const { data } = await supabase
-    .from('turma_aluno')
-    .select('aluno_id, turma_id')
+    .from("turma_aluno")
+    .select("aluno_id, turma_id");
 
-  const mapa = {}
-    ; (data || []).forEach((v) => {
-      if (!mapa[v.aluno_id]) mapa[v.aluno_id] = []
-      mapa[v.aluno_id].push(v.turma_id)
-    })
-  mapaMatriculas.value = mapa
+  const mapa = {};
+  (data || []).forEach((v) => {
+    if (!mapa[v.aluno_id]) mapa[v.aluno_id] = [];
+    mapa[v.aluno_id].push(v.turma_id);
+  });
+  mapaMatriculas.value = mapa;
 }
 
 async function carregarTodosAlunos() {
@@ -823,7 +973,7 @@ function adicionarAluno(aluno) {
   if (!edicaoAlunos.value.some((a) => a.id === aluno.id)) {
     edicaoAlunos.value = [...edicaoAlunos.value, aluno].sort((a, b) =>
       a.nome.localeCompare(b.nome),
-    )
+    );
   }
 }
 function removerAluno(id) {

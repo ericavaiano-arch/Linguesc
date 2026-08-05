@@ -47,7 +47,7 @@
 
         <div class="flex items-center justify-between">
           <p class="text-xs text-gray-400">Meta de frequência: <span class="font-semibold text-gray-600">{{ turma.meta_frequencia }}%</span></p>
-          <span class="text-xs text-green-600 font-semibold group-hover:underline">Ver {{ destino === 'minha-turma' ? 'turma' : 'presença' }} →</span>
+          <span class="text-xs text-green-600 font-semibold group-hover:underline">Ver {{ destino === 'minha-turma' ? 'turma' : destino === 'minhas-atividades' ? 'atividades' : 'presença' }} →</span>
         </div>
       </button>
     </div>
@@ -71,6 +71,11 @@ const turmas = ref([])
 onMounted(async () => {
   const alunoId = user.value?.id
   if (!alunoId) { loading.value = false; return }
+
+  if (destino.value === 'minhas-atividades') {
+    router.replace('/aluno/minhas-atividades')
+    return
+  }
 
   const { data: vinculos } = await supabase
     .from('turma_aluno')
