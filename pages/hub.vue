@@ -1,5 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50 p-8">
+    <ModalTermo v-if="mostrarTermo" @aceitar="handleAceitarTermo" />
+
     <div class="mb-12">
       <h1 class="text-3xl font-bold text-green-700">
         👋 Bem-vindo ao Linguesc
@@ -462,12 +464,21 @@
 definePageMeta({ middleware: "auth" });
 
 const router = useRouter();
-const { user, isAluno, isProfessor, isAdmin } = useAuth();
+const { user, isAluno, isProfessor, isAdmin, aceitarTermoConsciencia } =
+  useAuth();
 const { count: pendentes, carregar: carregarPendentes } =
   useJustificativasPendentes();
 
 function irPara(rota) {
   router.push(rota);
+}
+
+const mostrarTermo = computed(
+  () => !!user.value && user.value.termoAceite !== true,
+);
+
+async function handleAceitarTermo() {
+  await aceitarTermoConsciencia();
 }
 
 const {

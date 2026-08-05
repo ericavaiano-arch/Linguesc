@@ -8,6 +8,7 @@ export interface AuthUser {
   nome: string
   email: string
   ativo: boolean
+  termoAceite: boolean | null
 }
 
 // Estado global fora do composable
@@ -40,7 +41,7 @@ export const useAuth = () => {
 
     const { data: perfil } = await supabase
       .from('usuarios')
-      .select('id, nome, ativo')
+      .select('id, nome, ativo, termo_aceite')
       .eq('id', session.user.id)
       .single()
 
@@ -51,6 +52,7 @@ export const useAuth = () => {
       nome: perfil.nome,
       email: session.user.email ?? '',
       ativo: perfil.ativo,
+      termoAceite: perfil.termo_aceite,
     }
 
     papeis.value = await carregarPapeis(perfil.id)
@@ -63,7 +65,7 @@ export const useAuth = () => {
 
     const { data: perfil } = await supabase
       .from('usuarios')
-      .select('id, nome, ativo')
+      .select('id, nome, ativo, termo_aceite')
       .eq('id', data.user.id)
       .single()
 
@@ -75,6 +77,7 @@ export const useAuth = () => {
       nome: perfil.nome,
       email: data.user.email ?? '',
       ativo: perfil.ativo,
+      termoAceite: perfil.termo_aceite,
     }
 
     papeis.value = await carregarPapeis(perfil.id)
@@ -109,6 +112,20 @@ export const useAuth = () => {
   return null
 }
 
+  async function aceitarTermoConsciencia(): Promise<string | null> {
+    if (!user.value) return 'Usuário não autenticado'
+
+    const { error } = await supabase
+      .from('usuarios')
+      .update({ termo_aceite: true })
+      .eq('id', user.value.id)
+
+    if (error) return 'Erro ao registrar aceite do termo'
+
+    user.value = { ...user.value, termoAceite: true }
+    return null
+  }
+
 
   const isLoggedIn = computed(() => !!user.value)
   const isProfessor = computed(() => papelAtivo.value === 'PROFESSOR')
@@ -131,6 +148,7 @@ export const useAuth = () => {
     logout,
     reidratar,
     selecionarPapel,
-    alterarSenha
+    alterarSenha,
+    aceitarTermoConsciencia
   }
 }
