@@ -52,34 +52,73 @@
             Clique em <strong>+ Nova Atividade</strong> para começar.
           </p>
         </div>
-        <button
-          v-for="atividade in atividades"
-          :key="atividade.id"
-          @click="escolherAtividade(atividade)"
-          class="w-full flex items-center justify-between px-3.5 py-2.5 border-b border-gray-100 last:border-0 text-left gap-2 transition"
-          :class="
-            atividadeSelecionada?.id === atividade.id
-              ? 'bg-green-50'
-              : 'hover:bg-gray-50 cursor-pointer'
-          "
-        >
-          <div class="min-w-0">
-            <p class="text-xs font-medium text-gray-800 truncate">
-              {{ atividade.titulo }}
-            </p>
-            <p class="text-xs text-gray-400 mt-0.5">
-              {{
-                atividade.tipo === "NOTA" ? "📝 Com nota" : "✅ Participação"
-              }}
-            </p>
+
+        <!-- Seção: Provas -->
+        <template v-if="provas.length > 0">
+          <div class="px-3.5 py-2 bg-gray-50 border-b border-gray-100">
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">📝 Provas</p>
           </div>
-          <span
-            class="text-xs px-2 py-0.5 rounded-full font-medium shrink-0"
-            :class="badgeStatus(atividade.status)"
+          <button
+            v-for="atividade in provas"
+            :key="atividade.id"
+            @click="escolherAtividade(atividade)"
+            class="w-full flex items-center justify-between px-3.5 py-2.5 border-b border-gray-100 last:border-0 text-left gap-2 transition"
+            :class="
+              atividadeSelecionada?.id === atividade.id
+                ? 'bg-green-50'
+                : 'hover:bg-gray-50 cursor-pointer'
+            "
           >
-            {{ labelStatus(atividade.status) }}
-          </span>
-        </button>
+            <div class="min-w-0 flex-1">
+              <p class="text-xs font-medium text-gray-800 truncate">
+                {{ atividade.titulo }}
+              </p>
+              <p v-if="atividade.data_final" class="text-[10px] text-gray-400 mt-0.5">
+                até {{ formatarDataCurta(atividade.data_final) }}
+              </p>
+            </div>
+            <span
+              class="text-xs px-2 py-0.5 rounded-full font-medium shrink-0"
+              :class="badgeStatus(atividade)"
+            >
+              {{ labelStatus(atividade) }}
+            </span>
+          </button>
+        </template>
+
+        <!-- Seção: Missões -->
+        <template v-if="missoes.length > 0">
+          <div class="px-3.5 py-2 bg-amber-50 border-b border-gray-100" :class="provas.length > 0 ? 'border-t border-gray-100' : ''">
+            <p class="text-[10px] font-semibold text-amber-600 uppercase tracking-widest">⭐ Missões da semana</p>
+          </div>
+          <button
+            v-for="atividade in missoes"
+            :key="atividade.id"
+            @click="escolherAtividade(atividade)"
+            class="w-full flex items-center justify-between px-3.5 py-2.5 border-b border-gray-100 last:border-0 text-left gap-2 transition"
+            :class="
+              atividadeSelecionada?.id === atividade.id
+                ? 'bg-amber-50'
+                : 'hover:bg-gray-50 cursor-pointer'
+            "
+          >
+            <div class="min-w-0 flex-1">
+              <p class="text-xs font-medium text-gray-800 truncate flex items-center gap-1">
+                <span class="text-amber-400">⭐</span>
+                {{ atividade.titulo }}
+              </p>
+              <p v-if="atividade.data_final" class="text-[10px] text-gray-400 mt-0.5">
+                até {{ formatarDataCurta(atividade.data_final) }}
+              </p>
+            </div>
+            <span
+              class="text-xs px-2 py-0.5 rounded-full font-medium shrink-0"
+              :class="badgeStatus(atividade)"
+            >
+              {{ labelStatus(atividade) }}
+            </span>
+          </button>
+        </template>
       </div>
 
       <!-- Painel da atividade selecionada -->
@@ -93,17 +132,37 @@
         >
           <div class="flex items-center gap-2 min-w-0">
             <h2 class="text-sm font-semibold text-gray-800 truncate">
+              <span v-if="atividadeSelecionada.tipo_missao === 'MISSAO'" class="text-amber-400 mr-1">⭐</span>
               {{ atividadeSelecionada.titulo }}
             </h2>
           </div>
 
           <div class="flex items-center gap-2 shrink-0 ml-2">
+            <!-- Botão encerrar — só para atividades publicadas -->
             <button
+              v-if="atividadeSelecionada.status === 'PUBLICADA'"
+              @click="confirmarEncerrar"
+              class="text-xs px-3 py-1.5 rounded-lg border border-orange-200 text-orange-600 hover:bg-orange-50 transition"
+            >
+              🔒 Encerrar atividade
+            </button>
+
+            <!-- Botão editar — só enquanto publicada -->
+            <button
+              v-if="atividadeSelecionada.status === 'PUBLICADA'"
               @click="abrirEdicao(atividadeSelecionada)"
               class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition"
             >
-              ✏️ Editar Configurações da Atividade
+              ✏️ Editar
             </button>
+
+            <!-- Badge leitura — encerrada -->
+            <span
+              v-if="atividadeSelecionada.status === 'ENCERRADA'"
+              class="text-xs px-3 py-1.5 rounded-lg bg-red-50 border border-red-100 text-red-500 font-medium"
+            >
+              🔒 Encerrada
+            </span>
 
             <Transition name="fade">
               <div v-if="temAlteracoes" class="flex items-center gap-2">
@@ -149,35 +208,65 @@
         >
           <span class="text-amber-500 text-xs">💡</span>
           <p class="text-sm text-amber-700">
-            <template v-if="atividadeSelecionada.tipo === 'NOTA'">
-              Digite a nota (0–10) de cada estudante e clique em 💬 para
-              adicionar feedback individual. Salve ao final.
+            <template v-if="atividadeSelecionada.tipo_missao === 'MISSAO'">
+              Missão opcional da semana. Os estudantes respondem pelo sistema.
+              Confira as respostas abaixo e marque quem você considera como participante.
             </template>
             <template v-else>
-              Marque os estudantes que realizaram a atividade. Clique em 💬 para
+              Digite a nota (0–10) de cada estudante e clique em 💬 para
               adicionar feedback individual. Salve ao final.
             </template>
           </p>
         </div>
 
-        <!-- Ações rápidas -->
+        <!-- Painel de respostas — apenas para missões -->
+        <div v-if="atividadeSelecionada.tipo_missao === 'MISSAO'" class="border-b border-gray-100">
+          <div class="px-3.5 py-2.5 bg-amber-50 flex items-center gap-2">
+            <span class="text-sm">⭐</span>
+            <p class="text-xs font-semibold text-amber-700 uppercase tracking-wide">Respostas dos estudantes</p>
+            <span class="ml-auto text-xs text-amber-600">
+              {{ registros.filter(r => r.respondido_em).length }}/{{ registros.length }} responderam
+            </span>
+          </div>
+          <div class="divide-y divide-gray-50">
+            <div
+              v-for="r in registros"
+              :key="r.aluno_id"
+              class="px-4 py-3"
+              :class="r.respondido_em ? 'bg-white' : 'bg-gray-50'"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                    <span
+                      class="w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center text-[10px]"
+                      :class="r.respondido_em ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'"
+                    >{{ r.respondido_em ? '✓' : '–' }}</span>
+                    {{ r.nome }}
+                  </p>
+                  <!-- Resposta de múltipla escolha -->
+                  <p v-if="r.resposta_opcao" class="mt-1 text-xs text-gray-600 bg-green-50 border border-green-100 rounded-lg px-2 py-1 inline-block">
+                    {{ r.resposta_opcao }}
+                  </p>
+                  <!-- Resposta texto livre -->
+                  <p v-else-if="r.resposta_texto" class="mt-1 text-xs text-gray-600 bg-blue-50 border border-blue-100 rounded-lg px-2 py-1.5 leading-relaxed line-clamp-3">
+                    {{ r.resposta_texto }}
+                  </p>
+                  <p v-else-if="!r.respondido_em" class="mt-1 text-xs text-gray-400 italic">Ainda não respondeu</p>
+                </div>
+                <span v-if="r.respondido_em" class="text-[10px] text-gray-400 flex-shrink-0 mt-0.5">
+                  {{ formatarDataCurta(r.respondido_em) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resumo (só para provas) -->
         <div
+          v-if="atividadeSelecionada.tipo_missao !== 'MISSAO'"
           class="flex gap-2 px-3.5 py-2.5 border-b border-gray-100 flex-wrap items-center"
         >
-          <template v-if="atividadeSelecionada.tipo === 'PARTICIPACAO'">
-            <button
-              @click="marcarTodos"
-              class="text-xs px-3 py-1.5 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 transition"
-            >
-              marcar todos
-            </button>
-            <button
-              @click="desmarcarTodos"
-              class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition"
-            >
-              desmarcar todos
-            </button>
-          </template>
           <div class="flex-1"></div>
           <span class="text-xs text-gray-400">{{ resumoParticipacao }}</span>
         </div>
@@ -206,7 +295,7 @@
                 <th
                   class="text-center px-3 py-2 text-xs font-medium text-gray-400 whitespace-nowrap"
                 >
-                  {{ atividadeSelecionada.tipo === "NOTA" ? "Nota" : "Feito" }}
+                  Nota
                 </th>
                 <th
                   class="text-center px-3 py-2 text-xs font-medium text-gray-400"
@@ -225,45 +314,14 @@
                 <td class="px-4 py-2.5">
                   <span
                     class="text-sm font-medium"
-                    :class="nomeClass(registro)"
+                    :class="registro.nota !== null ? 'text-gray-800' : 'text-gray-700'"
                   >
                     {{ registro.nome }}
                   </span>
                 </td>
 
-                <!-- PARTICIPAÇÃO: checkbox -->
-                <td
-                  class="px-3 py-2.5 text-center"
-                  v-if="atividadeSelecionada.tipo === 'PARTICIPACAO'"
-                >
-                  <div
-                    @click="toggleFeito(registro)"
-                    class="w-5 h-5 rounded flex items-center justify-center shrink-0 border-2 transition-all cursor-pointer mx-auto"
-                    :class="
-                      registro.feito
-                        ? 'bg-green-500 border-green-500'
-                        : 'border-gray-300 hover:border-gray-400'
-                    "
-                  >
-                    <svg
-                      v-if="registro.feito"
-                      class="w-3 h-3 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      stroke-width="3.5"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  </div>
-                </td>
-
                 <!-- NOTA: input com máscara -->
-                <td class="px-3 py-2.5 text-center" v-else>
+                <td class="px-3 py-2.5 text-center">
                   <input
                     :value="notaDisplay(registro)"
                     @keydown="onNotaKeydown($event, registro)"
@@ -271,7 +329,8 @@
                     inputmode="numeric"
                     placeholder="–"
                     readonly
-                    class="w-16 text-center text-sm font-bold rounded-lg px-2 py-1.5 border-2 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-green-400 transition-all cursor-pointer select-none"
+                    :disabled="atividadeSelecionada.status === 'ENCERRADA'"
+                    class="w-16 text-center text-sm font-bold rounded-lg px-2 py-1.5 border-2 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-green-400 transition-all cursor-pointer select-none disabled:cursor-not-allowed disabled:opacity-60"
                     :class="notaInputClass(registro._digitos)"
                   />
                 </td>
@@ -280,7 +339,8 @@
                 <td class="px-3 py-2.5 text-center">
                   <button
                     @click="abrirFeedback(registro)"
-                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border transition"
+                    :disabled="atividadeSelecionada.status === 'ENCERRADA'"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border transition disabled:opacity-50 disabled:cursor-not-allowed"
                     :class="
                       registro.feedback
                         ? 'bg-green-500 border-green-500 text-white hover:bg-green-600'
@@ -288,9 +348,7 @@
                     "
                   >
                     💬
-                    <span v-if="registro.feedback" class="hidden sm:inline"
-                      >Editar</span
-                    >
+                    <span v-if="registro.feedback" class="hidden sm:inline">Editar</span>
                     <span v-else class="hidden sm:inline">Adicionar</span>
                   </button>
                 </td>
@@ -309,7 +367,7 @@
         <p class="text-sm font-medium text-gray-600">Selecione uma atividade</p>
         <p class="text-xs text-gray-400 max-w-xs leading-relaxed">
           Clique em uma atividade à esquerda para ver e editar os registros dos
-          estudantes — notas, participação e feedbacks individuais.
+          estudantes — notas e feedbacks individuais.
         </p>
         <p class="text-xs text-gray-400">
           Não tem nenhuma ainda? Clique em
@@ -387,6 +445,40 @@
       </div>
     </Transition>
 
+    <!-- ── MODAL CONFIRMAR ENCERRAR ── -->
+    <Transition name="fade">
+      <div
+        v-if="modalEncerrar"
+        class="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4"
+      >
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+          <div class="px-6 pt-6 pb-4">
+            <p class="text-2xl mb-3">🔒</p>
+            <h3 class="text-base font-semibold text-gray-800 mb-1">Encerrar atividade?</h3>
+            <p class="text-sm text-gray-500">
+              Os estudantes não poderão mais responder. Esta ação não pode ser desfeita.
+            </p>
+          </div>
+          <div class="px-6 pb-6 flex gap-3">
+            <button
+              @click="modalEncerrar = false"
+              class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition"
+            >
+              Cancelar
+            </button>
+            <button
+              @click="encerrarAtividade"
+              :disabled="encerrando"
+              class="flex-1 px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white text-sm font-semibold transition flex items-center justify-center gap-2"
+            >
+              <div v-if="encerrando" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              {{ encerrando ? 'Encerrando...' : 'Sim, encerrar' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
     <!-- ── OVERLAY DRAWER ── -->
     <Transition name="fade">
       <div
@@ -415,93 +507,160 @@
         </div>
 
         <div class="flex-1 overflow-y-auto p-6 space-y-5">
-          <!-- Título -->
-          <div>
-            <label class="text-sm font-medium text-gray-700 mb-2 block"
-              >Título</label
-            >
-            <input
-              v-model="form.titulo"
-              type="text"
-              placeholder="Ex: Lista 1, Trabalho em grupo..."
-              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
-            />
-          </div>
 
-          <!-- Tipo -->
-          <div>
-            <label class="text-sm font-medium text-gray-700 mb-2 block"
-              >Tipo</label
-            >
+          <!-- PASSO 1: Escolher tipo (só na criação) -->
+          <div v-if="modo === 'criar' && !form.tipoEscolhido">
+            <p class="text-sm font-medium text-gray-700 mb-3">O que você quer criar?</p>
             <div class="grid grid-cols-2 gap-3">
               <button
-                @click="form.tipo = 'NOTA'"
-                class="py-3 rounded-xl border-2 text-sm font-semibold transition"
-                :class="
-                  form.tipo === 'NOTA'
-                    ? 'border-green-500 bg-green-50 text-green-700'
-                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                "
+                @click="escolherTipoCriacao('NOTA')"
+                class="flex flex-col items-center gap-2 py-5 rounded-xl border-2 border-gray-200 hover:border-green-400 hover:bg-green-50 text-gray-600 hover:text-green-700 transition"
               >
-                📝 Com nota
+                <span class="text-3xl">📝</span>
+                <span class="text-sm font-semibold">Prova Final</span>
+                <span class="text-xs text-gray-400">Lança nota 0–10</span>
               </button>
               <button
-                @click="form.tipo = 'PARTICIPACAO'"
-                class="py-3 rounded-xl border-2 text-sm font-semibold transition"
-                :class="
-                  form.tipo === 'PARTICIPACAO'
-                    ? 'border-green-500 bg-green-50 text-green-700'
-                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                "
+                @click="escolherTipoCriacao('MISSAO')"
+                class="flex flex-col items-center gap-2 py-5 rounded-xl border-2 border-gray-200 hover:border-amber-400 hover:bg-amber-50 text-gray-600 hover:text-amber-700 transition"
               >
-                ✅ Apenas Participação
+                <span class="text-3xl">⭐</span>
+                <span class="text-sm font-semibold">Missão da Semana</span>
+                <span class="text-xs text-gray-400">Interativa · +5 ⭐</span>
               </button>
             </div>
           </div>
 
-          <!-- Status -->
-          <div>
-            <label class="text-sm font-medium text-gray-700 mb-2 block"
-              >Status</label
-            >
-            <div class="grid grid-cols-3 gap-2">
-              <button
-                v-for="s in statusOpcoes"
-                :key="s.value"
-                @click="form.status = s.value"
-                class="py-2.5 rounded-xl border-2 text-xs font-semibold transition"
-                :class="
-                  form.status === s.value
-                    ? 'border-green-500 bg-green-50 text-green-700'
-                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                "
+          <!-- Formulário (após escolha de tipo ou em modo editar) -->
+          <template v-if="modo === 'editar' || form.tipoEscolhido">
+
+            <!-- Badge do tipo (criação) -->
+            <div v-if="modo === 'criar'" class="flex items-center gap-2">
+              <span
+                class="text-xs font-semibold px-3 py-1 rounded-full"
+                :class="form.tipo_missao === 'MISSAO'
+                  ? 'bg-amber-100 text-amber-700'
+                  : 'bg-green-100 text-green-700'"
               >
-                {{ s.label }}
+                {{ form.tipo_missao === 'MISSAO' ? '⭐ Missão da Semana' : '📝 Prova Final' }}
+              </span>
+              <button
+                @click="form.tipoEscolhido = false"
+                class="text-xs text-gray-400 hover:text-gray-600 underline"
+              >
+                Trocar
               </button>
             </div>
-            <p class="text-xs text-gray-400 mt-2 leading-relaxed">
-              <strong>Rascunho:</strong> invisível aos estudantes.
-              <strong>Publicada:</strong> estudantes podem ver.
-              <strong>Encerrada:</strong> bloqueada para edições.
-            </p>
-          </div>
 
-          <!-- Informações adicionais -->
-          <div>
-            <label class="text-sm font-medium text-gray-700 mb-2 block">
-              Informações adicionais
-              <span class="text-gray-400 font-normal">(opcional)</span>
-            </label>
-            <textarea
-              v-model="form.descricao"
-              rows="4"
-              placeholder="Instruções, links de conteúdo, observações..."
-              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition resize-none"
-            />
-          </div>
+            <!-- Título -->
+            <div>
+              <label class="text-sm font-medium text-gray-700 mb-2 block">Título</label>
+              <input
+                v-model="form.titulo"
+                type="text"
+                :placeholder="form.tipo_missao === 'MISSAO' ? 'Ex: Tema da semana – Verbos irregulares' : 'Ex: Prova Final – Módulo 1'"
+                class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+              />
+            </div>
+
+            <!-- Informações adicionais -->
+            <div>
+              <label class="text-sm font-medium text-gray-700 mb-2 block">
+                Informações adicionais
+                <span class="text-gray-400 font-normal">(opcional)</span>
+              </label>
+              <textarea
+                v-model="form.descricao"
+                rows="3"
+                placeholder="Instruções, links de conteúdo, observações..."
+                class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition resize-none"
+              />
+            </div>
+
+            <!-- Data de encerramento -->
+            <div>
+              <label class="text-sm font-medium text-gray-700 mb-2 block">
+                Data de encerramento
+                <span class="text-gray-400 font-normal">(opcional)</span>
+              </label>
+              <input
+                v-model="form.data_final"
+                type="datetime-local"
+                class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+              />
+              <p class="text-xs text-gray-400 mt-1">
+                Se definida, a atividade será encerrada automaticamente nesta data.
+              </p>
+            </div>
+
+            <!-- Conteúdo da missão -->
+            <template v-if="form.tipo_missao === 'MISSAO'">
+              <div class="border-t border-gray-100 pt-4">
+                <p class="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-4">Configuração da missão</p>
+
+                <!-- Formato da resposta -->
+                <div class="mb-4">
+                  <label class="text-sm font-medium text-gray-700 mb-2 block">Formato da resposta</label>
+                  <div class="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      @click="form.formato_missao = 'multipla_escolha'"
+                      class="py-3 rounded-xl border-2 text-sm font-semibold transition"
+                      :class="form.formato_missao === 'multipla_escolha'
+                        ? 'border-amber-400 bg-amber-50 text-amber-700'
+                        : 'border-gray-200 text-gray-500 hover:border-gray-300'"
+                    >
+                      🔘 Múltipla escolha
+                    </button>
+                    <button
+                      type="button"
+                      @click="form.formato_missao = 'texto_livre'"
+                      class="py-3 rounded-xl border-2 text-sm font-semibold transition"
+                      :class="form.formato_missao === 'texto_livre'
+                        ? 'border-amber-400 bg-amber-50 text-amber-700'
+                        : 'border-gray-200 text-gray-500 hover:border-gray-300'"
+                    >
+                      ✍️ Texto livre
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Pergunta -->
+                <div class="mb-4">
+                  <label class="text-sm font-medium text-gray-700 mb-2 block">Pergunta / Enunciado</label>
+                  <textarea
+                    v-model="form.pergunta_missao"
+                    rows="3"
+                    placeholder="Ex: Qual foi o tema mais interessante desta semana e por quê?"
+                    class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 transition resize-none"
+                  />
+                </div>
+
+                <!-- Opções (só para múltipla escolha) -->
+                <div v-if="form.formato_missao === 'multipla_escolha'">
+                  <label class="text-sm font-medium text-gray-700 mb-2 block">Opções de resposta</label>
+                  <div class="space-y-2">
+                    <div
+                      v-for="(opcao, i) in form.opcoes_missao"
+                      :key="i"
+                      class="flex items-center gap-2"
+                    >
+                      <span class="text-xs font-bold text-gray-400 w-5 text-center">{{ ['A','B','C','D'][i] }}</span>
+                      <input
+                        v-model="form.opcoes_missao[i]"
+                        type="text"
+                        :placeholder="`Opção ${['A','B','C','D'][i]}`"
+                        class="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 transition"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </template>
         </div>
 
-        <div class="p-6 border-t">
+        <div class="p-6 border-t" v-if="modo === 'editar' || form.tipoEscolhido">
           <button
             @click="salvar"
             :disabled="salvandoForm || !form.titulo.trim()"
@@ -549,26 +708,34 @@ const modo = ref("criar");
 const modalFeedback = ref(false);
 const registroFeedback = ref(null);
 const textoFeedback = ref("");
-
-const statusOpcoes = [
-  { value: "RASCUNHO", label: "📋 Rascunho" },
-  { value: "PUBLICADA", label: "📢 Publicada" },
-  { value: "ENCERRADA", label: "🔒 Encerrada" },
-];
+const modalEncerrar = ref(false);
+const encerrando = ref(false);
 
 const form = reactive({
   titulo: "",
   tipo: "NOTA",
-  status: "RASCUNHO",
   descricao: "",
+  tipo_missao: "NORMAL",
+  formato_missao: "multipla_escolha",
+  pergunta_missao: "",
+  opcoes_missao: ["", "", "", ""],
+  data_final: "",
+  tipoEscolhido: false, // controla o step de seleção no drawer de criação
 });
+
+// ── Listas separadas por tipo ──────────────────────────────────────────────
+const provas = computed(() =>
+  atividades.value.filter((a) => a.tipo_missao !== "MISSAO")
+);
+const missoes = computed(() =>
+  atividades.value.filter((a) => a.tipo_missao === "MISSAO")
+);
 
 // ── Detecção de alterações não salvas ──────────────────────────────────────
 const snapshotKey = (r) =>
   JSON.stringify({
     id: r.aluno_id,
     nota: r._digitos ?? null,
-    feito: r.feito,
     feedback: r.feedback,
   });
 
@@ -584,7 +751,6 @@ function tirarSnapshot() {
 }
 
 // ── Máscara de nota (estilo caixa registradora) ────────────────────────────
-// _digitos: string de até 4 dígitos, ex "975" → 9,75 | "1000" → 10,00
 function notaDisplay(registro) {
   const d = registro._digitos ?? "";
   if (!d) return "";
@@ -603,12 +769,12 @@ function digitsToNota(d) {
 }
 
 function onNotaKeydown(e, registro) {
+  if (atividadeSelecionada.value?.status === "ENCERRADA") return;
   const d = registro._digitos ?? "";
 
   if (e.key >= "0" && e.key <= "9") {
     e.preventDefault();
     const novo = (d + e.key).replace(/^0+/, "") || "0";
-    // Limita: máximo 4 dígitos e valor ≤ 1000 (representa 10,00)
     if (novo.length > 4) return;
     const valorNum = digitsToNota(novo);
     if (valorNum !== null && valorNum > 10) return;
@@ -626,7 +792,6 @@ function onNotaKeydown(e, registro) {
 }
 
 function onNotaFocus(registro) {
-  // Garante que _digitos está sincronizado se nota foi carregada do banco
   if (registro._digitos === undefined && registro.nota !== null) {
     const s = Number(registro.nota).toFixed(2).replace(".", "");
     registro._digitos = s.replace(/^0+/, "") || "";
@@ -642,39 +807,79 @@ function notaInputClass(digitos) {
   return "border-red-400 text-red-600 bg-red-50";
 }
 
-function nomeClass(registro) {
-  if (atividadeSelecionada.value?.tipo === "PARTICIPACAO") {
-    return registro.feito ? "text-green-800" : "text-gray-700";
-  }
-  return registro.nota !== null ? "text-gray-800" : "text-gray-700";
-}
-
 const resumoParticipacao = computed(() => {
   if (!atividadeSelecionada.value) return "";
-  if (atividadeSelecionada.value.tipo === "PARTICIPACAO") {
-    const feitos = registros.value.filter((r) => r.feito).length;
-    return `${feitos}/${registros.value.length} realizaram`;
-  }
   const comNota = registros.value.filter((r) => r.nota !== null).length;
   return `${comNota}/${registros.value.length} com nota`;
 });
 
-function badgeStatus(status) {
+function formatarDataCurta(iso) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+  });
+}
+
+// Badge de status — considera expiração via data_final
+function badgeStatus(atividade) {
+  if (
+    atividade.status === "PUBLICADA" &&
+    atividade.data_final &&
+    new Date(atividade.data_final) < new Date()
+  ) {
+    return "bg-yellow-100 text-yellow-600"; // expirando (lag do cron)
+  }
   return (
     {
-      RASCUNHO: "bg-gray-100 text-gray-500",
       PUBLICADA: "bg-blue-100 text-blue-700",
       ENCERRADA: "bg-red-100 text-red-500",
-    }[status] ?? "bg-gray-100 text-gray-500"
+    }[atividade.status] ?? "bg-gray-100 text-gray-500"
   );
 }
 
-function labelStatus(status) {
+function labelStatus(atividade) {
+  if (
+    atividade.status === "PUBLICADA" &&
+    atividade.data_final &&
+    new Date(atividade.data_final) < new Date()
+  ) {
+    return "expirando...";
+  }
   return (
-    { RASCUNHO: "rascunho", PUBLICADA: "publicada", ENCERRADA: "encerrada" }[
-      status
-    ] ?? status.toLowerCase()
+    { PUBLICADA: "publicada", ENCERRADA: "encerrada" }[atividade.status] ??
+    atividade.status.toLowerCase()
   );
+}
+
+// ── Encerrar atividade ─────────────────────────────────────────────────────
+function confirmarEncerrar() {
+  modalEncerrar.value = true;
+}
+
+async function encerrarAtividade() {
+  encerrando.value = true;
+  try {
+    const { error } = await supabase
+      .from("atividade")
+      .update({ status: "ENCERRADA" })
+      .eq("id", atividadeSelecionada.value.id);
+
+    if (error) throw error;
+    $toast.success("Atividade encerrada.");
+    modalEncerrar.value = false;
+    await carregarAtividades();
+    // Atualiza o painel com os dados frescos
+    const atualizada = atividades.value.find(
+      (a) => a.id === atividadeSelecionada.value.id
+    );
+    if (atualizada) atividadeSelecionada.value = atualizada;
+  } catch (err) {
+    console.error(err);
+    $toast.error("Erro ao encerrar atividade.");
+  } finally {
+    encerrando.value = false;
+  }
 }
 
 // ── Dados ──────────────────────────────────────────────────────────────────
@@ -714,14 +919,13 @@ async function escolherAtividade(atividade) {
     .eq("atividade_id", atividade.id);
 
   const mapaRegistros = Object.fromEntries(
-    (registrosExistentes || []).map((r) => [r.aluno_id, r]),
+    (registrosExistentes || []).map((r) => [r.aluno_id, r])
   );
 
   registros.value = (alunosTurma || [])
     .map((v) => {
       const reg = mapaRegistros[v.aluno_id];
       const notaVal = reg?.nota ?? null;
-      // Pré-computar _digitos a partir do valor do banco
       let digitos = "";
       if (notaVal !== null) {
         digitos =
@@ -732,8 +936,10 @@ async function escolherAtividade(atividade) {
         nome: v.usuarios?.nome ?? "",
         nota: notaVal,
         _digitos: digitos,
-        feito: reg?.feito ?? false,
         feedback: reg?.feedback ?? "",
+        resposta_texto: reg?.resposta_texto ?? null,
+        resposta_opcao: reg?.resposta_opcao ?? null,
+        respondido_em: reg?.respondido_em ?? null,
         _id: reg?.id ?? null,
       };
     })
@@ -741,18 +947,6 @@ async function escolherAtividade(atividade) {
 
   loadingAlunos.value = false;
   tirarSnapshot();
-}
-
-function marcarTodos() {
-  registros.value = registros.value.map((r) => ({ ...r, feito: true }));
-}
-
-function desmarcarTodos() {
-  registros.value = registros.value.map((r) => ({ ...r, feito: false }));
-}
-
-function toggleFeito(registro) {
-  registro.feito = !registro.feito;
 }
 
 function abrirFeedback(registro) {
@@ -780,24 +974,16 @@ async function salvarRegistros() {
   salvando.value = true;
   try {
     const upserts = toRaw(registros.value).map((r) => {
-      const raw = toRaw(r); // garante objeto plain JS, não Proxy
+      const raw = toRaw(r);
       return {
         ...(raw._id ? { id: raw._id } : {}),
         atividade_id: atividadeSelecionada.value.id,
         aluno_id: raw.aluno_id,
-        nota:
-          atividadeSelecionada.value.tipo === "NOTA"
-            ? (raw.nota ?? null)
-            : null,
-        feito:
-          atividadeSelecionada.value.tipo === "PARTICIPACAO"
-            ? raw.feito
-            : false,
+        nota: raw.nota ?? null,
+        feito: false,
         feedback: raw.feedback || null,
       };
     });
-
-    console.log("upserts:", JSON.stringify(upserts)); // confirma no console antes de remover
 
     const { error } = await supabase
       .from("atividade_aluno")
@@ -820,17 +1006,42 @@ function abrirCriacao() {
   modo.value = "criar";
   form.titulo = "";
   form.tipo = "NOTA";
-  form.status = "RASCUNHO";
   form.descricao = "";
+  form.tipo_missao = "NORMAL";
+  form.formato_missao = "multipla_escolha";
+  form.pergunta_missao = "";
+  form.opcoes_missao = ["", "", "", ""];
+  form.data_final = "";
+  form.tipoEscolhido = false;
   painelAberto.value = true;
+}
+
+function escolherTipoCriacao(tipo) {
+  if (tipo === "MISSAO") {
+    form.tipo_missao = "MISSAO";
+    form.tipo = "NOTA"; // missões têm tipo NOTA no banco (nota não é usada, mas manter consistência)
+  } else {
+    form.tipo_missao = "NORMAL";
+    form.tipo = "NOTA";
+  }
+  form.tipoEscolhido = true;
 }
 
 function abrirEdicao(atividade) {
   modo.value = "editar";
   form.titulo = atividade.titulo;
   form.tipo = atividade.tipo;
-  form.status = atividade.status;
   form.descricao = atividade.descricao ?? "";
+  form.tipo_missao = atividade.tipo_missao ?? "NORMAL";
+  const conteudo = atividade.conteudo_json ?? {};
+  form.formato_missao = conteudo.formato ?? "multipla_escolha";
+  form.pergunta_missao = conteudo.pergunta ?? "";
+  form.opcoes_missao = conteudo.opcoes ?? ["", "", "", ""];
+  // Converter timestamptz → datetime-local (sem segundos)
+  form.data_final = atividade.data_final
+    ? atividade.data_final.slice(0, 16)
+    : "";
+  form.tipoEscolhido = true;
   painelAberto.value = true;
 }
 
@@ -842,18 +1053,38 @@ async function salvar() {
   if (!form.titulo.trim()) return;
   salvandoForm.value = true;
   try {
+    const conteudo_json =
+      form.tipo_missao === "MISSAO"
+        ? {
+            formato: form.formato_missao,
+            pergunta: form.pergunta_missao.trim(),
+            ...(form.formato_missao === "multipla_escolha"
+              ? {
+                  opcoes: form.opcoes_missao
+                    .map((o) => o.trim())
+                    .filter(Boolean),
+                }
+              : {}),
+          }
+        : null;
+
+    const payload = {
+      titulo: form.titulo.trim(),
+      tipo: form.tipo,
+      descricao: form.descricao.trim() || null,
+      tipo_missao: form.tipo_missao,
+      conteudo_json,
+      data_final: form.data_final ? new Date(form.data_final).toISOString() : null,
+    };
+
     if (modo.value === "criar") {
+      // Sempre publica ao criar
+      payload.status = "PUBLICADA";
+      payload.turma_id = turmaId;
+
       const { data, error } = await supabase
         .from("atividade")
-        .insert([
-          {
-            turma_id: turmaId,
-            titulo: form.titulo.trim(),
-            tipo: form.tipo,
-            status: form.status,
-            descricao: form.descricao.trim() || null,
-          },
-        ])
+        .insert([payload])
         .select()
         .single();
 
@@ -871,20 +1102,22 @@ async function salvar() {
             aluno_id: a.aluno_id,
             feito: false,
             nota: null,
-          })),
+          }))
         );
         if (e) throw e;
       }
 
       $toast.success("Atividade criada!");
     } else {
+      // Edição: apenas campos não-estruturais (título, descrição, data_final)
       const { error } = await supabase
         .from("atividade")
         .update({
-          titulo: form.titulo.trim(),
-          tipo: form.tipo,
-          status: form.status,
-          descricao: form.descricao.trim() || null,
+          titulo: payload.titulo,
+          descricao: payload.descricao,
+          data_final: payload.data_final,
+          tipo_missao: payload.tipo_missao,
+          conteudo_json: payload.conteudo_json,
         })
         .eq("id", atividadeSelecionada.value.id);
 
@@ -897,10 +1130,9 @@ async function salvar() {
 
     if (modo.value === "editar" && atividadeSelecionada.value) {
       const atualizada = atividades.value.find(
-        (a) => a.id === atividadeSelecionada.value.id,
+        (a) => a.id === atividadeSelecionada.value.id
       );
       if (atualizada) {
-        // Recarregar sem pedir confirmação (já salvamos)
         await escolherAtividade(atualizada, { forcar: true });
       }
     }

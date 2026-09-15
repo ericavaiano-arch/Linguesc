@@ -78,9 +78,20 @@ onMounted(async () => {
   }
 
   const { data: vinculos } = await supabase
-    .from('turma_aluno')
-    .select('turma_id, turma(id, nome, status, meta_frequencia, sala, professor_id)')
-    .eq('aluno_id', alunoId)
+  .from('turma_aluno')
+  .select(`
+    turma_id,
+    turma!inner(
+      id,
+      nome,
+      status,
+      meta_frequencia,
+      sala,
+      professor_id
+    )
+  `)
+  .eq('aluno_id', alunoId)
+  .eq('turma.status', 'ATIVA')
 
   if (!vinculos || vinculos.length === 0) {
     loading.value = false

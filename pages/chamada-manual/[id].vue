@@ -446,6 +446,21 @@ async function salvarChamada() {
 
     $toast.success(msg);
 
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+
+    fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/processar-bonus-presenca`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        aula_id: aulaSelecionada.value.id,
+        turma_id: aulaSelecionada.value.turma_id,
+      }),
+    }).catch((err) => console.error('Erro ao processar bônus de presença:', err))
+
     await verificarENotificarRisco({
       turmaId: aulaSelecionada.value.turma_id,
       turmaNome: turma?.value.nome,

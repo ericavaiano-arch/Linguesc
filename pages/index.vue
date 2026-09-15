@@ -85,7 +85,7 @@
 <script setup>
 definePageMeta({ layout: "auth" });
 
-const { precisaSelecionarPapel, login } = useAuth();
+const { precisaSelecionarPapel, bonusLoginPendente, login } = useAuth();
 const { $toast } = useNuxtApp();
 
 const email = ref("");
@@ -105,6 +105,11 @@ async function verificarUsuario() {
     if (erro) {
       $toast.error(erro);
       return;
+    }
+
+    if (bonusLoginPendente.value) {
+      $toast.success('+5 ⭐ bônus por fazer login essa semana!')
+      bonusLoginPendente.value = false
     }
 
     navigateTo(precisaSelecionarPapel.value ? "/selecionar-papel" : "/hub");

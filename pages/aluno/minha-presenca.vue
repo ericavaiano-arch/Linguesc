@@ -478,67 +478,110 @@
       </div>
     </div>
 
-    <!-- Modal justificativa -->
+        <!-- Modal justificativa -->
     <Transition name="fade">
       <div
         v-if="modalAberto"
         class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4"
       >
         <div class="bg-white rounded-2xl p-6 shadow-xl w-full max-w-md">
-          <h3 class="text-lg font-semibold text-gray-800 mb-1">
-            📝 Justificar Falta
-          </h3>
-          <p class="text-sm text-gray-400 mb-4">
-            Aula de
-            {{
-              aulaSelecionada ? formatarDataCompleta(aulaSelecionada.data) : ""
-            }}
-          </p>
 
-          <div
-            v-if="
-              justificativaExistente?.status === 'REJEITADA' &&
-              justificativaExistente?.resposta
-            "
-            class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4"
-          >
-            <p class="text-xs font-semibold text-red-600 mb-1">
-              Motivo da rejeição:
+          <!-- ── Estado bloqueado: nível de perfil insuficiente ── -->
+          <template v-if="modalBloqueado">
+            <div class="flex flex-col items-center text-center py-2">
+              <div class="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                <svg class="w-7 h-7 text-gray-400" fill="none" viewBox="0 0 24 24">
+                  <path
+                    d="M6 10V8a6 6 0 1112 0v2M5 10h14a1 1 0 011 1v9a1 1 0 01-1 1H5a1 1 0 01-1-1v-9a1 1 0 011-1z"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <h3 class="text-base font-semibold text-gray-800 mb-1">
+                Funcionalidade bloqueada
+              </h3>
+              <p class="text-sm text-gray-500 leading-relaxed mb-5">
+                Justificar faltas está disponível a partir do
+                <strong class="text-gray-700">Nível 1 — Estudante</strong>.
+                Complete seu perfil para desbloquear.
+              </p>
+              <NuxtLink
+                :to="`/profile/${user?.id}`"
+                @click="fecharModal"
+                class="w-full py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition text-center"
+              >
+                Completar perfil agora
+              </NuxtLink>
+              <button
+                @click="fecharModal"
+                class="mt-3 text-sm text-gray-400 hover:text-gray-600 transition"
+              >
+                Fechar
+              </button>
+            </div>
+          </template>
+
+          <!-- ── Estado normal ── -->
+          <template v-else>
+            <h3 class="text-lg font-semibold text-gray-800 mb-1">
+              📝 Justificar Falta
+            </h3>
+            <p class="text-sm text-gray-400 mb-4">
+              Aula de
+              {{
+                aulaSelecionada ? formatarDataCompleta(aulaSelecionada.data) : ""
+              }}
             </p>
-            <p class="text-sm text-red-700">
-              {{ justificativaExistente.resposta }}
+
+            <div
+              v-if="
+                justificativaExistente?.status === 'REJEITADA' &&
+                justificativaExistente?.resposta
+              "
+              class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4"
+            >
+              <p class="text-xs font-semibold text-red-600 mb-1">
+                Motivo da rejeição:
+              </p>
+              <p class="text-sm text-red-700">
+                {{ justificativaExistente.resposta }}
+              </p>
+            </div>
+
+            <textarea
+              v-model="textoJustificativa"
+              rows="4"
+              placeholder="Descreva o motivo da sua falta..."
+              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition resize-none"
+            ></textarea>
+            <p class="text-xs text-gray-400 mt-1 text-right">
+              {{ textoJustificativa.length }}/500
             </p>
-          </div>
 
-          <textarea
-            v-model="textoJustificativa"
-            rows="4"
-            placeholder="Descreva o motivo da sua falta..."
-            class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition resize-none"
-          ></textarea>
-          <p class="text-xs text-gray-400 mt-1 text-right">
-            {{ textoJustificativa.length }}/500
-          </p>
+            <div class="flex gap-3 mt-4">
+              <button
+                @click="fecharModal"
+                class="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                @click="enviarJustificativa"
+                :disabled="enviando || !textoJustificativa.trim()"
+                class="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white text-sm font-semibold transition flex items-center justify-center gap-2"
+              >
+                <div
+                  v-if="enviando"
+                  class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
+                ></div>
+                {{ enviando ? "Enviando..." : "Enviar" }}
+              </button>
+            </div>
+          </template>
 
-          <div class="flex gap-3 mt-4">
-            <button
-              @click="fecharModal"
-              class="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition"
-            >
-              Cancelar
-            </button>
-            <button
-              @click="enviarJustificativa"
-              :disabled="enviando || !textoJustificativa.trim()"
-              class="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white text-sm font-semibold transition flex items-center justify-center gap-2"
-            >
-              <div
-                v-if="enviando"
-                class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
-              ></div>
-              {{ enviando ? "Enviando..." : "Enviar" }}
-            </button>
-          </div>
         </div>
       </div>
     </Transition>
@@ -575,6 +618,7 @@ const aulaSelecionada = ref(null);
 const textoJustificativa = ref("");
 const enviando = ref(false);
 const aulasSimuladasFalta = ref(new Set());
+const modalBloqueado = ref(false)
 
 onMounted(async () => {
   const alunoId = user.value?.id;
@@ -779,6 +823,14 @@ const justificativaExistente = computed(
 
 function abrirJustificativa(aula) {
   aulaSelecionada.value = aula;
+
+  if ((user.value?.nivelPerfil ?? 0) < 1) {
+    modalBloqueado.value = true;
+    modalAberto.value = true;
+    return;
+  }
+
+  modalBloqueado.value = false;
   const existente = justificativas.value.find((j) => j.aula_id === aula.id);
   textoJustificativa.value =
     existente?.status === "REJEITADA" ? existente.texto : "";
@@ -787,8 +839,8 @@ function abrirJustificativa(aula) {
 
 function fecharModal() {
   modalAberto.value = false;
+  modalBloqueado.value = false;
   aulaSelecionada.value = null;
-  textoJustificativa.value = "";
 }
 
 async function enviarJustificativa() {
