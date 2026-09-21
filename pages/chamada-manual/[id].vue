@@ -142,51 +142,100 @@
           <li
             v-for="aluno in alunosOrdenados"
             :key="aluno.id"
-            @click="aluno.ativo ? togglePresenca(aluno.id) : null"
             class="flex items-center gap-3 px-3 py-2.5 rounded-xl border my-1 transition-all duration-100 select-none"
             :class="
               !aluno.ativo
                 ? 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
                 : presentes.has(aluno.id)
-                  ? 'border-green-300 bg-green-50 cursor-pointer'
-                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 cursor-pointer'
+                  ? 'border-green-300 bg-green-50'
+                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
             "
           >
             <div
-              class="w-4 h-4 rounded flex items-center justify-center shrink-0 border-2 transition-all"
-              :class="
-                presentes.has(aluno.id)
-                  ? 'bg-green-500 border-green-500'
-                  : 'border-gray-300'
-              "
+              @click="aluno.ativo ? togglePresenca(aluno.id) : null"
+              class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
             >
-              <svg
-                v-if="presentes.has(aluno.id)"
-                class="w-2.5 h-2.5 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="3.5"
+              <div
+                class="w-4 h-4 rounded flex items-center justify-center shrink-0 border-2 transition-all"
+                :class="
+                  presentes.has(aluno.id)
+                    ? 'bg-green-500 border-green-500'
+                    : 'border-gray-300'
+                "
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
+                <svg
+                  v-if="presentes.has(aluno.id)"
+                  class="w-2.5 h-2.5 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="3.5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <span
+                class="text-sm truncate"
+                :class="
+                  presentes.has(aluno.id)
+                    ? 'text-green-800 font-medium'
+                    : 'text-gray-700'
+                "
+              >
+                {{ aluno.nome }}
+              </span>
             </div>
-            <span
-              class="text-sm truncate"
-              :class="
-                presentes.has(aluno.id)
-                  ? 'text-green-800 font-medium'
-                  : 'text-gray-700'
-              "
+            <!-- Botão destaque -->
+            <button
+              v-if="presentes.has(aluno.id) && !destaqueExistentes.some(d => d.aluno_id === aluno.id)"
+              @click.stop="toggleDestaque(aluno.id)"
+              :title="destaqueAlunoIds.has(aluno.id) ? 'Remover destaque' : 'Marcar como destaque'"
+              class="shrink-0 text-base leading-none transition-transform hover:scale-110"
+              :class="destaqueAlunoIds.has(aluno.id) ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-300'"
             >
-              {{ aluno.nome }}
-            </span>
+              ★
+            </button>
+            <span
+              v-else-if="destaqueExistentes.some(d => d.aluno_id === aluno.id)"
+              class="shrink-0 text-yellow-400 text-base leading-none"
+              title="Destaque desta aula"
+            >★</span>
           </li>
         </ul>
+
+        <!-- Destaque da aula -->
+        <div
+          v-if="destaqueAlunoIds.size > 0 || destaqueExistentes.length > 0"
+          class="mx-3.5 mb-3 px-3 py-2.5 rounded-xl border border-yellow-200 bg-yellow-50"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-yellow-500 text-sm shrink-0">★</span>
+              <span class="text-xs font-medium text-yellow-800 truncate">
+                <template v-if="destaqueExistentes.length > 0">
+                  Destaque(s): {{ destaqueExistentes.map(d => nomeAluno(d.aluno_id)).join(', ') }}
+                </template>
+                <template v-else>
+                  Selecionado(s): {{ [...destaqueAlunoIds].map(nomeAluno).join(', ') }}
+                </template>
+              </span>
+            </div>
+            <button
+              v-if="destaqueExistentes.length === 0 && destaqueAlunoIds.size > 0"
+              @click="salvarDestaque"
+              :disabled="salvandoDestaque"
+              class="shrink-0 text-xs px-3 py-1 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-white font-semibold transition flex items-center gap-1"
+            >
+              <div v-if="salvandoDestaque" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              {{ salvandoDestaque ? 'Salvando...' : 'Confirmar +15 ⭐' }}
+            </button>
+            <span v-else-if="destaqueExistentes.length > 0" class="shrink-0 text-xs text-yellow-600">já registrado</span>
+          </div>
+        </div>
 
         <!-- Rodapé -->
         <div
@@ -272,9 +321,23 @@ const modoEdicao = ref(false);
 
 const dropdownAberto = ref(false);
 
+const destaqueAlunoIds = ref(new Set());
+const destaqueExistentes = ref([]);
+const salvandoDestaque = ref(false);
+
 const alunosOrdenados = computed(() =>
   [...alunos.value].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
 );
+
+function nomeAluno(alunoId) {
+  return alunos.value.find((a) => a.id === alunoId)?.nome ?? '—';
+}
+
+function toggleDestaque(alunoId) {
+  const s = new Set(destaqueAlunoIds.value);
+  s.has(alunoId) ? s.delete(alunoId) : s.add(alunoId);
+  destaqueAlunoIds.value = s;
+}
 
 async function escolherAula(aula) {
   dropdownAberto.value = false;
@@ -356,20 +419,22 @@ async function selecionarAula(aula) {
   aulaSelecionada.value = aula;
   loadingPresencas.value = true;
   presencaIds.value = {};
+  destaqueAlunoIds.value = new Set();
+  destaqueExistentes.value = [];
 
-  const { data, error } = await supabase
-    .from("presenca")
-    .select("id, aluno_id")
-    .eq("aula_id", aula.id);
+  const [presencaResult, destaqueResult] = await Promise.all([
+    supabase.from("presenca").select("id, aluno_id").eq("aula_id", aula.id),
+    supabase.from("destaque_aula").select("aluno_id").eq("aula_id", aula.id),
+  ]);
 
-  if (error) {
-    console.error(error);
+  if (presencaResult.error) {
+    console.error(presencaResult.error);
     loadingPresencas.value = false;
     return;
   }
 
   const novosPresentes = new Set();
-  data.forEach((p) => {
+  presencaResult.data.forEach((p) => {
     novosPresentes.add(p.aluno_id);
     presencaIds.value[p.aluno_id] = p.id;
   });
@@ -377,7 +442,74 @@ async function selecionarAula(aula) {
   presentes.value = novosPresentes;
   presentesOriginais.value = new Set(novosPresentes);
   modoEdicao.value = novosPresentes.size > 0;
+  destaqueExistentes.value = destaqueResult.data ?? [];
   loadingPresencas.value = false;
+}
+
+async function salvarDestaque() {
+  if (!destaqueAlunoIds.value.size || !aulaSelecionada.value || !user.value) return;
+  salvandoDestaque.value = true;
+  try {
+    const novosIds = [...destaqueAlunoIds.value];
+
+    const { error } = await supabase.from("destaque_aula").insert(
+      novosIds.map((aluno_id) => ({
+        aula_id: aulaSelecionada.value.id,
+        aluno_id,
+        professor_id: user.value.id,
+      })),
+    );
+    if (error) throw error;
+
+    // +15 estrelas para cada aluno destaque
+    for (const alunoId of novosIds) {
+      const { data: alunoData } = await supabase
+        .from("usuarios").select("estrelas").eq("id", alunoId).single();
+      await supabase
+        .from("usuarios")
+        .update({ estrelas: (alunoData?.estrelas ?? 0) + 15 })
+        .eq("id", alunoId);
+    }
+
+    // +20 estrelas para o professor (uma vez, independente da quantidade)
+    const { data: profData } = await supabase
+      .from("usuarios").select("estrelas").eq("id", user.value.id).single();
+    await supabase
+      .from("usuarios")
+      .update({ estrelas: (profData?.estrelas ?? 0) + 20 })
+      .eq("id", user.value.id);
+
+    // Histórico
+    supabase.from("estrelas_historico").insert(
+      novosIds.map((aluno_id) => ({
+        usuario_id: aluno_id,
+        quantidade: 15,
+        motivo: "DESTAQUE_AULA",
+        descricao: "Aluno destaque escolhido pelo professor",
+        aula_id: aulaSelecionada.value.id,
+        turma_id: turma.value?.id ?? null,
+      }))
+    ).then(() => {})
+
+    supabase.from("estrelas_historico").insert({
+      usuario_id: user.value.id,
+      quantidade: 20,
+      motivo: "DADO_DESTAQUE",
+      descricao: `Reconheceu ${novosIds.length} aluno(s) como destaque`,
+      aula_id: aulaSelecionada.value.id,
+      turma_id: turma.value?.id ?? null,
+    }).then(() => {})
+
+    destaqueExistentes.value = novosIds.map((id) => ({ aluno_id: id }));
+    destaqueAlunoIds.value = new Set();
+    const nomes = novosIds.map(nomeAluno).join(", ");
+    $toast.success(`★ Destaque(s) salvo(s): ${nomes} (+15 ⭐ cada)`);
+  } catch (err) {
+    console.error(err);
+    $toast.error("Erro ao salvar destaque.");
+  } finally {
+    salvandoDestaque.value = false;
+  }
 }
 
 function togglePresenca(alunoId) {
@@ -449,7 +581,8 @@ async function salvarChamada() {
     const { data: { session } } = await supabase.auth.getSession()
     const token = session?.access_token
 
-    fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/processar-bonus-presenca`, {
+    // Aguarda a edge function terminar antes de ler as estrelas no email
+    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/processar-bonus-presenca`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -561,8 +694,4 @@ async function registrarAulaCancelada() {
   }
 }
 
-onMounted(async () => {
-  await Promise.all([carregarTurma(), carregarAulas(), carregarAlunos()]);
-  loading.value = false;
-});
 </script>

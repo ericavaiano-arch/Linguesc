@@ -317,11 +317,11 @@
                 </button>
                 <div class="bg-gray-100 self-stretch"></div>
                 <button
-                  @click.stop="$router.push(`/turmas/${turma.id}/aulas`)"
+                  @click.stop="$router.push(`/turmas/${turma.id}/calendario`)"
                   class="flex flex-col items-center justify-center gap-1 py-2.5 text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition"
                 >
                   <span class="text-base leading-none">📅</span>
-                  Aula extra
+                  Calendário
                 </button>
                 <div class="bg-gray-100 self-stretch"></div>
                 <button

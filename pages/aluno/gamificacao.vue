@@ -30,11 +30,53 @@
         </div>
       </div>
       <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-3"><div class="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-lg flex-shrink-0">✨</div><div><h2 class="text-base font-semibold text-gray-800 leading-tight">Como ganhar estrelas</h2><p class="text-xs text-gray-400 mt-0.5">Atividades disponíveis para professores</p></div></div>
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-lg flex-shrink-0">✨</div>
+          <div><h2 class="text-base font-semibold text-gray-800 leading-tight">Como ganhar estrelas</h2><p class="text-xs text-gray-400 mt-0.5">Atividades disponíveis para professores</p></div>
+        </div>
         <div class="p-4 flex flex-col gap-2">
-          <div v-for="forma in formasDeGanharProfessor" :key="forma.nome" class="flex items-center justify-between rounded-xl px-4 py-3 border bg-gray-50 border-gray-100">
-            <div class="flex items-center gap-3"><span class="text-lg w-7 text-center">{{ forma.emoji }}</span><div><p class="text-sm font-semibold text-gray-700">{{ forma.nome }}</p><p class="text-[11px] text-gray-400 mt-0.5">{{ forma.desc }}</p></div></div>
-            <span class="text-xs font-bold px-2.5 py-1 rounded-lg border flex-shrink-0 ml-2 bg-amber-50 text-amber-700 border-amber-200">+{{ forma.pontos }} ⭐</span>
+          <div
+            v-for="forma in formasDeGanharProfessor"
+            :key="forma.nome"
+            class="flex items-center justify-between rounded-xl px-4 py-3 border"
+            :class="forma.conquistado ? 'bg-green-50 border-green-100' : 'bg-gray-50 border-gray-100'"
+          >
+            <div class="flex items-center gap-3">
+              <span class="text-lg w-7 text-center">{{ forma.emoji }}</span>
+              <div>
+                <p class="text-sm font-semibold" :class="forma.conquistado ? 'text-green-800' : 'text-gray-700'">{{ forma.nome }}</p>
+                <p class="text-[11px] text-gray-400 mt-0.5">{{ forma.desc }}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0 ml-2">
+              <span
+                v-if="forma.maxContador"
+                class="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                :class="forma.conquistado ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
+              >{{ Math.min(forma.contador, forma.maxContador) }}/{{ forma.maxContador }}</span>
+              <span
+                class="text-xs font-bold px-2.5 py-1 rounded-lg border"
+                :class="forma.conquistado ? 'bg-green-100 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'"
+              >+{{ forma.pontos }} ⭐<span v-if="forma.conquistado"> ✓</span></span>
+            </div>
+          </div>
+        </div>
+        <!-- Histórico -->
+        <div v-if="historicoEstrelas.length > 0" class="border-t border-gray-100">
+          <div class="px-6 py-3 flex items-center gap-2">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Histórico de estrelas</span>
+          </div>
+          <div class="divide-y divide-gray-50 max-h-64 overflow-y-auto">
+            <div v-for="item in historicoEstrelas" :key="item.id" class="flex items-center justify-between px-6 py-2.5">
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="text-base flex-shrink-0">{{ motivoEmoji(item.motivo) }}</span>
+                <div class="min-w-0">
+                  <p class="text-sm font-medium text-gray-700 truncate">{{ motivoLabel(item.motivo) }}</p>
+                  <p class="text-xs text-gray-300">{{ formatarDataHora(item.created_at) }}</p>
+                </div>
+              </div>
+              <span class="text-sm font-bold text-amber-600 flex-shrink-0 ml-3">+{{ item.quantidade }} ⭐</span>
+            </div>
           </div>
         </div>
       </div>
@@ -72,7 +114,15 @@
         <div v-else class="p-6"><div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div v-for="recompensa in recompensasProfessor" :key="recompensa.nivel" class="relative border rounded-2xl p-4 text-center" :class="recompensa.atingido ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-white'">
             <span v-if="recompensa.atingido" class="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-green-500 text-white text-[10px] font-bold px-3 py-0.5 rounded-full whitespace-nowrap">✓ Conquistado</span>
-            <div class="text-3xl mb-2 mt-1">{{ recompensa.emoji }}</div><p class="text-[11px] font-bold uppercase tracking-wide mb-0.5" :class="recompensa.atingido ? 'text-green-600' : 'text-gray-400'">{{ recompensa.nivel }}</p><p class="text-sm font-semibold text-gray-700 mb-1.5 leading-snug">{{ recompensa.nome }}</p><p class="text-xs font-bold" :class="recompensa.atingido ? 'text-green-600' : 'text-gray-400'">{{ recompensa.limiar }} ⭐</p>
+            <div class="text-3xl mb-2 mt-1">{{ recompensa.emoji }}</div>
+            <p class="text-[11px] font-bold uppercase tracking-wide mb-0.5" :class="recompensa.atingido ? 'text-green-600' : 'text-gray-400'">{{ recompensa.nivel }}</p>
+            <p class="text-sm font-semibold text-gray-700 mb-1.5 leading-snug">{{ recompensa.nome }}</p>
+            <p class="text-xs font-bold mb-2" :class="recompensa.atingido ? 'text-green-600' : 'text-gray-400'">{{ recompensa.limiar }} ⭐</p>
+            <div v-if="recompensa.atingido && recompensa.jaRequisitado" class="text-[10px] font-semibold px-2 py-1 rounded-lg bg-gray-100 text-gray-500">✓ Já requisitado</div>
+            <button v-else-if="recompensa.atingido" @click="requisitarRecompensa(recompensa)" :disabled="!!requisitandoId" class="w-full text-[10px] font-semibold px-2 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:bg-green-300 transition flex items-center justify-center gap-1">
+              <div v-if="requisitandoId === recompensa.nivel" class="w-2.5 h-2.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              {{ requisitandoId === recompensa.nivel ? '...' : 'Requisitar' }}
+            </button>
           </div>
         </div></div>
       </div>
@@ -219,17 +269,25 @@
               </p>
 
               <!-- Botão requisitar -->
+              <div
+                v-if="recompensa.atingido && recompensa.jaRequisitado"
+                class="w-full text-xs font-semibold px-3 py-1.5 rounded-xl border bg-gray-100 text-gray-500 border-gray-200 text-center"
+              >
+                ✓ Já requisitado
+              </div>
               <button
-                v-if="recompensa.atingido"
+                v-else-if="recompensa.atingido"
                 @click="requisitarRecompensa(recompensa)"
-                class="w-full text-xs font-semibold px-3 py-1.5 rounded-xl border transition-colors"
+                :disabled="!!requisitandoId"
+                class="w-full text-xs font-semibold px-3 py-1.5 rounded-xl border transition-colors flex items-center justify-center gap-1"
                 :class="
                   recompensa.atingido && !recompensa.proxima
-                    ? 'bg-green-600 text-white border-green-600 hover:bg-green-700'
-                    : 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
+                    ? 'bg-green-600 text-white border-green-600 hover:bg-green-700 disabled:bg-green-300'
+                    : 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600 disabled:bg-amber-300'
                 "
               >
-                Requisitar recompensa
+                <div v-if="requisitandoId === recompensa.nivel" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                {{ requisitandoId === recompensa.nivel ? 'Enviando...' : 'Requisitar' }}
               </button>
             </div>
           </div>
@@ -263,16 +321,40 @@
                   <p class="text-[11px] text-gray-400 mt-0.5">{{ forma.desc }}</p>
                 </div>
               </div>
-              <span
-                class="text-xs font-bold px-2.5 py-1 rounded-lg border flex-shrink-0 ml-2"
-                :class="forma.conquistado
-                  ? 'bg-green-100 text-green-700 border-green-200'
-                  : 'bg-amber-50 text-amber-700 border-amber-200'"
-              >
-                +{{ forma.pontos }} ⭐<span v-if="forma.conquistado"> ✓</span>
-              </span>
+              <div class="flex items-center gap-2 flex-shrink-0 ml-2">
+                <span
+                  v-if="forma.maxContador"
+                  class="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                  :class="forma.conquistado ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
+                >{{ Math.min(forma.contador, forma.maxContador) }}/{{ forma.maxContador }}</span>
+                <span
+                  class="text-xs font-bold px-2.5 py-1 rounded-lg border"
+                  :class="forma.conquistado
+                    ? 'bg-green-100 text-green-700 border-green-200'
+                    : 'bg-amber-50 text-amber-700 border-amber-200'"
+                >
+                  +{{ forma.pontos }} ⭐<span v-if="forma.conquistado"> ✓</span>
+                </span>
+              </div>
             </div>
           </div>
+          <!-- Histórico de estrelas (integrado) -->
+          <div v-if="historicoEstrelas.length > 0" class="border-t border-gray-100">
+            <div class="px-6 py-3"><span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Histórico de estrelas</span></div>
+            <div class="divide-y divide-gray-50 max-h-64 overflow-y-auto">
+              <div v-for="item in historicoEstrelas" :key="item.id" class="flex items-center justify-between px-6 py-2.5">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="text-base flex-shrink-0">{{ motivoEmoji(item.motivo) }}</span>
+                  <div class="min-w-0">
+                    <p class="text-sm font-medium text-gray-700 truncate">{{ motivoLabel(item.motivo) }}</p>
+                    <p class="text-xs text-gray-300">{{ formatarDataHora(item.created_at) }}</p>
+                  </div>
+                </div>
+                <span class="text-sm font-bold text-amber-600 flex-shrink-0 ml-3">+{{ item.quantidade }} ⭐</span>
+              </div>
+            </div>
+          </div>
+          <div v-else class="border-t border-gray-100 p-5 text-center text-xs text-gray-400">Nenhuma estrela registrada ainda.</div>
         </div>
 
         <!-- ── COLUNA DIREITA ── -->
@@ -421,18 +503,33 @@ const RECOMPENSAS_PROFESSOR_CONFIG = [
   { nivel: 'Nível 2', nome: 'Sticker personalizado', emoji: '🏷️', limiar: 100 },
   { nivel: 'Nível 3', nome: 'Bottom do Linguesc', emoji: '👕', limiar: 180 },
   { nivel: 'Nível 4', nome: 'Marca-página', emoji: '📖', limiar: 220 },
-  { nivel: 'Nível 5', nome: 'Chaveiro', emoji: '🔑', limiar: 300 },
-  { nivel: 'Nível 6', nome: 'Troféu 3D', emoji: '🏆', limiar: 370 },
+  { nivel: 'Nível 5', nome: 'Troféu impresso em 3D', emoji: '🏆', limiar: 370 },
 ]
-const recompensasProfessor = computed(() => RECOMPENSAS_PROFESSOR_CONFIG.map(r => ({ ...r, atingido: estrelas.value >= r.limiar })))
-const formasDeGanharProfessor = [
-  { emoji: '👤', nome: 'Perfil nível 1', desc: 'Completar o perfil básico', pontos: 10 },
-  { emoji: '📸', nome: 'Perfil nível 2', desc: 'Completar o perfil avançado', pontos: 10 },
-  { emoji: '🔐', nome: 'Login semanal', desc: 'Acessar a plataforma — até 8 semanas', pontos: 5 },
-  // { emoji: '🤝', nome: 'Meta coletiva', desc: 'Atingir a meta coletiva da turma', pontos: 20 },
-  { emoji: '🏅', nome: 'Destaque para estudante', desc: 'Reconhecer um estudante — até 8 vezes', pontos: 20 },
-  { emoji: '🚀', nome: 'Criar missão', desc: 'Criar uma missão da semana — até 8 vezes', pontos: 20 },
-]
+const recompensasProfessor = computed(() =>
+  RECOMPENSAS_PROFESSOR_CONFIG.map(r => ({
+    ...r,
+    atingido: estrelas.value >= r.limiar,
+    jaRequisitado: recompensasRequisitadas.value.has(r.nivel),
+  }))
+)
+
+const contadorLoginSemanalProf = computed(() =>
+  historicoEstrelas.value.filter(h => h.motivo === 'LOGIN_SEMANAL').length
+)
+const contadorCriouMissao = computed(() =>
+  historicoEstrelas.value.filter(h => h.motivo === 'CRIOU_MISSAO').length
+)
+const contadorDadoDestaque = computed(() =>
+  historicoEstrelas.value.filter(h => h.motivo === 'DADO_DESTAQUE').length
+)
+
+const formasDeGanharProfessor = computed(() => [
+  { emoji: '👤', nome: 'Perfil nível 1',          desc: 'Completar o perfil básico',                  pontos: 10, conquistado: nivelPerfil.value >= 1,                 contador: null },
+  { emoji: '📸', nome: 'Perfil nível 2',          desc: 'Completar o perfil avançado',                pontos: 10, conquistado: nivelPerfil.value >= 2,                 contador: null },
+  { emoji: '🔐', nome: 'Login semanal',           desc: 'Acessar a plataforma — até 8 semanas',       pontos:  5, conquistado: loginNestaSemanaConcluido.value,        contador: contadorLoginSemanalProf.value, maxContador: 8 },
+  { emoji: '🏅', nome: 'Destaque para estudante', desc: 'Reconhecer um estudante — até 8 vezes',      pontos: 20, conquistado: contadorDadoDestaque.value > 0,          contador: contadorDadoDestaque.value, maxContador: 8 },
+  { emoji: '🚀', nome: 'Criar missão',            desc: 'Criar uma missão da semana — até 8 vezes',   pontos: 20, conquistado: contadorCriouMissao.value > 0,           contador: contadorCriouMissao.value, maxContador: 8 },
+])
 const potencialProfessor = [
   { valor: 10, label: 'Perfil nível 1', destaque: false },
   { valor: 20, label: 'Perfil nível 2', destaque: false },
@@ -444,13 +541,12 @@ const potencialProfessor = [
 
 // ── Configuração das recompensas ────────────────────────────────────────────
 const RECOMPENSAS_CONFIG = [
-  { nivel: 'Nível 1', nome: 'Doce / bombom',              emoji: '🍬', limiar: 60  },
-  { nivel: 'Nível 2', nome: 'Sticker personalizado',      emoji: '🎨', limiar: 100 },
-  { nivel: 'Nível 3', nome: 'Bottom do Linguesc',         emoji: '📌', limiar: 180 },
-  { nivel: 'Nível 4', nome: 'Marca-página',               emoji: '🔖', limiar: 220 },
-  { nivel: 'Nível 5', nome: 'Pontos bônus na prova +0,5', emoji: '📝', limiar: 260 },
-  { nivel: 'Nível 6', nome: 'Chaveiro',                   emoji: '🔑', limiar: 350 },
-  { nivel: 'Nível 7', nome: 'Troféu impresso em 3D',      emoji: '🏆', limiar: 430 },
+  { nivel: 'Nível 1', nome: 'Doce / bombom',                    emoji: '🍬', limiar: 60  },
+  { nivel: 'Nível 2', nome: 'Sticker personalizado',            emoji: '🎨', limiar: 100 },
+  { nivel: 'Nível 3', nome: 'Bottom do Linguesc',               emoji: '📌', limiar: 180 },
+  { nivel: 'Nível 4', nome: 'Marca-página',                     emoji: '🔖', limiar: 220 },
+  { nivel: 'Nível 5', nome: 'Pontos bônus na prova final +0,5', emoji: '📝', limiar: 260 },
+  { nivel: 'Nível 6', nome: 'Troféu impresso em 3D',            emoji: '🏆', limiar: 430 },
 ]
 
 const recompensas = computed(() => {
@@ -460,7 +556,7 @@ const recompensas = computed(() => {
     const atingido = pts >= r.limiar
     const proxima  = !atingido && !encontrouProxima
     if (proxima) encontrouProxima = true
-    return { ...r, atingido, proxima }
+    return { ...r, atingido, proxima, jaRequisitado: recompensasRequisitadas.value.has(r.nivel) }
   })
 })
 
@@ -479,21 +575,56 @@ const proximaRecompensa = computed(() => {
   return { ...prox, faltam, pct }
 })
 
+// ── Recompensas já requisitadas (localStorage) ────────────────────────────────
+const recompensasRequisitadas = ref(new Set())
+
+function carregarRequisitadas() {
+  try {
+    const saved = localStorage.getItem('linguesc_recompensas_req')
+    if (saved) recompensasRequisitadas.value = new Set(JSON.parse(saved))
+  } catch {}
+}
+
+function salvarRequisitada(nivel) {
+  recompensasRequisitadas.value.add(nivel)
+  try {
+    localStorage.setItem('linguesc_recompensas_req', JSON.stringify([...recompensasRequisitadas.value]))
+  } catch {}
+}
+
 // ── Formas de ganhar ─────────────────────────────────────────────────────────
-// `conquistado` para perfil usa nivelPerfil do useAuth.
-// Os demais itens (presenças, atividades, etc.) serão conectados a dados reais
-// futuramente; por ora ficam como false até haver a query correspondente.
+const totalPresencas = ref(0)
+const jaFoiDestaque = ref(false)
+const missaoRespondida = ref(false)
+
+const contadorLoginSemanal = computed(() =>
+  historicoEstrelas.value.filter(h => h.motivo === 'LOGIN_SEMANAL').length
+)
+
+function getSemanaISO(data = new Date()) {
+  const d = new Date(Date.UTC(data.getFullYear(), data.getMonth(), data.getDate()))
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7))
+  const ano = d.getUTCFullYear()
+  const inicioAno = new Date(Date.UTC(ano, 0, 1))
+  const semana = Math.ceil(((d.getTime() - inicioAno.getTime()) / 86400000 + 1) / 7)
+  return `${ano}-W${String(semana).padStart(2, '0')}`
+}
+
+const loginNestaSemanaConcluido = computed(
+  () => user.value?.ultimoBonusLoginSemana === getSemanaISO()
+)
+
 const formasDeGanhar = computed(() => [
-  { emoji: '🌟', nome: 'Presença na primeira aula',       desc: 'Bônus especial de boas-vindas',                    pontos: 30,  conquistado: false },
-  { emoji: '📅', nome: 'Presença em aula',                desc: 'Da 2ª à 8ª aula — por aula comparecida',           pontos: 10,  conquistado: false },
-  { emoji: '🔥', nome: 'Sequência de 3 presenças',        desc: 'Bônus por consistência',   pontos: 20,  conquistado: false },
-  { emoji: '🏁', nome: 'Presença em todas as aulas',      desc: 'Semestre completo sem faltas',   pontos: 30,  conquistado: false },
-  { emoji: '📬', nome: 'Missão da Semana',                desc: 'Atividade entre aulas aberta pelo professor',       pontos: 10,  conquistado: false },
-  { emoji: '👤', nome: 'Perfil nível 1 completo',         desc: 'Preencher informações básicas',                    pontos: 10,  conquistado: nivelPerfil.value >= 1 },
-  { emoji: '📸', nome: 'Perfil nível 2 completo',         desc: 'Adicionar foto de perfil',                         pontos: 10,  conquistado: nivelPerfil.value >= 2 },
-  { emoji: '🔐', nome: 'Login na semana',                 desc: 'Acessar a plataforma ao menos uma vez por semana',  pontos:  5,  conquistado: false },
-  { emoji: '✨', nome: 'Participação destaque em aula',   desc: 'Escolhido pelo professor — semanal e opcional',     pontos: 15,  conquistado: false },
-  { emoji: '🤝', nome: 'Meta Coletiva da Turma',          desc: '75% da turma com presença ≥ 75% na 4ª aula',       pontos: 20,  conquistado: false },
+  { emoji: '🌟', nome: 'Presença na primeira aula',       desc: 'Bônus especial de boas-vindas',                    pontos: 30,  conquistado: totalPresencas.value >= 1,              contador: null },
+  { emoji: '📅', nome: 'Presença em aula',                desc: 'Da 2ª à 8ª aula — por aula comparecida',           pontos: 10,  conquistado: totalPresencas.value >= 2,              contador: totalPresencas.value, maxContador: 8 },
+  { emoji: '🔥', nome: 'Sequência de 3 presenças',        desc: 'Bônus por consistência',                           pontos: 20,  conquistado: user.value?.bonusSequenciaSemestre ?? false, contador: null },
+  { emoji: '🏁', nome: 'Presença em todas as aulas',      desc: 'Semestre completo sem faltas',                     pontos: 30,  conquistado: totalPresencas.value >= 8,              contador: null },
+  { emoji: '📬', nome: 'Missão da Semana',                desc: 'Atividade entre aulas aberta pelo professor',       pontos: 10,  conquistado: missaoRespondida.value,                 contador: null },
+  { emoji: '👤', nome: 'Perfil nível 1 completo',         desc: 'Preencher informações básicas',                    pontos: 10,  conquistado: nivelPerfil.value >= 1,                 contador: null },
+  { emoji: '📸', nome: 'Perfil nível 2 completo',         desc: 'Adicionar foto de perfil',                         pontos: 10,  conquistado: nivelPerfil.value >= 2,                 contador: null },
+  { emoji: '🔐', nome: 'Login na semana',                 desc: 'Acessar a plataforma ao menos uma vez por semana',  pontos:  5,  conquistado: loginNestaSemanaConcluido.value,        contador: contadorLoginSemanal.value, maxContador: 8 },
+  { emoji: '✨', nome: 'Participação destaque em aula',   desc: 'Escolhido pelo professor — semanal e opcional',     pontos: 15,  conquistado: jaFoiDestaque.value,                    contador: null },
+  { emoji: '🤝', nome: 'Meta Coletiva da Turma',          desc: '75% da turma com presença ≥ 75% na 4ª aula',       pontos: 20,  conquistado: false,                                  contador: null },
 ])
 
 // ── Meta Coletiva ────────────────────────────────────────────────────────────
@@ -518,6 +649,33 @@ const potencial = [
   { valor: 430, label: 'total possível (aprox.)',      destaque: true  },
 ]
 
+// ── Histórico de estrelas ─────────────────────────────────────────────────────
+const historicoEstrelas = ref([])
+
+const MOTIVO_INFO = {
+  PRESENCA_BOAS_VINDAS: { emoji: '🌟', label: 'Boas-vindas (1ª aula)' },
+  PRESENCA:             { emoji: '📅', label: 'Presença em aula' },
+  SEQUENCIA_PRESENCAS:  { emoji: '🔥', label: 'Sequência de 3 presenças' },
+  PRESENCA_COMPLETA:    { emoji: '🏁', label: 'Presença em todas as aulas' },
+  META_COLETIVA:        { emoji: '🤝', label: 'Meta coletiva da turma' },
+  MISSAO_RESPONDIDA:    { emoji: '📬', label: 'Missão da semana' },
+  DESTAQUE_AULA:        { emoji: '✨', label: 'Destaque em aula' },
+  LOGIN_SEMANAL:        { emoji: '🔐', label: 'Login semanal' },
+  PERFIL_N1:            { emoji: '👤', label: 'Perfil nível 1 completo' },
+  PERFIL_N2:            { emoji: '📸', label: 'Perfil nível 2 completo' },
+  CRIOU_MISSAO:         { emoji: '🚀', label: 'Criou missão da semana' },
+  DADO_DESTAQUE:        { emoji: '🏅', label: 'Reconheceu aluno destaque' },
+}
+
+function motivoEmoji(motivo) { return MOTIVO_INFO[motivo]?.emoji ?? '⭐' }
+function motivoLabel(motivo) { return MOTIVO_INFO[motivo]?.label ?? motivo }
+
+function formatarDataHora(isoStr) {
+  if (!isoStr) return ''
+  const d = new Date(isoStr)
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function formatarData(dataStr) {
   if (!dataStr) return ''
@@ -527,65 +685,154 @@ function formatarData(dataStr) {
 
 // ── Ações ────────────────────────────────────────────────────────────────────
 
-/**
- * Requisitar recompensa física.
- * TODO: criar registro de solicitação no Supabase e notificar o professor/coordenador.
- */
-function requisitarRecompensa(recompensa) {
-  console.log('[gamificacao] requisitarRecompensa:', recompensa)
+const requisitandoId = ref(null)
+
+async function requisitarRecompensa(recompensa) {
+  if (!user.value?.id || requisitandoId.value) return
+  requisitandoId.value = recompensa.nivel
+  try {
+    await $fetch('/api/requisitar-recompensa', {
+      method: 'POST',
+      body: { aluno_id: user.value.id, recompensa },
+    })
+    salvarRequisitada(recompensa.nivel)
+    useNuxtApp().$toast.success(`Recompensa requisitada! A coordenação foi notificada. 🎉`)
+  } catch {
+    useNuxtApp().$toast.error('Não foi possível enviar a requisição. Tente novamente.')
+  } finally {
+    requisitandoId.value = null
+  }
 }
 
-/**
- * Abrir fluxo de resposta da Missão da Semana.
- * TODO: abrir modal de resposta e salvar no Supabase; após confirmação do
- *       professor, chamar atualizarEstrelasLocal(novoTotal) do useAuth.
- */
 function responderMissao() {
-  console.log('[gamificacao] responderMissao:', missaoDaSemana.value)
+  navigateTo('/aluno/minhas-atividades')
 }
 
 // ── Carregar dados complementares do Supabase ────────────────────────────────
 async function carregarDadosDaTurma(turmaId) {
-  // Missão da Semana ativa na turma do aluno
-  const { data: missao } = await supabase
-    .from('missoes_semana')
-    .select('id, pergunta, prazo, respondida')
+  if (!user.value?.id) return
+
+  // Missão da Semana ativa: busca da tabela `atividade` com tipo_missao = 'MISSAO'
+  const { data: missaoAtividade } = await supabase
+    .from('atividade')
+    .select('id, titulo, conteudo_json, data_final, status')
     .eq('turma_id', turmaId)
-    .eq('ativa', true)
+    .eq('tipo_missao', 'MISSAO')
+    .eq('status', 'PUBLICADA')
     .maybeSingle()
 
-  missaoDaSemana.value = missao ?? null
+  if (missaoAtividade) {
+    // Verifica se o aluno já respondeu
+    const { data: registro } = await supabase
+      .from('atividade_aluno')
+      .select('respondido_em')
+      .eq('atividade_id', missaoAtividade.id)
+      .eq('aluno_id', user.value.id)
+      .maybeSingle()
 
-  // Meta Coletiva: frequência média da turma (query simplificada)
-  // TODO: ajustar conforme estrutura real das tabelas de chamada
-  const { data: freq } = await supabase
-    .rpc('frequencia_media_turma', { p_turma_id: turmaId })
-    .maybeSingle()
+    const jaRespondeu = !!registro?.respondido_em
+    missaoRespondida.value = jaRespondeu
+    missaoDaSemana.value = {
+      id: missaoAtividade.id,
+      pergunta: missaoAtividade.conteudo_json?.pergunta ?? missaoAtividade.titulo,
+      prazo: missaoAtividade.data_final,
+      respondida: jaRespondeu,
+    }
+  } else {
+    missaoDaSemana.value = null
+  }
 
-  if (freq) {
-    const pct = Math.round(freq.media ?? 0)
-    metaColetiva.value = {
-      pct,
-      meta: 75,
-      atingida: pct >= 75,
-      descricao: pct >= 75
-        ? 'Sua turma atingiu a meta! O bônus coletivo será creditado em breve. 🎉'
-        : 'Sua turma está indo bem! Se a média se mantiver até o fim do período, todos ganham o bônus coletivo.',
+  // Total de presenças do aluno na turma
+  const { data: aulasDaTurma } = await supabase
+    .from('aula')
+    .select('id')
+    .eq('turma_id', turmaId)
+    .neq('status', 'CANCELADA')
+
+  if (aulasDaTurma && aulasDaTurma.length > 0) {
+    const aulaIds = aulasDaTurma.map((a) => a.id)
+    const { count } = await supabase
+      .from('presenca')
+      .select('id', { count: 'exact', head: true })
+      .eq('aluno_id', user.value.id)
+      .in('aula_id', aulaIds)
+    totalPresencas.value = count ?? 0
+  }
+
+  // Verifica se o aluno já foi destaque em alguma aula da turma
+  const { count: destaqueCount } = await supabase
+    .from('destaque_aula')
+    .select('id', { count: 'exact', head: true })
+    .eq('aluno_id', user.value.id)
+  jaFoiDestaque.value = (destaqueCount ?? 0) > 0
+
+  // Meta Coletiva: frequência média da turma
+  const totalAulas = aulasDaTurma?.length ?? 0
+  if (totalAulas > 0) {
+    const { data: matriculas } = await supabase
+      .from('turma_aluno')
+      .select('aluno_id')
+      .eq('turma_id', turmaId)
+
+    const totalAlunos = matriculas?.length ?? 0
+    if (totalAlunos > 0) {
+      const aulaIds = (aulasDaTurma ?? []).map((a) => a.id)
+      const { data: presencasTurma } = await supabase
+        .from('presenca')
+        .select('aluno_id')
+        .in('aula_id', aulaIds)
+
+      const presencasPorAluno = new Map()
+      for (const p of presencasTurma ?? []) {
+        presencasPorAluno.set(p.aluno_id, (presencasPorAluno.get(p.aluno_id) ?? 0) + 1)
+      }
+
+      const totalComFreq75 = (matriculas ?? []).filter(
+        (m) => ((presencasPorAluno.get(m.aluno_id) ?? 0) / totalAulas) >= 0.75
+      ).length
+
+      const pct = Math.round((totalComFreq75 / totalAlunos) * 100)
+      metaColetiva.value = {
+        pct,
+        meta: 75,
+        atingida: pct >= 75,
+        descricao: pct >= 75
+          ? 'Sua turma atingiu a meta! O bônus coletivo será creditado em breve. 🎉'
+          : 'Incentive sua turma! Se a média de presença chegar a 75%, todos ganham +20 ⭐.',
+      }
     }
   }
 }
 
 // ── Inicialização ─────────────────────────────────────────────────────────────
 onMounted(async () => {
+  carregarRequisitadas()
   try {
-    // Garante que o user está hidratado (caso a página seja acessada diretamente)
     await reidratar()
 
-    // Carrega dados dependentes de turma, se o aluno estiver vinculado
-    // TODO: expor turma_id no user do useAuth quando necessário, ou buscar aqui
-    // if (user.value?.turmaId) {
-    //   await carregarDadosDaTurma(user.value.turmaId)
-    // }
+    if (user.value?.id && (isAluno.value || isProfessor.value)) {
+      if (isAluno.value) {
+        const { data: matricula } = await supabase
+          .from('turma_aluno')
+          .select('turma_id')
+          .eq('aluno_id', user.value.id)
+          .limit(1)
+          .maybeSingle()
+
+        if (matricula?.turma_id) {
+          await carregarDadosDaTurma(matricula.turma_id)
+        }
+      }
+
+      const { data: historico } = await supabase
+        .from('estrelas_historico')
+        .select('id, quantidade, motivo, descricao, created_at')
+        .eq('usuario_id', user.value.id)
+        .order('created_at', { ascending: false })
+        .limit(30)
+
+      historicoEstrelas.value = historico ?? []
+    }
   } finally {
     loading.value = false
   }

@@ -12,6 +12,8 @@ export interface AuthUser {
   nivelPerfil: number
   avatarUrl: string | null
   estrelas: number
+  bonusSequenciaSemestre: boolean
+  ultimoBonusLoginSemana: string | null
 }
 
 // Estado global fora do composable
@@ -55,7 +57,7 @@ export const useAuth = () => {
 
     const { data: perfil } = await supabase
       .from('usuarios')
-      .select('id, nome, ativo, termo_aceite, nivel_perfil, avatar_url, estrelas')
+      .select('id, nome, ativo, termo_aceite, nivel_perfil, avatar_url, estrelas, bonus_sequencia_semestre, ultimo_bonus_login_semana')
       .eq('id', session.user.id)
       .single()
 
@@ -70,6 +72,8 @@ export const useAuth = () => {
       nivelPerfil: perfil.nivel_perfil ?? 0,
       avatarUrl: await gerarAvatarUrl(perfil.avatar_url),
       estrelas: perfil.estrelas ?? 0,
+      bonusSequenciaSemestre: perfil.bonus_sequencia_semestre ?? false,
+      ultimoBonusLoginSemana: perfil.ultimo_bonus_login_semana ?? null,
     }
 
     papeis.value = await carregarPapeis(perfil.id)
@@ -82,20 +86,22 @@ export const useAuth = () => {
 
     const { data: perfil } = await supabase
       .from('usuarios')
-      .select('id, nome, ativo, termo_aceite, nivel_perfil, avatar_url, estrelas, ultimo_bonus_login_semana')
+      .select('id, nome, ativo, termo_aceite, nivel_perfil, avatar_url, estrelas, ultimo_bonus_login_semana, bonus_sequencia_semestre')
       .eq('id', data.user.id)
       .single()
 
     if (!perfil) return 'Usuário não encontrado'
     if (!perfil.ativo) return 'Usuário inativo'
 
+    const ultimaSemana = perfil.ultimo_bonus_login_semana ?? null
     const estrelasFinais = await verificarBonusLoginSemanal(
       perfil.id,
       perfil.estrelas ?? 0,
-      perfil.ultimo_bonus_login_semana ?? null
+      ultimaSemana,
     )
 
     const bonusRecebido = estrelasFinais > (perfil.estrelas ?? 0)
+    const semanaAtualLogin = getSemanaISO()
 
     user.value = {
       id: perfil.id,
@@ -106,6 +112,8 @@ export const useAuth = () => {
       nivelPerfil: perfil.nivel_perfil ?? 0,
       avatarUrl: await gerarAvatarUrl(perfil.avatar_url),
       estrelas: estrelasFinais,
+      bonusSequenciaSemestre: perfil.bonus_sequencia_semestre ?? false,
+      ultimoBonusLoginSemana: bonusRecebido ? semanaAtualLogin : ultimaSemana,
     }
 
     papeis.value = await carregarPapeis(perfil.id)
@@ -136,6 +144,16 @@ export const useAuth = () => {
         ultimo_bonus_login_semana: semanaAtual,
       })
       .eq('id', userId)
+
+    supabase
+      .from('estrelas_historico')
+      .insert({
+        usuario_id: userId,
+        quantidade: 5,
+        motivo: 'LOGIN_SEMANAL',
+        descricao: `Bônus de login semanal — semana ${semanaAtual}`,
+      })
+      .then(() => {})
 
     return novasEstrelas
   }

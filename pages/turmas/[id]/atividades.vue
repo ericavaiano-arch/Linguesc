@@ -526,7 +526,7 @@
               >
                 <span class="text-3xl">⭐</span>
                 <span class="text-sm font-semibold">Missão da Semana</span>
-                <span class="text-xs text-gray-400">Interativa · +5 ⭐</span>
+                <span class="text-xs text-gray-400">Interativa · +20 ⭐</span>
               </button>
             </div>
           </div>
@@ -583,13 +583,22 @@
                 Data de encerramento
                 <span class="text-gray-400 font-normal">(opcional)</span>
               </label>
-              <input
-                v-model="form.data_final"
-                type="datetime-local"
-                class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
-              />
+              <div class="flex gap-2 items-center">
+                <input
+                  v-model="form.data_final"
+                  type="datetime-local"
+                  class="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+                />
+                <button
+                  type="button"
+                  @click="form.data_final = ''"
+                  v-if="form.data_final"
+                  class="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition"
+                  title="Remover data"
+                >✕</button>
+              </div>
               <p class="text-xs text-gray-400 mt-1">
-                Se definida, a atividade será encerrada automaticamente nesta data.
+                Pré-preenchido com 7 dias a partir de hoje — edite conforme necessário.
               </p>
             </div>
 
@@ -623,17 +632,6 @@
                       ✍️ Texto livre
                     </button>
                   </div>
-                </div>
-
-                <!-- Pergunta -->
-                <div class="mb-4">
-                  <label class="text-sm font-medium text-gray-700 mb-2 block">Pergunta / Enunciado</label>
-                  <textarea
-                    v-model="form.pergunta_missao"
-                    rows="3"
-                    placeholder="Ex: Qual foi o tema mais interessante desta semana e por quê?"
-                    class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 transition resize-none"
-                  />
                 </div>
 
                 <!-- Opções (só para múltipla escolha) -->
@@ -690,6 +688,7 @@ import { supabase } from "~/utils/supabase";
 definePageMeta({ middleware: "professor" });
 
 const { $toast } = useNuxtApp();
+const { user, atualizarEstrelasLocal } = useAuth();
 const route = useRoute();
 const router = useRouter();
 const turmaId = Number(route.params.id);
@@ -898,8 +897,24 @@ async function carregarAtividades() {
     .select("*")
     .eq("turma_id", turmaId)
     .order("criado_em", { ascending: false });
-  if (error) $toast.error("Erro ao carregar atividades.");
-  else atividades.value = data || [];
+  if (error) { $toast.error("Erro ao carregar atividades."); return; }
+
+  let lista = data || [];
+
+  // Auto-encerrar atividades com data_final expirada
+  const agora = new Date();
+  const expiradas = lista.filter(
+    (a) => a.status === "PUBLICADA" && a.data_final && new Date(a.data_final) < agora
+  );
+  if (expiradas.length > 0) {
+    const ids = expiradas.map((a) => a.id);
+    await supabase.from("atividade").update({ status: "ENCERRADA" }).in("id", ids);
+    lista = lista.map((a) =>
+      ids.includes(a.id) ? { ...a, status: "ENCERRADA" } : a
+    );
+  }
+
+  atividades.value = lista;
 }
 
 async function escolherAtividade(atividade) {
@@ -1002,6 +1017,12 @@ async function salvarRegistros() {
 }
 
 // ── Drawer criar/editar ────────────────────────────────────────────────────
+function umaSemanaAPartirDeHoje() {
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  return d.toISOString().slice(0, 16);
+}
+
 function abrirCriacao() {
   modo.value = "criar";
   form.titulo = "";
@@ -1011,7 +1032,7 @@ function abrirCriacao() {
   form.formato_missao = "multipla_escolha";
   form.pergunta_missao = "";
   form.opcoes_missao = ["", "", "", ""];
-  form.data_final = "";
+  form.data_final = umaSemanaAPartirDeHoje();
   form.tipoEscolhido = false;
   painelAberto.value = true;
 }
@@ -1057,7 +1078,7 @@ async function salvar() {
       form.tipo_missao === "MISSAO"
         ? {
             formato: form.formato_missao,
-            pergunta: form.pergunta_missao.trim(),
+            pergunta: form.titulo.trim(),
             ...(form.formato_missao === "multipla_escolha"
               ? {
                   opcoes: form.opcoes_missao
@@ -1107,6 +1128,11 @@ async function salvar() {
         if (e) throw e;
       }
 
+      // Bônus do professor por criar missão da semana (+20, até 8 vezes)
+      if (payload.tipo_missao === "MISSAO" && user.value?.id) {
+        await creditarBonusMissaoProfessor(user.value.id);
+      }
+
       $toast.success("Atividade criada!");
     } else {
       // Edição: apenas campos não-estruturais (título, descrição, data_final)
@@ -1142,6 +1168,44 @@ async function salvar() {
   } finally {
     salvandoForm.value = false;
   }
+}
+
+async function creditarBonusMissaoProfessor(professorId) {
+  // Conta quantas missões este professor já criou (via turmas dele)
+  const { count } = await supabase
+    .from('atividade')
+    .select('id', { count: 'exact', head: true })
+    .eq('tipo_missao', 'MISSAO')
+    .in('turma_id', await turmasIdsDoProfessor(professorId))
+
+  if ((count ?? 0) > 8) return // Limite de 8 missões com bônus
+
+  const { data: prof } = await supabase
+    .from('usuarios')
+    .select('estrelas')
+    .eq('id', professorId)
+    .single()
+
+  if (!prof) return
+
+  const novoSaldo = (prof.estrelas ?? 0) + 20
+  await supabase.from('usuarios').update({ estrelas: novoSaldo }).eq('id', professorId)
+  atualizarEstrelasLocal(novoSaldo)
+  supabase.from('estrelas_historico').insert({
+    usuario_id: professorId,
+    quantidade: 20,
+    motivo: 'CRIOU_MISSAO',
+    descricao: 'Criou uma missão da semana',
+  }).then(() => {})
+  $toast.success('⭐ +20 estrelas por criar uma missão!')
+}
+
+async function turmasIdsDoProfessor(professorId) {
+  const { data } = await supabase
+    .from('turma')
+    .select('id')
+    .eq('professor_id', professorId)
+  return (data ?? []).map((t) => t.id)
 }
 
 onMounted(async () => {

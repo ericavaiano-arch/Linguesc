@@ -939,6 +939,12 @@ async function selecionarAvatarEmoji(op) {
       estrelas.value = payload.estrelas;
       avatarBonusConcedido.value = true;
       atualizarEstrelasLocal(payload.estrelas);
+      supabase.from('estrelas_historico').insert({
+        usuario_id: user.value.id,
+        quantidade: 10,
+        motivo: 'PERFIL_N2',
+        descricao: 'Adicionou avatar de perfil',
+      }).then(() => {})
       $toast.success('+10 ⭐ por adicionar um avatar!');
     }
 
@@ -1037,6 +1043,12 @@ async function salvarAvatar() {
       estrelas.value = payload.estrelas;
       avatarBonusConcedido.value = true;
       atualizarEstrelasLocal(payload.estrelas);
+      supabase.from('estrelas_historico').insert({
+        usuario_id: user.value.id,
+        quantidade: 10,
+        motivo: 'PERFIL_N2',
+        descricao: 'Adicionou foto de perfil',
+      }).then(() => {})
       $toast.success('+10 ⭐ por adicionar foto de perfil!');
     }
 
@@ -1287,6 +1299,12 @@ async function salvarPerfil() {
       perfilBonusConcedido.value = true;
       primeiroSave.value = false;
       atualizarEstrelasLocal(payload.estrelas);
+      supabase.from('estrelas_historico').insert({
+        usuario_id: user.value.id,
+        quantidade: 10,
+        motivo: 'PERFIL_N1',
+        descricao: 'Completou as informações básicas do perfil',
+      }).then(() => {})
       $toast.success('+10 ⭐ por preencher seu perfil!');
     }
 

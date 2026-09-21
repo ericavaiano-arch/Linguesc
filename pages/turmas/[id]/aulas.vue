@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-50 p-8">
+  <div class="min-h-screen bg-gray-50 p-4 sm:p-8">
     <!-- Header -->
-    <div class="mb-10 flex items-start justify-between">
+    <div class="mb-8 flex items-start justify-between gap-4 flex-wrap">
       <div>
         <button
           @click="$router.back()"
@@ -10,20 +10,23 @@
           ← Voltar
         </button>
         <h1 class="text-3xl font-bold text-green-700">
-          Aulas — {{ turma?.nome }}
+          {{ isProfessor ? 'Aulas' : 'Calendário de Aulas' }} — {{ turma?.nome }}
         </h1>
-        <p class="text-gray-500 mt-2">Gerencie as datas de aula desta turma.</p>
+        <p class="text-gray-500 mt-2">{{ isProfessor ? 'Gerencie as datas de aula desta turma.' : 'Acompanhe as aulas da turma.' }}</p>
         <div class="w-20 h-1 bg-green-600 mt-4 rounded"></div>
       </div>
-      <button
-        @click="painelAberto = true"
-        class="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-3 rounded-xl transition active:scale-95 flex items-center gap-2 flex-shrink-0"
-      >
-        + Adicionar Aulas
-      </button>
+      <div class="flex items-center gap-3 mt-8 flex-wrap">
+        <button
+          v-if="isProfessor"
+          @click="painelAberto = true"
+          class="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-3 rounded-xl transition active:scale-95 flex items-center gap-2 flex-shrink-0"
+        >
+          + Adicionar Aulas
+        </button>
+      </div>
     </div>
 
-    <!-- Lista de aulas cadastradas -->
+    <!-- ── LISTA DE AULAS ── -->
     <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-lg font-semibold text-gray-800">
@@ -50,6 +53,7 @@
         <p class="text-4xl mb-3">📅</p>
         <p class="text-gray-500 font-medium">Nenhuma aula cadastrada ainda.</p>
         <button
+          v-if="isProfessor"
           @click="painelAberto = true"
           class="mt-3 text-green-600 font-semibold hover:underline text-sm"
         >
@@ -65,19 +69,22 @@
         <li
           v-for="aula in aulasOrdenadas"
           :key="aula.id"
-          class="flex items-center justify-between px-4 py-3 rounded-xl border transition"
+          class="flex items-start justify-between px-4 py-3 rounded-xl border transition"
           :class="{
             'border-green-200 bg-green-50': aula.status === 'REALIZADA',
             'border-red-200 bg-red-50': aula.status === 'CANCELADA',
             'border-gray-200 bg-gray-50': aula.status === 'AGENDADA',
           }"
         >
-          <div>
+          <div class="min-w-0 flex-1">
             <p class="text-sm font-semibold text-gray-800">
               {{ formatarDia(aula.data) }}
             </p>
             <p class="text-xs text-gray-500">
               {{ formatarDataCurta(aula.data) }}
+            </p>
+            <p v-if="aula.titulo" class="text-xs text-gray-600 mt-0.5 italic truncate">
+              {{ aula.titulo }}
             </p>
             <span
               class="text-xs font-semibold px-2 py-0.5 rounded-full mt-1.5 inline-block"
@@ -90,13 +97,15 @@
               {{ aula.status }}
             </span>
           </div>
-          <button
-            @click="solicitarDelecao(aula)"
-            class="text-gray-300 hover:text-red-500 transition text-xl font-bold ml-2 flex-shrink-0"
-            title="Remover aula"
-          >
-            ×
-          </button>
+          <div v-if="isProfessor" class="flex items-center gap-1 ml-2 flex-shrink-0">
+            <button
+              @click="solicitarDelecao(aula)"
+              class="text-gray-300 hover:text-red-500 transition text-xl font-bold"
+              title="Remover aula"
+            >
+              ×
+            </button>
+          </div>
         </li>
       </ul>
     </div>
@@ -130,6 +139,62 @@
             class="px-4 py-2 rounded-xl text-sm bg-red-600 text-white hover:bg-red-700 transition"
           >
             Remover
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de edição -->
+    <div
+      v-if="aulaParaEditar"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      @click.self="aulaParaEditar = null"
+    >
+      <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4 space-y-4">
+        <h3 class="text-lg font-semibold text-gray-800">Editar aula</h3>
+
+        <div class="space-y-3">
+          <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block">Data</label>
+            <input
+              v-model="edicaoData"
+              type="date"
+              :disabled="aulaParaEditar.status !== 'AGENDADA'"
+              class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition disabled:bg-gray-50 disabled:text-gray-400"
+            />
+            <p v-if="aulaParaEditar.status !== 'AGENDADA'" class="text-xs text-gray-400 mt-1">
+              Data bloqueada — aula já {{ aulaParaEditar.status.toLowerCase() }}.
+            </p>
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block">
+              Título / Tema <span class="text-gray-400 font-normal">(opcional)</span>
+            </label>
+            <input
+              v-model="edicaoTitulo"
+              type="text"
+              maxlength="120"
+              placeholder="Ex: Introdução ao subjuntivo"
+              class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+            />
+          </div>
+        </div>
+
+        <div class="flex gap-3 justify-end pt-1">
+          <button
+            @click="aulaParaEditar = null"
+            class="px-4 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition"
+          >
+            Cancelar
+          </button>
+          <button
+            @click="confirmarEdicao"
+            :disabled="salvandoEdicao"
+            class="px-4 py-2 rounded-xl text-sm bg-green-600 text-white hover:bg-green-700 disabled:bg-green-300 transition flex items-center gap-2"
+          >
+            <div v-if="salvandoEdicao" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            {{ salvandoEdicao ? 'Salvando...' : 'Salvar' }}
           </button>
         </div>
       </div>
@@ -336,8 +401,8 @@ import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { supabase } from "@/utils/supabase";
 
-definePageMeta({ middleware: "professor" });
-const { isAdmin } = useAuth();
+definePageMeta({ middleware: "auth" });
+const { isAdmin, isProfessor } = useAuth();
 
 const route = useRoute();
 const { $toast } = useNuxtApp();
@@ -349,6 +414,10 @@ const loadingAulas = ref(true);
 const salvando = ref(false);
 const painelAberto = ref(false);
 const aulaParaDeletar = ref(null);
+const aulaParaEditar = ref(null);
+const edicaoData = ref('');
+const edicaoTitulo = ref('');
+const salvandoEdicao = ref(false);
 const modo = ref(isAdmin.value ? "recorrencia" : "manual");
 const dataManual = ref("");
 const datasManual = ref([]);
@@ -356,6 +425,7 @@ const diaSemana = ref(null);
 const recorrenciaInicio = ref("");
 const quantidadeAulas = ref(null);
 const datasRecorrencia = ref([]);
+
 
 const diasSemana = [
   { valor: 0, label: "Dom" },
@@ -493,6 +563,35 @@ async function salvarAulas() {
     $toast.error("Erro ao salvar aulas.");
   } finally {
     salvando.value = false;
+  }
+}
+
+function abrirEdicao(aula) {
+  aulaParaEditar.value = aula;
+  edicaoData.value = aula.data;
+  edicaoTitulo.value = aula.titulo ?? '';
+}
+
+async function confirmarEdicao() {
+  const aula = aulaParaEditar.value;
+  if (!aula) return;
+  salvandoEdicao.value = true;
+  try {
+    const updates = { titulo: edicaoTitulo.value || null };
+    if (aula.status === 'AGENDADA' && edicaoData.value !== aula.data) {
+      updates.data = edicaoData.value;
+    }
+    const { error } = await supabase.from('aula').update(updates).eq('id', aula.id);
+    if (error) throw error;
+    const idx = aulas.value.findIndex((a) => a.id === aula.id);
+    if (idx !== -1) aulas.value[idx] = { ...aulas.value[idx], ...updates };
+    $toast.success('Aula atualizada.');
+    aulaParaEditar.value = null;
+  } catch (err) {
+    console.error(err);
+    $toast.error('Erro ao atualizar aula.');
+  } finally {
+    salvandoEdicao.value = false;
   }
 }
 

@@ -51,7 +51,7 @@
                 <span
                   class="text-xs px-2 py-1 rounded-full font-bold bg-amber-100 text-amber-700 shrink-0"
                 >
-                  ⭐ +5
+                  ⭐ +10
                 </span>
               </div>
 
@@ -89,7 +89,7 @@
               <template v-else-if="m.registro?.respondido_em">
                 <div class="bg-green-50 border border-green-100 rounded-xl px-3 py-2.5 mb-2">
                   <p class="text-xs font-semibold text-green-700 mb-1">
-                    ✅ Você respondeu · ⭐ +5 estrelas!
+                    ✅ Você respondeu · ⭐ +10 estrelas!
                   </p>
                   <p v-if="m.registro.resposta_opcao" class="text-sm text-gray-700">
                     {{ m.registro.resposta_opcao }}
@@ -453,7 +453,7 @@ definePageMeta({ middleware: 'auth' })
 const { $toast } = useNuxtApp()
 const { user, atualizarEstrelasLocal } = useAuth()
 
-const ESTRELAS_MISSAO = 5
+const ESTRELAS_MISSAO = 10
 
 const loading = ref(true)
 const grupos = ref([])
@@ -576,6 +576,14 @@ async function enviarResposta() {
     // Reflete o novo saldo na Navbar (e em qualquer componente que leia user.estrelas)
     atualizarEstrelasLocal(novoSaldo)
 
+    supabase.from('estrelas_historico').insert({
+      usuario_id: alunoId,
+      quantidade: ESTRELAS_MISSAO,
+      motivo: 'MISSAO_RESPONDIDA',
+      descricao: `Respondeu missão da semana: ${m.titulo ?? 'Missão'}`,
+      turma_id: m.turmaId ?? null,
+    }).then(() => {})
+
     // Atualiza o card localmente sem precisar recarregar tudo
     m.registro = {
       ...(m.registro || {}),
@@ -586,7 +594,7 @@ async function enviarResposta() {
     }
 
     modalResponder.value = false
-    $toast.success('⭐ +5 estrelas!')
+    $toast.success('⭐ +10 estrelas!')
   } catch (err) {
     console.error(err)
     $toast.error('Erro ao enviar sua resposta.')
