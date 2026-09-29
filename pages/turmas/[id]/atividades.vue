@@ -37,13 +37,22 @@
     >
       <!-- Lista de atividades -->
       <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-        <div class="px-3.5 py-2.5 border-b border-gray-100">
+        <div class="px-3.5 py-2 border-b border-gray-100 flex items-center justify-between gap-2">
           <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">
-            Atividades ({{ atividades.length }})
+            Atividades ({{ atividadesFiltradas.length }})
           </p>
+          <div class="flex gap-1">
+            <button
+              v-for="f in filtrosStatus"
+              :key="f.value"
+              @click="filtroAtivo = f.value"
+              class="text-[10px] font-semibold px-2 py-0.5 rounded-full transition"
+              :class="filtroAtivo === f.value ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'"
+            >{{ f.label }}</button>
+          </div>
         </div>
         <div
-          v-if="atividades.length === 0"
+          v-if="atividadesFiltradas.length === 0 && atividades.length === 0"
           class="px-4 py-8 text-center space-y-1"
         >
           <p class="text-2xl">📋</p>
@@ -52,14 +61,20 @@
             Clique em <strong>+ Nova Atividade</strong> para começar.
           </p>
         </div>
+        <div
+          v-else-if="atividadesFiltradas.length === 0"
+          class="px-4 py-8 text-center"
+        >
+          <p class="text-xs text-gray-400">Nenhuma atividade neste filtro.</p>
+        </div>
 
         <!-- Seção: Provas -->
-        <template v-if="provas.length > 0">
+        <template v-if="provasFiltradas.length > 0">
           <div class="px-3.5 py-2 bg-gray-50 border-b border-gray-100">
             <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">📝 Provas</p>
           </div>
           <button
-            v-for="atividade in provas"
+            v-for="atividade in provasFiltradas"
             :key="atividade.id"
             @click="escolherAtividade(atividade)"
             class="w-full flex items-center justify-between px-3.5 py-2.5 border-b border-gray-100 last:border-0 text-left gap-2 transition"
@@ -87,12 +102,12 @@
         </template>
 
         <!-- Seção: Missões -->
-        <template v-if="missoes.length > 0">
-          <div class="px-3.5 py-2 bg-amber-50 border-b border-gray-100" :class="provas.length > 0 ? 'border-t border-gray-100' : ''">
+        <template v-if="missoesFiltradas.length > 0">
+          <div class="px-3.5 py-2 bg-amber-50 border-b border-gray-100" :class="provasFiltradas.length > 0 ? 'border-t border-gray-100' : ''">
             <p class="text-[10px] font-semibold text-amber-600 uppercase tracking-widest">⭐ Missões da semana</p>
           </div>
           <button
-            v-for="atividade in missoes"
+            v-for="atividade in missoesFiltradas"
             :key="atividade.id"
             @click="escolherAtividade(atividade)"
             class="w-full flex items-center justify-between px-3.5 py-2.5 border-b border-gray-100 last:border-0 text-left gap-2 transition"
@@ -220,142 +235,122 @@
         </div>
 
         <!-- Painel de respostas — apenas para missões -->
-        <div v-if="atividadeSelecionada.tipo_missao === 'MISSAO'" class="border-b border-gray-100">
-          <div class="px-3.5 py-2.5 bg-amber-50 flex items-center gap-2">
-            <span class="text-sm">⭐</span>
-            <p class="text-xs font-semibold text-amber-700 uppercase tracking-wide">Respostas dos estudantes</p>
-            <span class="ml-auto text-xs text-amber-600">
-              {{ registros.filter(r => r.respondido_em).length }}/{{ registros.length }} responderam
+        <!-- ── Respostas da missão da semana ── -->
+        <div v-if="atividadeSelecionada.tipo_missao === 'MISSAO'">
+          <!-- Header com contadores -->
+          <div class="px-4 py-3 bg-amber-50 border-b border-amber-100 flex items-center gap-2">
+            <span class="text-base">⭐</span>
+            <p class="text-xs font-bold text-amber-800 uppercase tracking-wider">Respostas dos estudantes</p>
+            <span class="ml-auto flex items-center gap-1.5">
+              <span class="inline-flex items-center gap-1 bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+                {{ registros.filter(r => r.respondido_em).length }}/{{ registros.length }} responderam
+              </span>
             </span>
           </div>
-          <div class="divide-y divide-gray-50">
+
+          <!-- Respondidos -->
+          <div v-if="registros.some(r => r.respondido_em)" class="divide-y divide-gray-50">
             <div
-              v-for="r in registros"
+              v-for="r in registros.filter(r => r.respondido_em)"
               :key="r.aluno_id"
-              class="px-4 py-3"
-              :class="r.respondido_em ? 'bg-white' : 'bg-gray-50'"
+              class="px-4 py-3.5"
             >
-              <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0 flex-1">
-                  <p class="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
-                    <span
-                      class="w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center text-[10px]"
-                      :class="r.respondido_em ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'"
-                    >{{ r.respondido_em ? '✓' : '–' }}</span>
-                    {{ r.nome }}
-                  </p>
-                  <!-- Resposta de múltipla escolha -->
-                  <p v-if="r.resposta_opcao" class="mt-1 text-xs text-gray-600 bg-green-50 border border-green-100 rounded-lg px-2 py-1 inline-block">
-                    {{ r.resposta_opcao }}
-                  </p>
-                  <!-- Resposta texto livre -->
-                  <p v-else-if="r.resposta_texto" class="mt-1 text-xs text-gray-600 bg-blue-50 border border-blue-100 rounded-lg px-2 py-1.5 leading-relaxed line-clamp-3">
-                    {{ r.resposta_texto }}
-                  </p>
-                  <p v-else-if="!r.respondido_em" class="mt-1 text-xs text-gray-400 italic">Ainda não respondeu</p>
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="w-5 h-5 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-[11px] font-bold flex-shrink-0">✓</span>
+                  <span class="text-sm font-semibold text-gray-800">{{ r.nome }}</span>
                 </div>
-                <span v-if="r.respondido_em" class="text-[10px] text-gray-400 flex-shrink-0 mt-0.5">
-                  {{ formatarDataCurta(r.respondido_em) }}
+                <span class="text-[11px] text-gray-400 flex-shrink-0">{{ formatarDataCurta(r.respondido_em) }}</span>
+              </div>
+              <!-- Resposta múltipla escolha -->
+              <div v-if="r.resposta_opcao" class="ml-7">
+                <span class="inline-flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-800 text-xs font-medium px-3 py-1.5 rounded-lg">
+                  <span>✦</span> {{ r.resposta_opcao }}
                 </span>
               </div>
+              <!-- Resposta texto livre -->
+              <div v-else-if="r.resposta_texto" class="ml-7">
+                <p class="text-sm text-gray-700 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5 leading-relaxed">{{ r.resposta_texto }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Não respondidos -->
+          <div v-if="registros.some(r => !r.respondido_em)" class="border-t border-gray-100 bg-gray-50/60">
+            <p class="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">Aguardando resposta</p>
+            <div class="px-4 pb-3 flex flex-wrap gap-2">
+              <span
+                v-for="r in registros.filter(r => !r.respondido_em)"
+                :key="r.aluno_id"
+                class="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-500 text-xs font-medium px-2.5 py-1 rounded-full"
+              >
+                <span class="w-3.5 h-3.5 rounded-full bg-gray-100 flex items-center justify-center text-[9px] text-gray-400">–</span>
+                {{ r.nome }}
+              </span>
             </div>
           </div>
         </div>
 
-        <!-- Resumo (só para provas) -->
-        <div
-          v-if="atividadeSelecionada.tipo_missao !== 'MISSAO'"
-          class="flex gap-2 px-3.5 py-2.5 border-b border-gray-100 flex-wrap items-center"
-        >
-          <div class="flex-1"></div>
-          <span class="text-xs text-gray-400">{{ resumoParticipacao }}</span>
-        </div>
+        <!-- ── Tabela nota/feedback (só para prova final) ── -->
+        <template v-else>
+          <!-- Resumo -->
+          <div class="flex gap-2 px-3.5 py-2.5 border-b border-gray-100 flex-wrap items-center">
+            <div class="flex-1"></div>
+            <span class="text-xs text-gray-400">{{ resumoParticipacao }}</span>
+          </div>
 
-        <!-- Lista de alunos -->
-        <div
-          v-if="loadingAlunos"
-          class="flex items-center gap-3 text-green-700 px-4 py-6"
-        >
-          <div
-            class="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"
-          ></div>
-          <span class="text-sm">Carregando alunos...</span>
-        </div>
+          <!-- Lista de alunos -->
+          <div v-if="loadingAlunos" class="flex items-center gap-3 text-green-700 px-4 py-6">
+            <div class="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+            <span class="text-sm">Carregando alunos...</span>
+          </div>
 
-        <!-- Tabela compacta -->
-        <div v-else class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b border-gray-100 bg-gray-50">
-                <th
-                  class="text-left px-4 py-2 text-xs font-medium text-gray-400 w-full"
-                >
-                  Estudante
-                </th>
-                <th
-                  class="text-center px-3 py-2 text-xs font-medium text-gray-400 whitespace-nowrap"
-                >
-                  Nota
-                </th>
-                <th
-                  class="text-center px-3 py-2 text-xs font-medium text-gray-400"
-                >
-                  Feedback
-                </th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
-              <tr
-                v-for="registro in registros"
-                :key="registro.aluno_id"
-                class="hover:bg-gray-50 transition"
-              >
-                <!-- Nome -->
-                <td class="px-4 py-2.5">
-                  <span
-                    class="text-sm font-medium"
-                    :class="registro.nota !== null ? 'text-gray-800' : 'text-gray-700'"
-                  >
-                    {{ registro.nome }}
-                  </span>
-                </td>
-
-                <!-- NOTA: input com máscara -->
-                <td class="px-3 py-2.5 text-center">
-                  <input
-                    :value="notaDisplay(registro)"
-                    @keydown="onNotaKeydown($event, registro)"
-                    @focus="onNotaFocus(registro)"
-                    inputmode="numeric"
-                    placeholder="–"
-                    readonly
-                    :disabled="atividadeSelecionada.status === 'ENCERRADA'"
-                    class="w-16 text-center text-sm font-bold rounded-lg px-2 py-1.5 border-2 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-green-400 transition-all cursor-pointer select-none disabled:cursor-not-allowed disabled:opacity-60"
-                    :class="notaInputClass(registro._digitos)"
-                  />
-                </td>
-
-                <!-- Feedback -->
-                <td class="px-3 py-2.5 text-center">
-                  <button
-                    @click="abrirFeedback(registro)"
-                    :disabled="atividadeSelecionada.status === 'ENCERRADA'"
-                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    :class="
-                      registro.feedback
-                        ? 'bg-green-500 border-green-500 text-white hover:bg-green-600'
-                        : 'bg-white border-green-200 text-green-600 hover:bg-green-50'
-                    "
-                  >
-                    💬
-                    <span v-if="registro.feedback" class="hidden sm:inline">Editar</span>
-                    <span v-else class="hidden sm:inline">Adicionar</span>
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+          <div v-else class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-gray-100 bg-gray-50">
+                  <th class="text-left px-4 py-2 text-xs font-medium text-gray-400 w-full">Estudante</th>
+                  <th class="text-center px-3 py-2 text-xs font-medium text-gray-400 whitespace-nowrap">Nota</th>
+                  <th class="text-center px-3 py-2 text-xs font-medium text-gray-400">Feedback</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-50">
+                <tr v-for="registro in registros" :key="registro.aluno_id" class="hover:bg-gray-50 transition">
+                  <td class="px-4 py-2.5">
+                    <span class="text-sm font-medium" :class="registro.nota !== null ? 'text-gray-800' : 'text-gray-700'">
+                      {{ registro.nome }}
+                    </span>
+                  </td>
+                  <td class="px-3 py-2.5 text-center">
+                    <input
+                      :value="notaDisplay(registro)"
+                      @keydown="onNotaKeydown($event, registro)"
+                      @focus="onNotaFocus(registro)"
+                      inputmode="numeric"
+                      placeholder="–"
+                      readonly
+                      :disabled="atividadeSelecionada.status === 'ENCERRADA'"
+                      class="w-16 text-center text-sm font-bold rounded-lg px-2 py-1.5 border-2 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-green-400 transition-all cursor-pointer select-none disabled:cursor-not-allowed disabled:opacity-60"
+                      :class="notaInputClass(registro._digitos)"
+                    />
+                  </td>
+                  <td class="px-3 py-2.5 text-center">
+                    <button
+                      @click="abrirFeedback(registro)"
+                      :disabled="atividadeSelecionada.status === 'ENCERRADA'"
+                      class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      :class="registro.feedback ? 'bg-green-500 border-green-500 text-white hover:bg-green-600' : 'bg-white border-green-200 text-green-600 hover:bg-green-50'"
+                    >
+                      💬
+                      <span v-if="registro.feedback" class="hidden sm:inline">Editar</span>
+                      <span v-else class="hidden sm:inline">Adicionar</span>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
       </div>
 
       <!-- Estado vazio -->
@@ -583,21 +578,35 @@
                 Data de encerramento
                 <span class="text-gray-400 font-normal">(opcional)</span>
               </label>
-              <div class="flex gap-2 items-center">
-                <input
-                  v-model="form.data_final"
-                  type="datetime-local"
-                  class="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
-                />
+              <div class="flex gap-2 items-end">
+                <div class="flex-1">
+                  <p class="text-[10px] text-gray-400 mb-1 font-medium uppercase tracking-wide">Data</p>
+                  <input
+                    :value="dataFinalDate"
+                    @input="e => atualizarDataFinal(e.target.value, horaFinalTime)"
+                    type="date"
+                    class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+                  />
+                </div>
+                <div class="w-28">
+                  <p class="text-[10px] text-gray-400 mb-1 font-medium uppercase tracking-wide">Horário</p>
+                  <select
+                    :value="horaFinalTime"
+                    @change="e => atualizarDataFinal(dataFinalDate, e.target.value)"
+                    class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition bg-white"
+                  >
+                    <option v-for="h in horariosOpcoes" :key="h" :value="h">{{ h }}</option>
+                  </select>
+                </div>
                 <button
                   type="button"
                   @click="form.data_final = ''"
                   v-if="form.data_final"
-                  class="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition"
+                  class="text-xs text-gray-400 hover:text-red-500 px-2 py-2.5 rounded-lg hover:bg-red-50 transition flex-shrink-0"
                   title="Remover data"
                 >✕</button>
               </div>
-              <p class="text-xs text-gray-400 mt-1">
+              <p class="text-xs text-gray-400 mt-1.5">
                 Pré-preenchido com 7 dias a partir de hoje — edite conforme necessário.
               </p>
             </div>
@@ -722,7 +731,26 @@ const form = reactive({
   tipoEscolhido: false, // controla o step de seleção no drawer de criação
 });
 
-// ── Listas separadas por tipo ──────────────────────────────────────────────
+// ── Filtro de status ───────────────────────────────────────────────────────
+const filtroAtivo = ref('todas')
+const filtrosStatus = [
+  { value: 'todas', label: 'Todas' },
+  { value: 'ativas', label: 'Ativas' },
+  { value: 'encerradas', label: 'Encerradas' },
+]
+
+// ── Listas separadas por tipo + filtro ────────────────────────────────────
+const atividadesFiltradas = computed(() => {
+  if (filtroAtivo.value === 'ativas') return atividades.value.filter((a) => a.status === 'PUBLICADA')
+  if (filtroAtivo.value === 'encerradas') return atividades.value.filter((a) => a.status === 'ENCERRADA')
+  return atividades.value
+})
+const provasFiltradas = computed(() =>
+  atividadesFiltradas.value.filter((a) => a.tipo_missao !== "MISSAO")
+);
+const missoesFiltradas = computed(() =>
+  atividadesFiltradas.value.filter((a) => a.tipo_missao === "MISSAO")
+);
 const provas = computed(() =>
   atividades.value.filter((a) => a.tipo_missao !== "MISSAO")
 );
@@ -1016,11 +1044,40 @@ async function salvarRegistros() {
   }
 }
 
+// ── Date/time picker helpers ───────────────────────────────────────────────
+const horariosOpcoes = (() => {
+  const h = []
+  for (let i = 0; i < 24; i++) {
+    h.push(`${String(i).padStart(2, '0')}:00`)
+    h.push(`${String(i).padStart(2, '0')}:30`)
+  }
+  return h
+})()
+
+const dataFinalDate = computed(() => {
+  if (!form.data_final) return ''
+  return form.data_final.slice(0, 10)
+})
+
+const horaFinalTime = computed(() => {
+  if (!form.data_final) return '23:00'
+  const time = form.data_final.slice(11, 16)
+  // Round to nearest 30min option
+  const [h, m] = time.split(':').map(Number)
+  const rounded = m >= 30 ? `${String(h).padStart(2, '0')}:30` : `${String(h).padStart(2, '0')}:00`
+  return horariosOpcoes.includes(rounded) ? rounded : '23:00'
+})
+
+function atualizarDataFinal(date, time) {
+  if (!date) { form.data_final = ''; return }
+  form.data_final = `${date}T${time || '23:00'}`
+}
+
 // ── Drawer criar/editar ────────────────────────────────────────────────────
 function umaSemanaAPartirDeHoje() {
   const d = new Date();
   d.setDate(d.getDate() + 7);
-  return d.toISOString().slice(0, 16);
+  return `${d.toISOString().slice(0, 10)}T23:00`;
 }
 
 function abrirCriacao() {
@@ -1196,8 +1253,9 @@ async function creditarBonusMissaoProfessor(professorId) {
     quantidade: 20,
     motivo: 'CRIOU_MISSAO',
     descricao: 'Criou uma missão da semana',
+    turma_id: turmaId ?? null,
   }).then(() => {})
-  $toast.success('⭐ +20 estrelas por criar uma missão!')
+  $toast.success('Missão da semana criada! +20 ⭐')
 }
 
 async function turmasIdsDoProfessor(professorId) {

@@ -14,13 +14,13 @@
         <SidebarItem v-if="isAluno" to="/aluno/turmas?destino=minha-presenca" label="Minha Presença" icon="📅" :open="true" @click="$emit('toggle')" />
         <SidebarItem v-if="isAluno" to="/aluno/turmas?destino=minha-turma" label="Minha Turma" icon="👥" :open="true" @click="$emit('toggle')" />
         <SidebarItem v-if="isAluno" to="/aluno/turmas?destino=minhas-atividades" label="Minhas Atividades" icon="📚" :open="true" @click="$emit('toggle')" />
-        <SidebarItem v-if="isAluno" to="/aluno/gamificacao" label="Gamificação" icon="🏆" :open="true" @click="$emit('toggle')" />
+        <SidebarItem v-if="isAluno" to="/aluno/gamificacao" label="Recompensas" icon="🏆" :open="true" @click="$emit('toggle')" />
         <!-- <SidebarItem v-if="isAluno" to="/registroPresenca" label="Marcar Presença" icon="📷" :open="true" @click="$emit('toggle')" /> -->
 
         <!-- PROFESSOR -->
         <SidebarItem v-if="isProfessor" to="/dashboard" label="Dashboard" icon="📊" :open="true" @click="$emit('toggle')" />
         <SidebarItem v-if="isProfessor" to="/turmas" label="Minhas Turmas" icon="📚" :open="true" @click="$emit('toggle')" />
-        <SidebarItem v-if="isProfessor" to="/aluno/gamificacao" label="Gamificação" icon="🏆" :open="true" @click="$emit('toggle')" />
+        <SidebarItem v-if="isProfessor" to="/aluno/gamificacao" label="Recompensas" icon="🏆" :open="true" @click="$emit('toggle')" />
 
         <!-- <SidebarItem v-if="isProfessor" to="/qrCodeTurmas" label="Chamada por QR Code" icon="🧾" :open="true" @click="$emit('toggle')" /> -->
         <!-- <SidebarItem v-if="isProfessor" to="/chamada-manual" label="Chamada" icon="✅" :open="true" @click="$emit('toggle')" /> -->
@@ -36,8 +36,9 @@
           <SidebarItem to="/admin/usuarios" label="Usuários" icon="👥" :open="true" @click="$emit('toggle')" />
           <SidebarItem to="/admin/cadastro-lote" label="Cadastro de Usuários - Lote" icon="📦" :open="true" @click="$emit('toggle')" />
           <SidebarItem to="/justificativas" label="Justificativas" icon="📝" :open="true" @click="$emit('toggle')" />
-          <SidebarItem to="/admin/acessos" label="Acessos" icon="🟢" :open="true" @click="$emit('toggle')" />
+          <SidebarItem to="/admin/pre-inscricao" label="Pré-inscrições" icon="📋" :open="true" @click="$emit('toggle')" />
           <SidebarItem to="/admin/configuracoes" label="Configurações" icon="⚙️" :open="true" @click="$emit('toggle')" />
+          <SidebarItem to="/admin/reset-semestral" label="Reset Semestral" icon="🔄" :open="true" @click="$emit('toggle')" />
 
         </template>
       

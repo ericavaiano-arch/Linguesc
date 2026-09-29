@@ -5,6 +5,7 @@
         <button class="md:hidden text-2xl text-gray-700" @click="$emit('toggleSidebar')">☰</button>
         <NuxtLink to="/hub" class="flex items-center space-x-3">
           <img src="~/assets/images/logo_linguesc.png" alt="Linguesc" class="h-10 w-auto" />
+          <img src="~/assets/images/logo_udesc.png" alt="UDESC" class="h-10 w-auto" />
           <span class="text-2xl font-bold text-gray-800 hidden sm:block">Linguesc</span>
         </NuxtLink>
       </div>

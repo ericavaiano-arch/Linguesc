@@ -146,14 +146,33 @@ export const useAuth = () => {
       .eq('id', userId)
 
     supabase
-      .from('estrelas_historico')
-      .insert({
-        usuario_id: userId,
-        quantidade: 5,
-        motivo: 'LOGIN_SEMANAL',
-        descricao: `Bônus de login semanal — semana ${semanaAtual}`,
+      .from('turma_aluno')
+      .select('turma_id, turma:turma_id(status)')
+      .eq('aluno_id', userId)
+      .eq('turma.status', 'ATIVA')
+      .limit(1)
+      .maybeSingle()
+      .then(async ({ data: mat }) => {
+        let turmaId = mat?.turma?.status === 'ATIVA' ? mat.turma_id : null
+        if (!turmaId) {
+          const { data: profTurma } = await supabase
+            .from('turma')
+            .select('id')
+            .eq('professor_id', userId)
+            .eq('status', 'ATIVA')
+            .order('dt_inclusao', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          if (profTurma) turmaId = profTurma.id
+        }
+        supabase.from('estrelas_historico').insert({
+          usuario_id: userId,
+          quantidade: 5,
+          motivo: 'LOGIN_SEMANAL',
+          descricao: `Bônus de login semanal — semana ${semanaAtual}`,
+          turma_id: turmaId,
+        }).then(() => {})
       })
-      .then(() => {})
 
     return novasEstrelas
   }

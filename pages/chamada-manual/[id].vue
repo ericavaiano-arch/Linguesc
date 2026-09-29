@@ -194,16 +194,22 @@
               v-if="presentes.has(aluno.id) && !destaqueExistentes.some(d => d.aluno_id === aluno.id)"
               @click.stop="toggleDestaque(aluno.id)"
               :title="destaqueAlunoIds.has(aluno.id) ? 'Remover destaque' : 'Marcar como destaque'"
-              class="shrink-0 text-base leading-none transition-transform hover:scale-110"
-              :class="destaqueAlunoIds.has(aluno.id) ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-300'"
+              class="shrink-0 flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg border transition-all"
+              :class="destaqueAlunoIds.has(aluno.id)
+                ? 'bg-yellow-100 text-yellow-700 border-yellow-300'
+                : 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-yellow-50 hover:text-yellow-600 hover:border-yellow-200'"
             >
-              ★
+              <span>⭐</span>
+              <span>Estudante destaque</span>
             </button>
             <span
               v-else-if="destaqueExistentes.some(d => d.aluno_id === aluno.id)"
-              class="shrink-0 text-yellow-400 text-base leading-none"
+              class="shrink-0 flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg bg-yellow-100 text-yellow-700 border border-yellow-200"
               title="Destaque desta aula"
-            >★</span>
+            >
+              <span>⭐</span>
+              <span>Destaque</span>
+            </span>
           </li>
         </ul>
 
@@ -214,25 +220,20 @@
         >
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0">
-              <span class="text-yellow-500 text-sm shrink-0">★</span>
+              <span class="text-yellow-500 text-sm shrink-0">⭐</span>
               <span class="text-xs font-medium text-yellow-800 truncate">
                 <template v-if="destaqueExistentes.length > 0">
                   Destaque(s): {{ destaqueExistentes.map(d => nomeAluno(d.aluno_id)).join(', ') }}
                 </template>
                 <template v-else>
-                  Selecionado(s): {{ [...destaqueAlunoIds].map(nomeAluno).join(', ') }}
+                  Destaque(s): {{ [...destaqueAlunoIds].map(nomeAluno).join(', ') }}
                 </template>
               </span>
             </div>
-            <button
+            <span
               v-if="destaqueExistentes.length === 0 && destaqueAlunoIds.size > 0"
-              @click="salvarDestaque"
-              :disabled="salvandoDestaque"
-              class="shrink-0 text-xs px-3 py-1 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-white font-semibold transition flex items-center gap-1"
-            >
-              <div v-if="salvandoDestaque" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              {{ salvandoDestaque ? 'Salvando...' : 'Confirmar +15 ⭐' }}
-            </button>
+              class="shrink-0 text-xs text-yellow-700 bg-yellow-200 px-2 py-0.5 rounded-lg font-semibold whitespace-nowrap"
+            >+15 ⭐ ao salvar</span>
             <span v-else-if="destaqueExistentes.length > 0" class="shrink-0 text-xs text-yellow-600">já registrado</span>
           </div>
         </div>
@@ -296,7 +297,7 @@ import { useRoute, useRouter } from "vue-router";
 import { supabase } from "@/utils/supabase";
 import { verificarENotificarRisco } from "~/composables/useNotificacaoRisco";
 const { metaFrequencia, carregarConfig } = useConfigSistema();
-const { user } = useAuth();
+const { user, atualizarEstrelasLocal } = useAuth();
 
 definePageMeta({ middleware: "professor" });
 
@@ -447,69 +448,7 @@ async function selecionarAula(aula) {
 }
 
 async function salvarDestaque() {
-  if (!destaqueAlunoIds.value.size || !aulaSelecionada.value || !user.value) return;
-  salvandoDestaque.value = true;
-  try {
-    const novosIds = [...destaqueAlunoIds.value];
-
-    const { error } = await supabase.from("destaque_aula").insert(
-      novosIds.map((aluno_id) => ({
-        aula_id: aulaSelecionada.value.id,
-        aluno_id,
-        professor_id: user.value.id,
-      })),
-    );
-    if (error) throw error;
-
-    // +15 estrelas para cada aluno destaque
-    for (const alunoId of novosIds) {
-      const { data: alunoData } = await supabase
-        .from("usuarios").select("estrelas").eq("id", alunoId).single();
-      await supabase
-        .from("usuarios")
-        .update({ estrelas: (alunoData?.estrelas ?? 0) + 15 })
-        .eq("id", alunoId);
-    }
-
-    // +20 estrelas para o professor (uma vez, independente da quantidade)
-    const { data: profData } = await supabase
-      .from("usuarios").select("estrelas").eq("id", user.value.id).single();
-    await supabase
-      .from("usuarios")
-      .update({ estrelas: (profData?.estrelas ?? 0) + 20 })
-      .eq("id", user.value.id);
-
-    // Histórico
-    supabase.from("estrelas_historico").insert(
-      novosIds.map((aluno_id) => ({
-        usuario_id: aluno_id,
-        quantidade: 15,
-        motivo: "DESTAQUE_AULA",
-        descricao: "Aluno destaque escolhido pelo professor",
-        aula_id: aulaSelecionada.value.id,
-        turma_id: turma.value?.id ?? null,
-      }))
-    ).then(() => {})
-
-    supabase.from("estrelas_historico").insert({
-      usuario_id: user.value.id,
-      quantidade: 20,
-      motivo: "DADO_DESTAQUE",
-      descricao: `Reconheceu ${novosIds.length} aluno(s) como destaque`,
-      aula_id: aulaSelecionada.value.id,
-      turma_id: turma.value?.id ?? null,
-    }).then(() => {})
-
-    destaqueExistentes.value = novosIds.map((id) => ({ aluno_id: id }));
-    destaqueAlunoIds.value = new Set();
-    const nomes = novosIds.map(nomeAluno).join(", ");
-    $toast.success(`★ Destaque(s) salvo(s): ${nomes} (+15 ⭐ cada)`);
-  } catch (err) {
-    console.error(err);
-    $toast.error("Erro ao salvar destaque.");
-  } finally {
-    salvandoDestaque.value = false;
-  }
+  // Lógica movida para o bloco fire-and-forget em salvarChamada()
 }
 
 function togglePresenca(alunoId) {
@@ -557,7 +496,9 @@ async function salvarChamada() {
         promessas.push(supabase.from("presenca").delete().in("id", ids));
     }
 
-    if (promessas.length === 0) {
+    const temDestaquePendente = destaqueAlunoIds.value.size > 0;
+
+    if (promessas.length === 0 && !temDestaquePendente) {
       $toast.warning("Nenhuma alteração detectada.");
       salvando.value = false;
       return;
@@ -574,38 +515,67 @@ async function salvarChamada() {
       .update({ status: "REALIZADA" })
       .eq("id", aulaSelecionada.value.id);
 
-    const msg = modoEdicao.value ? `Chamada atualizada!` : `Chamada salva!`;
+    // Captura tudo que os processos async vão precisar antes de navegar
+    const aulaId    = aulaSelecionada.value.id
+    const turmaId   = aulaSelecionada.value.turma_id
+    const turmaNome = turma?.value.nome
+    const profId    = user.value?.id ?? ""
+    const novosDestaqueIds = [...destaqueAlunoIds.value]
+    const jaTemDestaques   = destaqueExistentes.value.length > 0
 
-    $toast.success(msg);
+    const msg = modoEdicao.value ? 'Chamada atualizada!' : 'Chamada salva!'
+    $toast.info(`${msg} Pontuações sendo processadas...`)
+    router.push("/turmas")
 
-    const { data: { session } } = await supabase.auth.getSession()
-    const token = session?.access_token
+    // ── Processamento async (fire-and-forget) ────────────────────────────────
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const token = session?.access_token
 
-    // Aguarda a edge function terminar antes de ler as estrelas no email
-    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/processar-bonus-presenca`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        aula_id: aulaSelecionada.value.id,
-        turma_id: aulaSelecionada.value.turma_id,
-      }),
-    }).catch((err) => console.error('Erro ao processar bônus de presença:', err))
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/processar-bonus-presenca`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ aula_id: aulaId, turma_id: turmaId }),
+      }).catch((err) => console.error('Erro ao processar bônus de presença:', err))
+    })
 
-    await verificarENotificarRisco({
-      turmaId: aulaSelecionada.value.turma_id,
-      turmaNome: turma?.value.nome,
-      professorId: user.value?.id ?? "",
-      metaFrequencia: metaFrequencia.value,
-    }).catch((err) => console.error("Erro ao verificar risco:", err));
+    if (novosDestaqueIds.length > 0 && user.value) {
+      // Registrar destaque_aula + créditar +15 para cada aluno
+      supabase.from("destaque_aula").insert(
+        novosDestaqueIds.map((aluno_id) => ({ aula_id: aulaId, aluno_id, professor_id: profId }))
+      ).then(({ error }) => {
+        if (error) { console.error('Erro ao inserir destaque_aula:', error); return }
+        $fetch('/api/salvar-destaque', {
+          method: 'POST',
+          body: { alunoIds: novosDestaqueIds, professorId: profId, aulaId, turmaId },
+        }).catch((err) => console.error('Erro ao salvar destaque:', err))
+      })
 
-    await verificarNotificacaoProfessor().catch((err) =>
+      // +20 para o professor apenas na primeira vez nesta aula
+      if (!jaTemDestaques) {
+        supabase.from("usuarios").select("estrelas").eq("id", profId).single().then(({ data: profData }) => {
+          const novasEstrelas = (profData?.estrelas ?? 0) + 20
+          supabase.from("usuarios").update({ estrelas: novasEstrelas }).eq("id", profId).then(() => {
+            atualizarEstrelasLocal(novasEstrelas)
+          })
+          supabase.from("estrelas_historico").insert({
+            usuario_id: profId,
+            quantidade: 20,
+            motivo: "DADO_DESTAQUE",
+            descricao: `Reconheceu ${novosDestaqueIds.length} aluno(s) como destaque`,
+            aula_id: aulaId,
+            turma_id: turmaId ?? null,
+          }).then(() => {})
+        })
+      }
+    }
+
+    verificarENotificarRisco({
+      turmaId, turmaNome, professorId: profId, metaFrequencia: metaFrequencia.value,
+    }).catch((err) => console.error("Erro ao verificar risco:", err))
+
+    verificarNotificacaoProfessor().catch((err) =>
       console.error("Erro ao emitir notificação:", err),
-    );
-
-    router.push("/turmas");
+    )
   } catch (err) {
     console.error(err);
     $toast.error("Erro ao salvar chamada.");

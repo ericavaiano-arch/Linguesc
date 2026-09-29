@@ -105,9 +105,35 @@
           </p>
         </div>
 
+        <!-- Data de nascimento -->
+        <div>
+          <label for="dataNascimento" class="block text-sm font-medium text-gray-700 mb-1">Data de nascimento</label>
+          <input
+            v-model="dataNascimento"
+            id="dataNascimento"
+            type="date"
+            required
+            class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+          />
+        </div>
+
+        <!-- Documento federal (CPF/RG) -->
+        <div>
+          <label for="documentoFederal" class="block text-sm font-medium text-gray-700 mb-1">CPF ou RG</label>
+          <input
+            v-model="documentoFederal"
+            id="documentoFederal"
+            type="text"
+            required
+            placeholder="Somente números"
+            class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+          />
+          <p class="text-xs text-gray-400 mt-1">Usado apenas para controle interno. Não será exibido publicamente.</p>
+        </div>
+
         <!-- Botão -->
         <button
-          :disabled="!nome || !email || !senha || carregando"
+          :disabled="!nome || !email || !senha || !dataNascimento || !documentoFederal || carregando"
           class="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition active:scale-95 flex items-center justify-center gap-2"
         >
           <div
@@ -129,12 +155,14 @@ const { $toast } = useNuxtApp();
 const nome = ref("");
 const email = ref("");
 const senha = ref("");
+const dataNascimento = ref("");
+const documentoFederal = ref("");
 const emailInvalido = ref(false);
 const senhaCurta = ref(false);
 const carregando = ref(false);
 
 async function cadastrarUsuario() {
-  if (!nome.value || !email.value || !senha.value) {
+  if (!nome.value || !email.value || !senha.value || !dataNascimento.value || !documentoFederal.value) {
     $toast.warning("Todos os campos são obrigatórios.");
     return;
   }
@@ -157,6 +185,8 @@ async function cadastrarUsuario() {
           email: email.value.trim(),
           senha: senha.value,
           papel: "ALUNO",
+          data_nascimento: dataNascimento.value,
+          documento_federal: documentoFederal.value.trim(),
         }),
       },
     );

@@ -15,7 +15,8 @@
       </div>
       <div class="mt-8">
         <button
-          @click="$router.push(`/turmas/${turmaId}/aulas`)"
+          v-if="isProfessor || isAdmin"
+          @click="painelAberto = true"
           class="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-3 rounded-xl transition active:scale-95 flex items-center gap-2 flex-shrink-0"
         >
           📅 Cadastrar Aulas
@@ -33,7 +34,7 @@
     <div v-else-if="aulasDaJornada.length === 0" class="text-center py-16">
       <p class="text-4xl mb-3">📅</p>
       <p class="text-gray-500 font-medium">Nenhuma aula cadastrada.</p>
-      <button @click="$router.push(`/turmas/${turmaId}/aulas`)" class="mt-3 text-green-600 font-semibold hover:underline text-sm">
+      <button v-if="isProfessor || isAdmin" @click="painelAberto = true" class="mt-3 text-green-600 font-semibold hover:underline text-sm">
         Cadastrar aulas →
       </button>
     </div>
@@ -151,6 +152,104 @@
       </div>
     </div>
 
+    <!-- Modal de confirmação de remoção -->
+    <div
+      v-if="aulaParaDeletar"
+      class="fixed inset-0 z-[80] flex items-center justify-center bg-black/50"
+      @click.self="aulaParaDeletar = null"
+    >
+      <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4 space-y-4">
+        <h3 class="text-lg font-semibold text-gray-800">Remover aula</h3>
+        <p class="text-sm text-gray-600">
+          Tem certeza que deseja remover a aula do dia
+          <span class="font-medium">{{ formatarData(aulaParaDeletar.data) }}</span>?
+          Esta ação não pode ser desfeita.
+        </p>
+        <div class="flex gap-3 justify-end">
+          <button @click="aulaParaDeletar = null" class="px-4 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition">Cancelar</button>
+          <button @click="confirmarDelecao" class="px-4 py-2 rounded-xl text-sm bg-red-600 text-white hover:bg-red-700 transition">Remover</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drawer: Cadastrar Aulas -->
+    <Transition name="fade">
+      <div v-if="painelAberto" class="fixed inset-0 bg-black/40 z-[60]" @click="painelAberto = false"></div>
+    </Transition>
+    <Transition name="slide">
+      <div v-if="painelAberto" class="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl z-[70] flex flex-col">
+        <div class="flex items-center justify-between p-6 border-b">
+          <h2 class="text-lg font-semibold text-gray-800">➕ Cadastrar Aulas</h2>
+          <button @click="painelAberto = false" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition text-xl">×</button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+          <!-- Tabs -->
+          <div class="flex gap-2">
+            <button v-if="isAdmin" @click="modoAdicao = 'recorrencia'" class="flex-1 py-2 rounded-xl text-sm font-semibold transition" :class="modoAdicao === 'recorrencia' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">🔁 Recorrência</button>
+            <button @click="modoAdicao = 'manual'" class="flex-1 py-2 rounded-xl text-sm font-semibold transition" :class="modoAdicao === 'manual' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">📅 Datas avulsas</button>
+          </div>
+          <!-- Manual -->
+          <div v-if="modoAdicao === 'manual'" class="space-y-4">
+            <label class="text-sm text-gray-600 font-medium block">Selecione uma data:</label>
+            <div class="flex gap-3">
+              <input v-model="dataManual" type="date" class="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+              <button @click="adicionarDataManual" :disabled="!dataManual" class="bg-green-600 hover:bg-green-700 disabled:bg-green-300 disabled:cursor-not-allowed text-white font-semibold px-4 py-2 rounded-xl transition">Adicionar</button>
+            </div>
+            <ul v-if="datasManual.length > 0" class="space-y-2">
+              <li v-for="(data, i) in datasManual" :key="i" class="flex items-center justify-between px-4 py-2 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800">
+                <span>{{ formatarDataCompleta(data) }}</span>
+                <button @click="datasManual.splice(i, 1)" class="text-red-400 hover:text-red-600 font-bold">×</button>
+              </li>
+            </ul>
+          </div>
+          <!-- Recorrência (admin) -->
+          <div v-if="modoAdicao === 'recorrencia'" class="space-y-4">
+            <div>
+              <label class="text-sm text-gray-600 font-medium mb-2 block">Dia da semana:</label>
+              <div class="flex flex-wrap gap-2">
+                <button v-for="dia in diasSemanaOpcoes" :key="dia.valor" @click="diaRecorrencia = dia.valor" class="px-3 py-2 rounded-xl text-sm font-semibold transition" :class="diaRecorrencia === dia.valor ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">{{ dia.label }}</button>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-sm text-gray-600 font-medium mb-2 block">Data inicial:</label>
+                <input v-model="recorrenciaInicio" type="date" class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+              </div>
+              <div>
+                <label class="text-sm text-gray-600 font-medium mb-2 block">Número de aulas:</label>
+                <input v-model.number="quantidadeAulasForm" type="number" min="1" max="52" placeholder="Ex: 4" class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+              </div>
+            </div>
+            <button @click="gerarRecorrencia" :disabled="diaRecorrencia === null || !recorrenciaInicio || !quantidadeAulasForm" class="w-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 font-semibold py-2 rounded-xl transition text-sm">🔍 Pré-visualizar datas</button>
+            <ul v-if="datasRecorrencia.length > 0" class="space-y-2 max-h-64 overflow-y-auto">
+              <li v-for="(data, i) in datasRecorrencia" :key="i" class="flex items-center justify-between px-4 py-2 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800">
+                <span>{{ formatarDataCompleta(data) }}</span>
+                <button @click="datasRecorrencia.splice(i, 1)" class="text-red-400 hover:text-red-600 font-bold">×</button>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="p-6 border-t space-y-4">
+          <div>
+            <label class="text-sm font-medium text-gray-700 mb-2 block">Horário das aulas</label>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">Início</label>
+                <input v-model="horaInicio" type="time" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+              </div>
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">Fim</label>
+                <input v-model="horaFim" type="time" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+              </div>
+            </div>
+          </div>
+          <button @click="salvarAulas" :disabled="datasParaSalvar.length === 0" class="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition active:scale-95 flex items-center justify-center gap-2">
+            💾 Salvar {{ datasParaSalvar.length }} aula(s)
+          </button>
+        </div>
+      </div>
+    </Transition>
+
     <!-- Modal de edição -->
     <Teleport to="body">
       <Transition name="modal">
@@ -225,7 +324,7 @@
               </div>
 
               <!-- Ações -->
-              <div class="flex gap-3 pt-1">
+              <div class="flex gap-3 pt-1 flex-wrap">
                 <button
                   @click="salvarEdicao"
                   :disabled="salvando"
@@ -245,6 +344,14 @@
                   Cancelar
                 </button>
               </div>
+              <div v-if="(isProfessor || isAdmin) && modalEdicao.status === 'AGENDADA'" class="pt-1 border-t border-gray-100">
+                <button
+                  @click="solicitarDelecao(modalEdicao.id)"
+                  class="w-full text-sm text-red-400 hover:text-red-600 py-2 rounded-xl hover:bg-red-50 transition"
+                >
+                  🗑 Remover esta aula
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -256,9 +363,11 @@
 <script setup>
 import { supabase } from '~/utils/supabase'
 
-definePageMeta({ middleware: 'professor' })
+definePageMeta({ middleware: 'auth' })
 
 const route = useRoute()
+const { $toast } = useNuxtApp()
+const { isAdmin, isProfessor } = useAuth()
 const turmaId = Number(route.params.id)
 
 const loading = ref(true)
@@ -315,6 +424,7 @@ const trilhaPathConcluida = computed(() => {
 
 let resizeObs = null
 onMounted(async () => {
+  modoAdicao.value = isAdmin.value ? 'recorrencia' : 'manual'
   await carregarDados()
   await nextTick()
   if (jornadaMapaRef.value) {
@@ -339,6 +449,94 @@ function dia(d) { return new Date(d + 'T12:00:00').getDate() }
 function mesNum(d) { return String(new Date(d + 'T12:00:00').getMonth() + 1).padStart(2, '0') }
 function diaSemana(d) { return new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '') }
 function formatarData(d) { return d ? new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : '—' }
+
+// ── Drawer: Cadastrar Aulas ───────────────────────────────────────────────
+const painelAberto = ref(false)
+const modoAdicao = ref('manual') // será sobrescrito no onMounted
+const dataManual = ref('')
+const datasManual = ref([])
+const diaRecorrencia = ref(null)
+const recorrenciaInicio = ref('')
+const quantidadeAulasForm = ref(null)
+const datasRecorrencia = ref([])
+const horaInicio = ref('')
+const horaFim = ref('')
+const aulaParaDeletar = ref(null)
+
+const diasSemanaOpcoes = [
+  { valor: 0, label: 'Dom' }, { valor: 1, label: 'Seg' }, { valor: 2, label: 'Ter' },
+  { valor: 3, label: 'Qua' }, { valor: 4, label: 'Qui' }, { valor: 5, label: 'Sex' },
+  { valor: 6, label: 'Sáb' },
+]
+const datasParaSalvar = computed(() => modoAdicao.value === 'manual' ? datasManual.value : datasRecorrencia.value)
+
+function formatarDataCompleta(dataStr) {
+  const d = new Date(dataStr + 'T12:00:00')
+  return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+function adicionarDataManual() {
+  if (!dataManual.value) return
+  if (datasManual.value.includes(dataManual.value)) { $toast.warning('Esta data já foi adicionada.'); return }
+  datasManual.value.push(dataManual.value)
+  datasManual.value.sort()
+  dataManual.value = ''
+}
+
+function gerarRecorrencia() {
+  if (diaRecorrencia.value === null || !recorrenciaInicio.value || !quantidadeAulasForm.value) return
+  const quantidade = parseInt(quantidadeAulasForm.value)
+  if (quantidade < 1) { $toast.warning('Informe ao menos 1 aula.'); return }
+  const atual = new Date(recorrenciaInicio.value + 'T12:00:00')
+  while (atual.getDay() !== diaRecorrencia.value) { atual.setDate(atual.getDate() + 1) }
+  const datas = []
+  for (let i = 0; i < quantidade; i++) {
+    datas.push(atual.toISOString().split('T')[0])
+    atual.setDate(atual.getDate() + 7)
+  }
+  datasRecorrencia.value = datas
+}
+
+async function salvarAulas() {
+  const datas = datasParaSalvar.value
+  if (datas.length === 0) return
+  const datasExistentes = aulas.value.map((a) => a.data)
+  const novasDatas = datas.filter((d) => !datasExistentes.includes(d))
+  if (novasDatas.length === 0) { $toast.warning('Todas as datas selecionadas já estão cadastradas.'); return }
+  const registros = novasDatas.map((data) => ({
+    turma_id: turmaId,
+    data,
+    status: 'AGENDADA',
+    hora_inicio: horaInicio.value || null,
+    hora_fim: horaFim.value || null,
+  }))
+  const { error } = await supabase.from('aula').insert(registros)
+  if (error) { $toast.error('Erro ao salvar aulas.'); return }
+  $toast.success(`${novasDatas.length} aula(s) cadastrada(s)!`)
+  datasManual.value = []
+  datasRecorrencia.value = []
+  horaInicio.value = ''
+  horaFim.value = ''
+  painelAberto.value = false
+  await carregarDados()
+}
+
+function solicitarDelecao(aulaId) {
+  const aula = aulas.value.find((a) => a.id === aulaId)
+  if (!aula || aula.status !== 'AGENDADA') { $toast.warning('Apenas aulas agendadas podem ser removidas.'); return }
+  aulaParaDeletar.value = aula
+  fecharModal()
+}
+
+async function confirmarDelecao() {
+  const aula = aulaParaDeletar.value
+  if (!aula) return
+  const { error } = await supabase.from('aula').delete().eq('id', aula.id)
+  if (error) { $toast.error('Erro ao remover aula.'); return }
+  aulas.value = aulas.value.filter((a) => a.id !== aula.id)
+  $toast.success('Aula removida.')
+  aulaParaDeletar.value = null
+}
 
 // ── Modal de edição ───────────────────────────────────────────────────────
 const modalEdicao = ref(null)
@@ -402,6 +600,11 @@ async function limparPersonalizacao() {
 </script>
 
 <style scoped>
+.fade-enter-active, .fade-leave-active { transition: opacity 0.25s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+.slide-enter-active, .slide-leave-active { transition: transform 0.3s ease; }
+.slide-enter-from, .slide-leave-to { transform: translateX(100%); }
+
 .jornada-scroll-area { width: 100%; box-sizing: border-box; }
 .jornada-mapa { position: relative; width: 100%; min-height: 220px; }
 .jornada-trilha-svg { position: absolute; top: 40px; left: 0; width: 100%; pointer-events: none; overflow: visible; z-index: 0; }

@@ -108,7 +108,7 @@
           <div class="space-y-2.5">
             <div class="flex items-baseline gap-2">
               <span class="text-xl font-medium text-gray-700">{{
-                aulasRealizadas.length
+                aulasComChamada.length
               }}</span>
               <span class="text-sm text-gray-400">aulas realizadas</span>
             </div>
@@ -204,7 +204,7 @@
         <!-- ── TAB: Histórico ── -->
         <div v-if="tabAtiva === 'historico'" class="p-0">
           <div
-            v-if="aulasRealizadas.length === 0"
+            v-if="aulasComChamada.length === 0"
             class="text-center py-12 text-sm text-gray-400"
           >
             Nenhuma aula realizada ainda.
@@ -220,7 +220,7 @@
                     Estudante
                   </th>
                   <th
-                    v-for="aula in aulasRealizadas"
+                    v-for="aula in aulasComChamada"
                     :key="aula.id"
                     class="text-center px-3 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide whitespace-nowrap"
                   >
@@ -236,7 +236,7 @@
                     {{ user?.nome }}
                   </td>
                   <td
-                    v-for="aula in aulasRealizadas"
+                    v-for="aula in aulasComChamada"
                     :key="aula.id"
                     class="text-center px-3 py-4"
                   >
@@ -316,15 +316,18 @@
         <!-- ── TAB: Projeção ── -->
         <div v-if="tabAtiva === 'projecao'" class="p-6 space-y-5">
           <div
-            v-if="proximasAulas.length === 0"
+            v-if="proximasAulas.length === 0 && aulasRealizadas.length === 0"
             class="text-sm text-gray-400 text-center py-6"
           >
-            Nenhuma aula agendada para simular.
+            Nenhuma aula para simular.
           </div>
 
           <div v-else class="space-y-5">
-            <p class="text-sm text-gray-400">
+            <p v-if="proximasAulas.length > 0" class="text-sm text-gray-400">
               Toque em cada aula para simular presença ou falta.
+            </p>
+            <p v-else class="text-sm text-gray-400">
+              Todas as aulas já foram realizadas.
             </p>
 
             <div v-if="aulasRealizadas.length > 0" class="space-y-2 mb-4">
@@ -339,32 +342,35 @@
                   :key="aula.id"
                   class="flex flex-col items-center px-3 py-3 rounded-xl border text-sm font-medium cursor-default"
                   :class="
-                    presencasAluno.has(aula.id) ||
-                    justificativaStatus(aula.id) === 'ACEITA'
-                      ? 'border-green-100 bg-green-50/50 text-green-400'
-                      : 'border-red-100 bg-red-50/50 text-red-400'
+                    aula.status !== 'REALIZADA'
+                      ? 'border-gray-100 bg-gray-50/50 text-gray-400'
+                      : presencasAluno.has(aula.id) || justificativaStatus(aula.id) === 'ACEITA'
+                        ? 'border-green-100 bg-green-50/50 text-green-400'
+                        : 'border-red-100 bg-red-50/50 text-red-400'
                   "
                 >
                   <span class="text-lg mb-1">{{
-                    presencasAluno.has(aula.id) ? "✓" : "✗"
+                    aula.status !== 'REALIZADA' ? '?' : presencasAluno.has(aula.id) ? "✓" : "✗"
                   }}</span>
                   <span class="text-xs font-semibold">{{
                     formatarDataCurta(aula.data)
                   }}</span>
                   <span class="text-xs mt-0.5 opacity-70">
                     {{
-                      presencasAluno.has(aula.id)
-                        ? "Presente"
-                        : justificativaStatus(aula.id) === "ACEITA"
-                          ? "Justificada"
-                          : "Falta"
+                      aula.status !== 'REALIZADA'
+                        ? "Sem chamada"
+                        : presencasAluno.has(aula.id)
+                          ? "Presente"
+                          : justificativaStatus(aula.id) === "ACEITA"
+                            ? "Justificada"
+                            : "Falta"
                     }}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div v-if="proximasAulas.length > 0" class="grid grid-cols-2 sm:grid-cols-3 gap-2" >
               <button
                 v-for="aula in proximasAulas"
                 :key="aula.id"
@@ -389,6 +395,7 @@
             </div>
 
             <div
+              v-if="proximasAulas.length > 0"
               class="rounded-xl px-5 py-4 border transition-all"
               :class="
                 projecao.frequencia >= (turma?.meta_frequencia ?? 75)
@@ -438,7 +445,7 @@
               </p>
             </div>
 
-            <div class="grid grid-cols-3 gap-3 text-center">
+            <div v-if="proximasAulas.length > 0" class="grid grid-cols-3 gap-3 text-center">
               <div class="bg-gray-50 rounded-xl p-3">
                 <p class="text-xs text-gray-400 mb-1">Aulas futuras</p>
                 <p class="font-bold text-gray-700">
@@ -505,7 +512,7 @@
               </h3>
               <p class="text-sm text-gray-500 leading-relaxed mb-5">
                 Justificar faltas está disponível a partir do
-                <strong class="text-gray-700">Nível 1 — Estudante</strong>.
+                <strong class="text-gray-700">Nível 1 de perfil</strong>.
                 Complete seu perfil para desbloquear.
               </p>
               <NuxtLink
@@ -681,16 +688,17 @@ onMounted(async () => {
 
 // ── Computeds ────────────────────────────────────────────────────
 
-const aulasRealizadas = computed(() =>
-  aulas.value.filter((a) => a.status === "REALIZADA"),
-);
-const proximasAulas = computed(() => {
-  const hoje = new Date().toISOString().split("T")[0];
-  return aulas.value.filter((a) => a.status === "AGENDADA" && a.data >= hoje);
-});
+// Aulas com chamada registrada (REALIZADA) — histórico, faltas, frequência
+const aulasComChamada = computed(() => aulas.value.filter((a) => a.status === "REALIZADA"))
+
+// Alias para o template (projeção: seção "aulas realizadas")
+const aulasRealizadas = computed(() => aulasComChamada.value)
+
+// Todas as aulas AGENDADAS (sem chamada) — botões de simulação, independente da data
+const proximasAulas = computed(() => aulas.value.filter((a) => a.status === "AGENDADA"))
 
 const freq = computed(() => {
-  const aulasIds = aulasRealizadas.value.map((a) => a.id);
+  const aulasIds = aulasComChamada.value.map((a) => a.id);
   const alunoId = user.value?.id ?? "";
   const presencasArr = [...presencasAluno.value].map((aula_id) => ({
     aluno_id: alunoId,
@@ -704,7 +712,7 @@ const freq = computed(() => {
 
 const totalFaltas = computed(
   () =>
-    aulasRealizadas.value.filter(
+    aulasComChamada.value.filter(
       (a) =>
         !presencasAluno.value.has(a.id) &&
         justificativaStatus(a.id) !== "ACEITA",

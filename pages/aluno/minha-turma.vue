@@ -98,10 +98,10 @@
             <div class="flex items-start gap-4">
               <div class="flex-1 min-w-0">
                 <p class="text-sm text-gray-700 leading-snug">
-                  Se a turma finalizar o semestre com
+                  Se
                   <strong class="text-green-700"
-                    >{{ metaFrequencia }}% de frequência</strong
-                  >, todos os estudantes ganham
+                    >{{ metaFrequencia }}% dos estudantes</strong
+                  > finalizar as quatro primeiras aulas do semestre com frequência regular, todos os estudantes ganham
                   <strong class="text-green-700"
                     >{{ RECOMPENSA_ESTRELAS }} estrelas</strong
                   >!
@@ -257,8 +257,7 @@
                 Calendário de aulas
               </h2>
               <p class="text-xs text-gray-400 mt-0.5">
-                Cada aula é uma jornada. Complete a missão e decole rumo ao
-                conhecimento!
+                Clique em qualquer aula para ver os detalhes. Complete a missão e decole rumo ao conhecimento!
               </p>
             </div>
           </div>
@@ -417,6 +416,7 @@
                     <span v-else>Bloqueada 🔒</span>
                   </span>
                 </div>
+                <div class="etapa-ver-detalhes">Ver detalhes →</div>
               </div>
             </div>
           </div>
@@ -436,7 +436,7 @@
                 Parabéns! Você completou todas as aulas da missão! 🎉
               </template>
               <template v-else>
-                Complete todas as aulas e receba a Recompensa Final! 🚀
+                Compareça em todas as aulas e receba a Recompensa Final! 🚀
               </template>
             </span>
           </p>
@@ -628,7 +628,7 @@
                     <span class="truncate">{{ aluno.curso }}</span>
                   </div>
                   <div
-                    v-if="aluno.idade && campoVisivelAluno(aluno, CAMPOS.idade)"
+                    v-if="aluno.data_nascimento && campoVisivelAluno(aluno, CAMPOS.idade)"
                     class="flex items-center gap-1.5 text-xs text-gray-500"
                   >
                     <svg
@@ -644,7 +644,7 @@
                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                       />
                     </svg>
-                    <span>{{ aluno.idade }} anos</span>
+                    <span>{{ calcularIdade(aluno.data_nascimento) }} anos</span>
                   </div>
                 </div>
 
@@ -786,8 +786,8 @@
                     }}
                     <strong class="text-gray-700">{{
                       modalBloqueadoTipo === "foto"
-                        ? "Nível 2 — Membro"
-                        : "Nível 1 — Estudante"
+                        ? "Nível 2 de perfil"
+                        : "Nível 1 de perfil"
                     }}</strong
                     >. Complete seu perfil para desbloquear.
                   </p>
@@ -944,7 +944,7 @@ const { user } = useAuth();
 const route = useRoute();
 const router = useRouter();
 const { metaFrequencia } = useConfigSistema();
-const RECOMPENSA_ESTRELAS = 5; // fixo por enquanto; substituir por config futura
+const RECOMPENSA_ESTRELAS = 20; // fixo por enquanto; substituir por config futura
 
 const loading = ref(true);
 const turma = ref(null);
@@ -961,6 +961,16 @@ const CAMPOS = Object.freeze({ nome: 1, email: 2, curso: 4, idade: 8, interesses
 
 function campoVisivelAluno(aluno, bit) {
   return ((aluno.campos_visiveis ?? 63) & bit) > 0
+}
+
+function calcularIdade(dataNasc) {
+  if (!dataNasc) return null;
+  const hoje = new Date();
+  const nasc = new Date(dataNasc);
+  let idade = hoje.getFullYear() - nasc.getFullYear();
+  const m = hoje.getMonth() - nasc.getMonth();
+  if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+  return idade;
 }
 
 const alunosAtivos = computed(() =>
@@ -1164,7 +1174,7 @@ onMounted(async () => {
       supabase
         .from("turma_aluno")
         .select(
-          "aluno_id, usuarios(id, nome, ativo, nivel_perfil, avatar_url, curso, idade, interesses, motivacao_ingles, campos_visiveis)",
+          "aluno_id, usuarios(id, nome, ativo, nivel_perfil, avatar_url, curso, data_nascimento, interesses, motivacao_ingles, campos_visiveis)",
         )
         .eq("turma_id", tId),
       supabase
@@ -1190,7 +1200,7 @@ onMounted(async () => {
     avatar_url: v.usuarios?.avatar_url ?? null,   // ← adicionado
     signedUrl: null,
     curso: v.usuarios?.curso ?? null,
-    idade: v.usuarios?.idade ?? null,
+    data_nascimento: v.usuarios?.data_nascimento ?? null,
     interesses: v.usuarios?.interesses ?? null,
     motivacoes: v.usuarios?.motivacao_ingles ?? null,
     campos_visiveis: v.usuarios?.campos_visiveis ?? 63,  // ← adicionado
@@ -1535,7 +1545,29 @@ function formatarDataCurta(dataStr) {
   min-width: 0;
   gap: 6px;
   padding: 0 4px;
+  cursor: pointer;
+  transition: transform 0.18s;
 }
+
+.jornada-etapa:hover { transform: translateY(-3px); }
+.jornada-etapa:hover .etapa-planeta { box-shadow: 0 6px 20px rgba(0,0,0,0.14) !important; }
+.jornada-etapa--bloqueada { cursor: default; }
+.jornada-etapa--bloqueada:hover { transform: none; }
+.jornada-etapa--bloqueada:hover .etapa-planeta { box-shadow: none !important; }
+
+.etapa-ver-detalhes {
+  font-size: 9px;
+  color: #6366f1;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.18s, transform 0.18s;
+  white-space: nowrap;
+}
+.jornada-etapa:hover .etapa-ver-detalhes { opacity: 1; transform: translateY(0); }
+.jornada-etapa--bloqueada .etapa-ver-detalhes,
+.jornada-etapa--concluida .etapa-ver-detalhes { color: #9ca3af; }
 
 /* Etapas ímpares descem 40px para criar o efeito de mapa de fases */
 .jornada-etapa--baixo {

@@ -426,7 +426,7 @@
               </div>
               <h3 class="text-base font-semibold text-gray-800 mb-1">Remover foto de perfil?</h3>
               <p class="text-sm text-gray-500 leading-relaxed mb-5">
-                Sua foto será removida e seu perfil voltará ao <strong class="text-gray-700">Nível 1 — Estudante</strong>. Você perderá o acesso à loja de recompensas.
+                Sua foto será removida e seu perfil voltará ao <strong class="text-gray-700">Nível 1 de perfil</strong>. Você perderá o acesso à loja de recompensas.
               </p>
               <div class="flex gap-3">
                 <button @click="modalRemoverAberto = false" class="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">
@@ -450,13 +450,14 @@
         <form @submit.prevent="submeterPerfil" class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="field-label">Nome</label>
+              <label class="field-label">Nome <span class="text-red-400">*</span></label>
               <input
                 v-model="nome"
                 type="text"
                 placeholder="Seu nome completo"
-                class="field-input"
+                :class="['field-input', tentouSalvar && !nome.trim() ? 'field-input--error' : '']"
               />
+              <p v-if="tentouSalvar && !nome.trim()" class="text-xs text-red-500 mt-1">Campo obrigatório.</p>
             </div>
             <div>
               <label class="field-label">E-mail</label>
@@ -472,44 +473,43 @@
           <!-- Campos extras — aluno e professor -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="field-label">Curso</label>
+              <label class="field-label">Curso <span class="text-red-400">*</span></label>
               <input
                 v-model="curso"
                 type="text"
                 placeholder="ex: Ciência da Computação"
-                class="field-input"
+                :class="['field-input', tentouSalvar && !curso.trim() ? 'field-input--error' : '']"
               />
+              <p v-if="tentouSalvar && !curso.trim()" class="text-xs text-red-500 mt-1">Campo obrigatório.</p>
             </div>
             <div>
-              <label class="field-label">Idade</label>
+              <label class="field-label">Data de nascimento <span class="text-red-400">*</span></label>
               <input
-                v-model="idade"
-                type="number"
-                min="16"
-                max="80"
-                placeholder="ex: 21"
-                class="field-input"
+                v-model="dataNascimento"
+                type="date"
+                :class="['field-input', tentouSalvar && !dataNascimento ? 'field-input--error' : '']"
               />
+              <p v-if="tentouSalvar && !dataNascimento" class="text-xs text-red-500 mt-1">Campo obrigatório.</p>
             </div>
           </div>
 
           <div>
-            <label class="field-label">Interesses</label>
+            <label class="field-label">Interesses <span class="text-red-400">*</span></label>
             <input
               v-model="interesses"
               type="text"
               placeholder="ex: música, viagens, programação"
-              class="field-input"
+              :class="['field-input', tentouSalvar && !interesses.trim() ? 'field-input--error' : '']"
             />
-            <p class="text-xs text-gray-400 mt-1">
-              Separe por vírgulas. Visível para colegas de turma.
-            </p>
+            <p v-if="tentouSalvar && !interesses.trim()" class="text-xs text-red-500 mt-1">Campo obrigatório.</p>
+            <p v-else class="text-xs text-gray-400 mt-1">Separe por vírgulas. Visível para colegas de turma.</p>
           </div>
 
           <div>
-            <label class="field-label">{{
-              (isAluno || isProfessor) ? "Motivação com o inglês" : "Sobre você"
-            }}</label>
+            <label class="field-label">
+              {{ (isAluno || isProfessor) ? "Motivação com o inglês" : "Sobre você" }}
+              <span class="text-red-400">*</span>
+            </label>
             <textarea
               v-model="motivacao"
               rows="2"
@@ -518,8 +518,9 @@
                   ? 'Por que você quer aprender inglês?'
                   : 'Conte um pouco sobre você para os alunos.'
               "
-              class="field-input resize-none"
+              :class="['field-input resize-none', tentouSalvar && !motivacao.trim() ? 'field-input--error' : '']"
             />
+            <p v-if="tentouSalvar && !motivacao.trim()" class="text-xs text-red-500 mt-1">Campo obrigatório.</p>
           </div>
 
           <div class="flex items-center justify-between gap-3 pt-1 flex-wrap">
@@ -558,7 +559,7 @@
               </Transition>
               <button
                 type="submit"
-                :disabled="salvando || !nome"
+                :disabled="salvando"
                 class="btn-primary"
               >
                 <div
@@ -581,7 +582,7 @@
                   👀 Quem pode ver suas informações?
                 </h3>
                 <p class="text-sm text-gray-500 leading-relaxed">
-                  Essas informações ficam visíveis para os colegas da sua turma. Escolha o que você quer compartilhar — isso não afeta sua gamificação.
+                  Essas informações ficam visíveis para os colegas da sua turma. Escolha o que você quer compartilhar. Isso não afeta sua gamificação.
                 </p>
               </div>
 
@@ -732,21 +733,36 @@ const { $toast } = useNuxtApp();
 // ─── Estado base ────────────────────────────────────────────────
 const loading = ref(true);
 const salvando = ref(false);
+const turmaAtualId = ref(null)
 const perfilSalvo = ref(false);
 
 const nome = ref("");
 const email = ref("");
 const curso = ref("");
-const idade = ref("");
+const dataNascimento = ref("");
 const interesses = ref("");
 const motivacao = ref("");
+
+const idadeCalculada = computed(() => {
+  if (!dataNascimento.value) return null;
+  const hoje = new Date();
+  const nasc = new Date(dataNascimento.value);
+  let idade = hoje.getFullYear() - nasc.getFullYear();
+  const m = hoje.getMonth() - nasc.getMonth();
+  if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+  return idade;
+});
+
+const tentouSalvar = ref(false);
+const camposObrigatoriosOk = computed(() =>
+  !!nome.value.trim() && !!curso.value.trim() && !!dataNascimento.value && !!interesses.value.trim() && !!motivacao.value.trim()
+);
 
 // ─── Visibilidade de campos (bitmask) ───────────────────────────
 // Nome=1 Email=2 Curso=4 Idade=8 Interesses=16 Motivação=32
 const CAMPOS = Object.freeze({ nome: 1, email: 2, curso: 4, idade: 8, interesses: 16, motivacao: 32 })
 const CAMPOS_CONFIG = [
   { key: 'nome',       label: 'Nome',              bit: CAMPOS.nome,       fixo: true  },
-  { key: 'email',      label: 'E-mail',             bit: CAMPOS.email,      fixo: false },
   { key: 'curso',      label: 'Curso',     bit: CAMPOS.curso,      fixo: false },
   { key: 'idade',      label: 'Idade',              bit: CAMPOS.idade,      fixo: false },
   { key: 'interesses', label: 'Interesses',         bit: CAMPOS.interesses, fixo: false },
@@ -802,6 +818,24 @@ const AVATAR_OPTIONS = [
   { emoji: '🎯', label: 'Alvo' },
   { emoji: '🎸', label: 'Guitarra' },
   { emoji: '🌊', label: 'Onda' },
+  { emoji: '💻', label: 'Computador' },
+  { emoji: '🤖', label: 'Robô' },
+  { emoji: '⚙️', label: 'Engrenagem' },
+  { emoji: '🔧', label: 'Chave inglesa' },
+  { emoji: '⚡', label: 'Raio' },
+  { emoji: '🔌', label: 'Tomada' },
+  { emoji: '🏗️', label: 'Construção' },
+  { emoji: '🏭', label: 'Fábrica' },
+  { emoji: '⚛️', label: 'Átomo' },
+  { emoji: '🔭', label: 'Telescópio' },
+  { emoji: '🧲', label: 'Ímã' },
+  { emoji: '🧪', label: 'Tubo de ensaio' },
+  { emoji: '⚗️', label: 'Alambique' },
+  { emoji: '🧬', label: 'DNA' },
+  { emoji: '📐', label: 'Esquadro' },
+  { emoji: '🔬', label: 'Microscópio' },
+  { emoji: '⚽', label: 'Futebol' },
+  { emoji: '🏀', label: 'Basquete' },
 ];
 
 // Funcionalidades por nível — fonte única de verdade
@@ -810,14 +844,15 @@ const FUNCIONALIDADES_POR_NIVEL = {
     { id: 'presenca',   label: 'Visualizar minha presença' },
     { id: 'turma',      label: 'Visualizar minha turma' },
     { id: 'atividades', label: 'Minhas atividades' },
+    { id: 'estrelas',     label: 'Acúmulo de estrelas ⭐' },
   ],
   1: [
     { id: 'presenca',     label: 'Visualizar minha presença' },
     { id: 'turma',        label: 'Visualizar minha turma' },
     { id: 'atividades',   label: 'Minhas atividades' },
+    { id: 'estrelas',     label: 'Acúmulo de estrelas ⭐' },
     { id: 'mural',        label: 'Colegas da Turma' },
     { id: 'justificativa', label: 'Justificativa de falta' },
-    { id: 'estrelas',     label: 'Acúmulo de estrelas ⭐' },
   ],
   2: [
     { id: 'presenca',     label: 'Visualizar minha presença' },
@@ -827,7 +862,7 @@ const FUNCIONALIDADES_POR_NIVEL = {
     { id: 'justificativa', label: 'Justificativa de falta' },
     { id: 'estrelas',     label: 'Acúmulo de estrelas ⭐' },
     { id: 'loja',         label: 'Loja de recompensas 🎁' },
-    { id: 'foto',         label: 'Foto de perfil no mural' },
+    { id: 'foto',         label: 'Foto de perfil na página de colegas da turma' },
   ],
 }
 
@@ -915,7 +950,7 @@ async function selecionarAvatarEmoji(op) {
     const payload = { avatar_url: op.emoji };
     const novoNivel = calcularNivel({
       curso: curso.value,
-      idade: idade.value,
+      data_nascimento: dataNascimento.value,
       interesses: interesses.value,
       motivacao_ingles: motivacao.value,
       avatar_url: op.emoji,
@@ -944,8 +979,9 @@ async function selecionarAvatarEmoji(op) {
         quantidade: 10,
         motivo: 'PERFIL_N2',
         descricao: 'Adicionou avatar de perfil',
+        turma_id: turmaAtualId.value,
       }).then(() => {})
-      $toast.success('+10 ⭐ por adicionar um avatar!');
+      $toast.success('Perfil nível 2 completo! Avatar adicionado. +10 ⭐');
     }
 
     if (payload.nivel_perfil && payload.nivel_perfil > nivelAtual.value) {
@@ -1017,7 +1053,7 @@ async function salvarAvatar() {
     if (isAluno.value || isProfessor.value) {
       const novoNivel = calcularNivel({
         curso: curso.value,
-        idade: idade.value,
+        data_nascimento: dataNascimento.value,
         interesses: interesses.value,
         motivacao_ingles: motivacao.value,
         avatar_url: path,
@@ -1048,8 +1084,9 @@ async function salvarAvatar() {
         quantidade: 10,
         motivo: 'PERFIL_N2',
         descricao: 'Adicionou foto de perfil',
+        turma_id: turmaAtualId.value,
       }).then(() => {})
-      $toast.success('+10 ⭐ por adicionar foto de perfil!');
+      $toast.success('Perfil nível 2 completo! Foto adicionada. +10 ⭐');
     }
 
     if (payload.nivel_perfil && payload.nivel_perfil > nivelAtual.value) {
@@ -1080,7 +1117,7 @@ const nivelAtual = ref(0);
 const estrelas = ref(0);
 
 const nivelNome = computed(
-  () => ["Visitante", "Estudante", "Membro"][nivelAtual.value],
+  () => ["Nível 0", "Nível 1", "Nível 2"][nivelAtual.value],
 );
 const nivelDescricaoAtual = computed(() => [
   "Você está começando sua jornada. Preencha seu perfil para desbloquear mais funcionalidades.",
@@ -1088,7 +1125,7 @@ const nivelDescricaoAtual = computed(() => [
   "Perfil completo. Todas as funcionalidades estão disponíveis para você.",
 ][nivelAtual.value] ?? "");
 const proximoNivelNome = computed(
-  () => ["Estudante", "Membro"][nivelAtual.value] ?? "",
+  () => ["Nível 1", "Nível 2"][nivelAtual.value] ?? "",
 );
 const proximoNivelEmoji = computed(
   () => ["🚀", "⭐"][nivelAtual.value] ?? "",
@@ -1099,7 +1136,7 @@ const requisitosProximoNivel = computed(() => {
   if (nivelAtual.value === 0)
     return [
       { id: "curso", label: "Preencher curso", estrelas: 2, ok: !!curso.value },
-      { id: "idade", label: "Preencher idade", estrelas: 2, ok: !!idade.value },
+      { id: "data_nascimento", label: "Preencher data de nascimento", estrelas: 2, ok: !!dataNascimento.value },
       {
         id: "interesses",
         label: "Preencher interesses",
@@ -1127,7 +1164,7 @@ const requisitosProximoNivel = computed(() => {
 
 function calcularNivel(dados) {
   if (dados.avatar_url) return 2;
-  if (dados.curso && dados.idade && dados.interesses && dados.motivacao_ingles)
+  if (dados.curso && dados.data_nascimento && dados.interesses && dados.motivacao_ingles)
     return 1;
   return 0;
 }
@@ -1138,7 +1175,7 @@ const levelupNome = ref("");
 const levelupDesc = ref("");
 
 function dispararLevelUp(novoNivel) {
-  const nomes = ["Visitante", "Estudante", "Membro"];
+  const nomes = ["Nível 0", "Nível 1", "Nível 2"];
   const descs = [
     "",
     "Agora você aparece nos Colegas da Turma e acumula estrelas.",
@@ -1205,7 +1242,7 @@ onMounted(async () => {
 
   const { data, error } = await supabase
     .from("usuarios")
-    .select("nome, curso, idade, interesses, motivacao_ingles, estrelas, avatar_bonus_concedido, campos_visiveis, perfil_bonus_concedido")
+    .select("nome, curso, data_nascimento, interesses, motivacao_ingles, estrelas, avatar_bonus_concedido, campos_visiveis, perfil_bonus_concedido")
     .eq("id", user.value.id)
     .single();
 
@@ -1218,7 +1255,7 @@ onMounted(async () => {
   nome.value = data.nome ?? "";
   email.value = user.value.email;
   curso.value = data.curso ?? "";
-  idade.value = data.idade ?? "";
+  dataNascimento.value = data.data_nascimento ?? "";
   interesses.value = data.interesses ?? "";
   motivacao.value = data.motivacao_ingles ?? "";
   estrelas.value = data.estrelas ?? 0;
@@ -1233,6 +1270,28 @@ onMounted(async () => {
     primeiroSave.value = nivelAtual.value === 0;
   }
 
+  // Buscar turma ativa para salvar turma_id no histórico de estrelas
+  if (isAluno.value) {
+    const { data: mat } = await supabase
+      .from('turma_aluno')
+      .select('turma_id, turma:turma_id(status)')
+      .eq('aluno_id', user.value.id)
+      .eq('turma.status', 'ATIVA')
+      .limit(1)
+      .maybeSingle()
+    if (mat?.turma?.status === 'ATIVA') turmaAtualId.value = mat.turma_id
+  } else if (isProfessor.value) {
+    const { data: turma } = await supabase
+      .from('turma')
+      .select('id')
+      .eq('professor_id', user.value.id)
+      .eq('status', 'ATIVA')
+      .order('dt_inclusao', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (turma) turmaAtualId.value = turma.id
+  }
+
   loading.value = false;
 });
 
@@ -1242,7 +1301,8 @@ onMounted(async () => {
 // No primeiro save (nivelPerfil === 0) abre o modal de visibilidade antes
 // de persistir; nas edições seguintes salva direto com a visibilidade atual.
 function submeterPerfil() {
-  if (!nome.value) return;
+  tentouSalvar.value = true;
+  if (!camposObrigatoriosOk.value) return;
   if ((isAluno.value || isProfessor.value) && primeiroSave.value) {
     modalVisibilidadeAberto.value = true;
   } else {
@@ -1251,7 +1311,7 @@ function submeterPerfil() {
 }
 
 async function salvarPerfil() {
-  if (!nome.value) return;
+  if (!camposObrigatoriosOk.value) return;
   modalVisibilidadeAberto.value = false;
   salvando.value = true;
 
@@ -1259,7 +1319,7 @@ async function salvarPerfil() {
     const payload = {
       nome: nome.value.trim(),
       curso: curso.value.trim() || null,
-      idade: idade.value || null,
+      data_nascimento: dataNascimento.value || null,
       interesses: interesses.value.trim() || null,
       motivacao_ingles: motivacao.value.trim() || null,
       campos_visiveis: camposVisiveis.value,
@@ -1269,7 +1329,7 @@ async function salvarPerfil() {
     if (isAluno.value || isProfessor.value) {
       const dadosParaNivel = {
         curso: payload.curso,
-        idade: payload.idade,
+        data_nascimento: payload.data_nascimento,
         interesses: payload.interesses,
         motivacao_ingles: payload.motivacao_ingles,
         avatar_url: avatarPreview.value,
@@ -1304,8 +1364,9 @@ async function salvarPerfil() {
         quantidade: 10,
         motivo: 'PERFIL_N1',
         descricao: 'Completou as informações básicas do perfil',
+        turma_id: turmaAtualId.value,
       }).then(() => {})
-      $toast.success('+10 ⭐ por preencher seu perfil!');
+      $toast.success('Perfil nível 1 completo! Informações básicas preenchidas. +10 ⭐');
     }
 
     // Verificar se subiu de nível
@@ -1398,6 +1459,13 @@ async function alterarSenhaUsuario() {
   color: #9ca3af;
   background: #f9fafb;
   cursor: not-allowed;
+}
+.field-input--error {
+  border-color: #f87171;
+}
+.field-input--error:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
 }
 textarea.field-input {
   height: auto;

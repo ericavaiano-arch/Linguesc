@@ -24,20 +24,46 @@
       </button>
     </div>
 
-    <!-- Filtro de professor (admin apenas) -->
-    <div v-if="isAdmin" class="mb-8 flex items-center gap-3">
-      <label class="text-sm font-medium text-gray-600"
-        >Filtrar por professor:</label
-      >
-      <select
-        v-model="professorFiltro"
-        class="border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
-      >
-        <option value="">Todos os professores</option>
-        <option v-for="prof in professores" :key="prof.id" :value="prof.id">
-          {{ prof.nome }}
-        </option>
-      </select>
+    <!-- Filtros -->
+    <div v-if="isAdmin" class="mb-8 flex flex-wrap items-center gap-3">
+      <!-- Filtro de semestre -->
+      <div class="flex items-center gap-2">
+        <label class="text-sm font-medium text-gray-600">Semestre:</label>
+        <select
+          v-model="filtroSemestre"
+          class="border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+        >
+          <option value="">Todos</option>
+          <option v-for="s in semestresDisponiveis" :key="s" :value="s">{{ s }}</option>
+        </select>
+      </div>
+
+      <!-- Filtro de status (admin apenas) -->
+      <div v-if="isAdmin" class="flex items-center gap-2">
+        <label class="text-sm font-medium text-gray-600">Status:</label>
+        <select
+          v-model="filtroStatus"
+          class="border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+        >
+          <option value="ATIVA">Ativa</option>
+          <option value="FINALIZADA">Finalizada</option>
+          <option value="">Todas</option>
+        </select>
+      </div>
+
+      <!-- Filtro de professor (admin apenas) -->
+      <div v-if="isAdmin" class="flex items-center gap-2">
+        <label class="text-sm font-medium text-gray-600">Professor:</label>
+        <select
+          v-model="professorFiltro"
+          class="border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+        >
+          <option value="">Todos</option>
+          <option v-for="prof in professores" :key="prof.id" :value="prof.id">
+            {{ prof.nome }}
+          </option>
+        </select>
+      </div>
     </div>
 
     <div v-if="loading" class="flex items-center gap-3 text-green-700">
@@ -135,7 +161,7 @@
                 </button>
                 <div class="bg-gray-100 self-stretch"></div>
                 <button
-                  @click.stop="navegar(`/turmas/${turma.id}/aulas`)"
+                  @click.stop="navegar(`/turmas/${turma.id}/calendario`)"
                   class="flex flex-col items-center justify-center gap-1 py-2.5 text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition"
                 >
                   <span class="text-base leading-none">📅</span>
@@ -502,6 +528,23 @@
 
           <div>
             <label class="text-sm font-medium text-gray-700 mb-2 block">
+              Nível da Turma
+              <span class="text-gray-400 font-normal">(opcional)</span>
+            </label>
+            <select
+              v-model="edicaoNivel"
+              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition bg-white"
+            >
+              <option value="">Não definido</option>
+              <option value="INICIANTE">Iniciante</option>
+              <option value="BASICO">Básico</option>
+              <option value="INTERMEDIARIO">Intermediário</option>
+              <option value="CONVERSACAO">Conversação</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-gray-700 mb-2 block">
               Descrição
               <span class="text-gray-400 font-normal">(opcional)</span>
             </label>
@@ -693,6 +736,7 @@ const edicaoIdentificador = ref("");
 const edicaoAno = ref(new Date().getFullYear());
 const edicaoSemestre = ref(new Date().getMonth() < 6 ? "01" : "02");
 const edicaoSala = ref("");
+const edicaoNivel = ref("");
 const professorSelecionadoCriacao = ref("");
 const professorFiltro = ref("");
 
@@ -715,16 +759,45 @@ const nomeGerado = computed(() =>
     : "",
 );
 
+const filtroSemestre = ref("");
+const filtroStatus = ref("ATIVA");
+
+const semestresDisponiveis = computed(() => {
+  const semestres = new Set();
+  turmas.value.forEach((t) => {
+    const match = t.nome.match(/(\d{4}\/\d{2})$/);
+    if (match) semestres.add(match[1]);
+  });
+  return [...semestres].sort((a, b) => b.localeCompare(a));
+});
+
+watch(semestresDisponiveis, (val) => {
+  if (val.length > 0 && !filtroSemestre.value) {
+    filtroSemestre.value = val[0];
+  }
+}, { immediate: true });
+
+const turmasFiltradas = computed(() => {
+  return turmas.value.filter((t) => {
+    const matchSemestre =
+      !filtroSemestre.value ||
+      t.nome.endsWith(filtroSemestre.value);
+    const matchStatus =
+      !filtroStatus.value || t.status === filtroStatus.value;
+    return matchSemestre && matchStatus;
+  });
+});
+
 const turmasAtivas = computed(() =>
-  turmas.value.filter((t) => t.status !== "FINALIZADA"),
+  turmasFiltradas.value.filter((t) => t.status !== "FINALIZADA"),
 );
 const turmasFinalizadas = computed(() =>
-  turmas.value.filter((t) => t.status === "FINALIZADA"),
+  turmasFiltradas.value.filter((t) => t.status === "FINALIZADA"),
 );
 
 const grupos = computed(() => {
   const mapa = {};
-  for (const turma of turmas.value) {
+  for (const turma of turmasFiltradas.value) {
     const pid = turma.professor_id;
     if (!mapa[pid]) {
       mapa[pid] = {
@@ -838,9 +911,10 @@ async function carregarTurmas() {
 async function carregarProfessores() {
   const { data } = await supabase
     .from("usuario_papel")
-    .select("usuarios(id, nome)")
+    .select("usuarios!inner(id, nome)")
     .eq("papel", "PROFESSOR")
     .eq("ativo", true)
+    .eq("usuarios.ativo", true)
     .order("usuarios(nome)", { ascending: true });
 
   professores.value = data?.map((d) => d.usuarios).filter(Boolean) || [];
@@ -908,6 +982,7 @@ async function abrirCriacao() {
   edicaoAno.value = new Date().getFullYear();
   edicaoSemestre.value = new Date().getMonth() < 6 ? "01" : "02";
   edicaoSala.value = "";
+  edicaoNivel.value = "";
   edicaoAlunos.value = [];
   edicaoDescricao.value = "";
   alunosOriginais.value = [];
@@ -934,6 +1009,7 @@ async function abrirEdicao(turma) {
   edicaoAno.value = Number(ano) || new Date().getFullYear();
   edicaoSemestre.value = sem || "01";
   edicaoSala.value = turma.sala ?? "";
+  edicaoNivel.value = turma.nivel ?? "";
   edicaoDescricao.value = turma.descricao ?? "";
 
   const [{ data: vinculos }, { data: todos }] = await Promise.all([
@@ -1021,6 +1097,7 @@ async function salvarCriacao() {
         nome: nomeTrimmed,
         professor_id: professorId,
         sala: edicaoSala.value.trim() || null,
+        nivel: edicaoNivel.value || null,
         descricao: edicaoDescricao.value.trim() || null,
       },
     ])
@@ -1063,6 +1140,7 @@ async function salvarEdicao() {
   if (
     nomeTrimmed !== turmaSelecionada.value.nome ||
     edicaoSala.value.trim() !== (turmaSelecionada.value.sala ?? "") ||
+    edicaoNivel.value !== (turmaSelecionada.value.nivel ?? "") ||
     edicaoDescricao.value.trim() !== (turmaSelecionada.value.descricao ?? "")
   ) {
     promessas.push(
@@ -1071,6 +1149,7 @@ async function salvarEdicao() {
         .update({
           nome: nomeTrimmed,
           sala: edicaoSala.value.trim() || null,
+          nivel: edicaoNivel.value || null,
           descricao: edicaoDescricao.value.trim() || null,
         })
         .eq("id", turmaId),

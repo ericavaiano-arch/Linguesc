@@ -32,7 +32,7 @@ onMounted(async () => {
   const turma = ativa ?? data?.[0]
   if (turma?.turma_id) {
     turmaId.value = turma.turma_id
-    navigateTo(`/turmas/${turma.turma_id}/aulas`)
+    navigateTo(`/aluno/minha-turma`)
   } else {
     loading.value = false
   }

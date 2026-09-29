@@ -6,18 +6,22 @@
       class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 p-8"
     >
       <div class="text-center mb-8">
-        <div class="text-4xl mb-3 justify-center">
-          <div class="text-4xl mb-3 flex justify-center">
-            <img
-              src="~/assets/images/logo_linguesc.png"
-              alt="Linguesc"
-              class="h-32"
-            />
-          </div>
-          <h1 class="text-xl sm:text-2xl font-bold text-gray-800 leading-snug">
-            Sistema de Acompanhamento Educacional
-          </h1>
+        <div class="flex justify-center items-center gap-5 mb-5">
+          <img
+            src="~/assets/images/logo_linguesc.png"
+            alt="Linguesc"
+            class="h-16 w-auto"
+          />
+          <div class="w-px h-10 bg-gray-200 rounded-full"></div>
+          <img
+            src="~/assets/images/logo_udesc.png"
+            alt="UDESC Joinville"
+            class="h-12 w-auto"
+          />
         </div>
+        <h1 class="text-xl font-extrabold text-gray-900 tracking-tight leading-snug">
+          Sistema de Acompanhamento Educacional
+        </h1>
       </div>
 
       <form @submit.prevent="verificarUsuario" class="space-y-5">
@@ -78,7 +82,7 @@
         </div>
       </form>
 
-      <div class="mt-8 text-center text-sm">
+      <!-- <div class="mt-8 text-center text-sm">
         <p class="text-gray-600">Ainda não tem cadastro?</p>
         <button
           @click="$router.push('/register')"
@@ -87,7 +91,7 @@
         >
           Criar conta
         </button>
-      </div>
+      </div> -->
 
       <!-- Modal: Esqueci a senha -->
       <div
@@ -201,7 +205,7 @@ async function verificarUsuario() {
     }
 
     if (bonusLoginPendente.value) {
-      $toast.success('+5 ⭐ bônus por fazer login essa semana!')
+      $toast.success('Bom ter você aqui! +5 ⭐ por fazer login esta semana')
       bonusLoginPendente.value = false
     }
 

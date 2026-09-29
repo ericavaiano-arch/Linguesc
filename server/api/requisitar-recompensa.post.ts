@@ -17,15 +17,26 @@ export default defineEventHandler(async (event) => {
   ])
   const alunoEmail = authUserData?.user?.email ?? '—'
 
-  // Turma(s) ativas do aluno + professor
+  // Turma(s) ativas — tenta aluno primeiro, depois professor
   const { data: matriculas } = await supabaseAdmin
     .from('turma_aluno')
     .select('turma:turma_id(id, nome, professor_id, status)')
     .eq('aluno_id', aluno_id)
 
-  const turmas = (matriculas ?? [])
+  let turmas = (matriculas ?? [])
     .map((m: any) => m.turma)
     .filter((t: any) => t && t.status === 'ATIVA')
+
+  // Se não for aluno de nenhuma turma ativa, verifica se é professor
+  if (turmas.length === 0) {
+    const { data: turmasProf } = await supabaseAdmin
+      .from('turma')
+      .select('id, nome, professor_id, status')
+      .eq('professor_id', aluno_id)
+      .eq('status', 'ATIVA')
+      .order('dt_inclusao', { ascending: false })
+    if (turmasProf && turmasProf.length > 0) turmas = turmasProf
+  }
 
   let professorNome = '—'
   if (turmas.length > 0 && turmas[0]?.professor_id) {
@@ -51,6 +62,16 @@ export default defineEventHandler(async (event) => {
       pass: process.env.BREVO_SMTP_PASS!,
     },
   })
+
+  const turmaId = turmas.length > 0 ? turmas[0].id : null
+
+  // Registrar requisição no banco (ignora se já existir para a mesma turma)
+  await supabaseAdmin
+    .from('recompensa_requisicao')
+    .upsert(
+      { usuario_id: aluno_id, nivel: recompensa.nivel, turma_id: turmaId },
+      { onConflict: 'usuario_id,nivel,turma_id', ignoreDuplicates: true }
+    )
 
   await transporter.sendMail({
     from: `"Linguesc" <${process.env.BREVO_SENDER_EMAIL}>`,
