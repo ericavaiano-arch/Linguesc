@@ -123,6 +123,28 @@
                 />
               </div>
               <div>
+                <label class="text-sm font-medium text-gray-700 mb-1.5 block">Gênero</label>
+                <select
+                  v-model="cadGenero"
+                  required
+                  class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition bg-white"
+                >
+                  <option value="">Selecione...</option>
+                  <option value="Feminino">Feminino</option>
+                  <option value="Masculino">Masculino</option>
+                  <option value="Prefiro não informar">Prefiro não informar</option>
+                  <option value="Outro">Outro</option>
+                </select>
+                <input
+                  v-if="cadGenero === 'Outro'"
+                  v-model="cadGeneroOutro"
+                  type="text"
+                  maxlength="60"
+                  placeholder="Como você se identifica?"
+                  class="mt-2 w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+                />
+              </div>
+              <div>
                 <label class="text-sm font-medium text-gray-700 mb-1.5 block">Senha</label>
                 <input
                   v-model="cadSenha"
@@ -418,6 +440,14 @@
           </div>
           <p class="text-xs text-gray-400">Em caso de dúvidas, entre em contato em:</p>
           <p class="text-xs text-gray-700"> linguesc.cct@udesc.br ou udescinteragir@gmail.com</p>
+          <div v-if="inscricaoExistente" class="mt-6 pt-5 border-t border-gray-100">
+            <button
+              @click="() => { modoTrocarTurma = false; passo = 'turma' }"
+              class="text-sm text-green-600 hover:text-green-700 underline underline-offset-2"
+            >
+              ← Voltar e editar minha pré-inscrição
+            </button>
+          </div>
         </div>
       </div>
     </Transition>
@@ -506,6 +536,8 @@ const cadNome = ref('')
 const cadEmail = ref('')
 const cadCpf = ref('')
 const cadDataNasc = ref('')
+const cadGenero = ref('')
+const cadGeneroOutro = ref('')
 const cadSenha = ref('')
 
 // Nível
@@ -582,6 +614,7 @@ async function fazerCadastro() {
         senha: cadSenha.value,
         data_nascimento: cadDataNasc.value,
         documento_federal: cadCpf.value.replace(/\D/g, ''),
+        genero: cadGenero.value === 'Outro' ? (cadGeneroOutro.value.trim() || 'Outro') : cadGenero.value,
       },
     })
   } catch (err) {

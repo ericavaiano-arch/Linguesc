@@ -362,9 +362,13 @@
           </div>
 
           <!-- Dados do perfil -->
-          <div v-if="detalhesExtra && (detalhesExtra.curso || detalhesExtra.idade || detalhesExtra.data_nascimento)">
+          <div v-if="detalhesExtra && (detalhesExtra.curso || detalhesExtra.idade || detalhesExtra.data_nascimento || detalhesExtra.genero)">
             <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Perfil</p>
             <div class="space-y-2 text-sm">
+              <div v-if="detalhesExtra.genero" class="flex justify-between py-1 border-b border-gray-100">
+                <span class="text-gray-500">Gênero</span>
+                <span class="text-gray-700">{{ detalhesExtra.genero }}</span>
+              </div>
               <div v-if="detalhesExtra.curso" class="flex justify-between py-1 border-b border-gray-100">
                 <span class="text-gray-500">Curso</span>
                 <span class="text-gray-700">{{ detalhesExtra.curso }}</span>
@@ -741,7 +745,7 @@ async function abrirDetalhes(usuario) {
 
   const [{ data: extra }, { data: turmasAluno }, { data: turmasProf }] = await Promise.all([
     supabase.from('usuarios')
-      .select('estrelas, nivel_perfil, bonus_sequencia_semestre, ultimo_bonus_login_semana, avatar_bonus_concedido, perfil_bonus_concedido, documento_federal, curso, idade, data_nascimento')
+      .select('estrelas, nivel_perfil, bonus_sequencia_semestre, ultimo_bonus_login_semana, avatar_bonus_concedido, perfil_bonus_concedido, documento_federal, curso, idade, data_nascimento, genero')
       .eq('id', usuario.id)
       .single(),
     supabase.from('turma_aluno')

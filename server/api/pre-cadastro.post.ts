@@ -1,9 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 
 export default defineEventHandler(async (event) => {
-  const { nome, email, senha, data_nascimento, documento_federal } = await readBody(event)
+  const { nome, email, senha, data_nascimento, documento_federal, genero } = await readBody(event)
 
-  if (!nome || !email || !senha || !data_nascimento || !documento_federal) {
+  if (!nome || !email || !senha || !data_nascimento || !documento_federal || !genero) {
     throw createError({ statusCode: 400, message: 'Todos os campos são obrigatórios.' })
   }
   if (senha.length < 8) {
@@ -38,6 +38,7 @@ export default defineEventHandler(async (event) => {
     ativo: false,
     data_nascimento,
     documento_federal: documento_federal.trim(),
+    genero: genero.trim() || null,
     nivel_perfil: 0,
     estrelas: 0,
     bonus_sequencia_semestre: false,
