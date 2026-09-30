@@ -440,7 +440,7 @@
           </div>
           <p class="text-xs text-gray-400">Em caso de dúvidas, entre em contato em:</p>
           <p class="text-xs text-gray-700"> linguesc.cct@udesc.br ou udescinteragir@gmail.com</p>
-          <div v-if="inscricaoExistente" class="mt-6 pt-5 border-t border-gray-100">
+          <div class="mt-6 pt-5 border-t border-gray-100">
             <button
               @click="() => { modoTrocarTurma = false; passo = 'turma' }"
               class="text-sm text-green-600 hover:text-green-700 underline underline-offset-2"
