@@ -1,6 +1,6 @@
-# Linguesc – Plataforma de Apoio ao Engajamento Acadêmico
+# Linguesc – Sistema de Apoio ao Engajamento Acadêmico
 
-O **Linguesc** é uma plataforma digital desenvolvida no contexto de um projeto de pesquisa de mestrado, com foco no **engajamento e na motivação de estudantes universitários** em um curso presencial de língua inglesa, por meio de **estratégias de gamificação de longo prazo**.
+O **Linguesc** é um sistema digital desenvolvida no contexto de um projeto de pesquisa de mestrado, com foco no **engajamento e na motivação de estudantes universitários** em um curso presencial de língua inglesa, por meio de **estratégias de gamificação de longo prazo**.
 
 O sistema oferece acompanhamento contínuo do desempenho acadêmico, feedback automático e visualizações de progresso, apoiando alunos e professores ao longo do semestre.
 

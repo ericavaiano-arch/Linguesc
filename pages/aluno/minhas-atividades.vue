@@ -103,10 +103,25 @@
           </div>
 
           <div class="p-5 space-y-4">
+            <!-- Aviso modo anônimo -->
+            <div v-if="itemSelecionado.conteudo_json?.anonimo" class="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 flex items-start gap-2.5">
+              <span class="text-blue-400 text-base mt-0.5">🔒</span>
+              <div>
+                <p class="text-xs font-bold text-blue-700 mb-0.5">Esta missão é anônima</p>
+                <p class="text-xs text-blue-600 leading-relaxed">O professor <strong>não terá acesso</strong> a quem respondeu. Fique à vontade para ser sincero(a) — sua identidade não será revelada.</p>
+              </div>
+            </div>
+
             <!-- Pergunta -->
             <div v-if="itemSelecionado.conteudo_json?.pergunta" class="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
               <p class="text-xs font-semibold text-amber-700 mb-1">🎯 Pergunta</p>
               <p class="text-sm text-gray-800 leading-relaxed">{{ itemSelecionado.conteudo_json.pergunta }}</p>
+            </div>
+
+            <!-- Descrição / informações adicionais -->
+            <div v-if="itemSelecionado.descricao" class="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+              <p class="text-xs font-semibold text-gray-500 mb-1">📋 Informações adicionais</p>
+              <p class="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{{ itemSelecionado.descricao }}</p>
             </div>
 
             <!-- Prazo -->
@@ -233,6 +248,11 @@
             </div>
           </div>
           <div class="px-6 py-5 space-y-4">
+            <!-- Aviso anônimo no modal -->
+            <div v-if="missaoAtual?.conteudo_json?.anonimo" class="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
+              <span class="text-blue-400 text-sm">🔒</span>
+              <p class="text-xs text-blue-600"><strong>Missão anônima</strong> — sua identidade não será revelada ao professor.</p>
+            </div>
             <p class="text-sm text-gray-700 whitespace-pre-line">{{ missaoAtual?.conteudo_json?.pergunta }}</p>
             <!-- Múltipla escolha -->
             <div v-if="missaoAtual?.conteudo_json?.formato === 'multipla_escolha'" class="space-y-2">
@@ -308,8 +328,10 @@
               </div>
               <div v-else class="space-y-2">
                 <div v-if="respostasTexto.length === 0" class="text-center text-sm text-gray-400 py-4">Nenhuma resposta ainda.</div>
-                <div v-for="r in respostasTexto" :key="r.aluno_id" class="bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5">
-                  <p class="text-xs font-semibold text-gray-500 mb-1">{{ r.nome }}</p>
+                <div v-for="(r, idx) in respostasTexto" :key="r.aluno_id" class="bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5">
+                  <p class="text-xs font-semibold text-gray-500 mb-1">
+                    {{ missaoResultado?.conteudo_json?.anonimo ? `Participante ${idx + 1}` : r.nome }}
+                  </p>
                   <p class="text-sm text-gray-700 whitespace-pre-line">{{ r.resposta_texto }}</p>
                 </div>
               </div>
@@ -606,6 +628,7 @@ async function carregarAtividades() {
       id: a.id,
       titulo: a.titulo,
       status: a.status,
+      descricao: a.descricao ?? null,
       data_final: a.data_final ?? null,
       turmaId: a.turma_id,
       turmaNome: mapaTurmas[a.turma_id] ?? '',

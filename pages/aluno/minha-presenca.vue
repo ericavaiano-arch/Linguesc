@@ -241,7 +241,13 @@
                     class="text-center px-3 py-4"
                   >
                     <span
-                      v-if="presencasAluno.has(aula.id)"
+                      v-if="presencasAluno.has(aula.id) && destaquesAluno.has(aula.id)"
+                      class="inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold bg-amber-100 text-amber-600 ring-2 ring-amber-300"
+                      title="Presente · Destaque da aula ✨"
+                      >⭐</span
+                    >
+                    <span
+                      v-else-if="presencasAluno.has(aula.id)"
                       class="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold bg-green-100 text-green-700"
                       >✓</span
                     >
@@ -282,6 +288,13 @@
           <div
             class="px-6 py-3 border-t border-gray-50 flex items-center flex-wrap gap-4 text-xs text-gray-400"
           >
+            <span class="flex items-center gap-1.5"
+              ><span
+                class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-100 text-amber-600 font-bold text-sm ring-2 ring-amber-300"
+                >⭐</span
+              >
+              Presente · Destaque</span
+            >
             <span class="flex items-center gap-1.5"
               ><span
                 class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 text-green-700 font-bold text-xs"
@@ -617,6 +630,7 @@ const loading = ref(true);
 const turma = ref(null);
 const aulas = ref([]);
 const presencasAluno = ref(new Set());
+const destaquesAluno = ref(new Set()); // aula_ids onde o aluno foi destaque
 const justificativas = ref([]);
 const temMultiplasTurmas = ref(false);
 
@@ -672,16 +686,18 @@ onMounted(async () => {
 
   aulas.value = aulasData || [];
 
-  const [{ data: presencasData }, { data: justificativasData }] =
+  const [{ data: presencasData }, { data: justificativasData }, { data: destaquesData }] =
     await Promise.all([
       supabase.from("presenca").select("aula_id").eq("aluno_id", alunoId),
       supabase
         .from("justificativa_falta")
         .select("aula_id, status, resposta, texto")
         .eq("aluno_id", alunoId),
+      supabase.from("destaque_aula").select("aula_id").eq("aluno_id", alunoId),
     ]);
 
   presencasAluno.value = new Set((presencasData || []).map((p) => p.aula_id));
+  destaquesAluno.value = new Set((destaquesData || []).map((d) => d.aula_id));
   justificativas.value = justificativasData || [];
   loading.value = false;
 });

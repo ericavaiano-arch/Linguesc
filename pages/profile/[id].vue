@@ -1121,7 +1121,7 @@ const nivelNome = computed(
 );
 const nivelDescricaoAtual = computed(() => [
   "Você está começando sua jornada. Preencha seu perfil para desbloquear mais funcionalidades.",
-  "Seu perfil está ativo. Adicione uma foto para completar sua identidade na plataforma.",
+  "Seu perfil está ativo. Adicione uma foto para completar sua identidade no sistema.",
   "Perfil completo. Todas as funcionalidades estão disponíveis para você.",
 ][nivelAtual.value] ?? "");
 const proximoNivelNome = computed(

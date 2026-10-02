@@ -387,6 +387,11 @@
                     :class="forma.conquistado ? 'text-green-800' : 'text-gray-700'"
                   >{{ forma.nome }}</p>
                   <p class="text-[11px] text-gray-400 mt-0.5">{{ forma.desc }}</p>
+                  <NuxtLink
+                    v-if="forma.link"
+                    :to="forma.link"
+                    class="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-500 hover:text-indigo-700 mt-1"
+                  >{{ forma.linkLabel }} →</NuxtLink>
                 </div>
               </div>
               <div class="flex items-center gap-2 flex-shrink-0 ml-2">
@@ -618,6 +623,7 @@ import { supabase } from '~/utils/supabase'
 const { user, isAluno, isProfessor, isAdmin, reidratar } = useAuth()
 
 const loading = ref(true)
+const turmaNivel = ref(null) // nivel da turma ativa do aluno (ex: 'CONVERSACAO')
 
 // ── Dados do aluno — lidos diretamente do user reativo do useAuth ────────────
 // `user` já é um ref global; computed abaixo reage automaticamente a mudanças
@@ -677,7 +683,7 @@ const contadorDadoDestaque = computed(() =>
 const formasDeGanharProfessor = computed(() => [
   { emoji: '👤', nome: 'Perfil nível 1',          desc: 'Completar o perfil básico',                  pontos: 10, conquistado: jaGanhouPerfilN1.value,                 contador: null },
   { emoji: '📸', nome: 'Perfil nível 2',          desc: 'Completar o perfil avançado',                pontos: 10, conquistado: jaGanhouPerfilN2.value,                 contador: null },
-  { emoji: '🔐', nome: 'Login semanal',           desc: 'Acessar a plataforma — até 8 semanas',       pontos:  5, conquistado: loginNestaSemanaConcluido.value,        contador: contadorLoginSemanalProf.value, maxContador: 8 },
+  { emoji: '🔐', nome: 'Login semanal',           desc: 'Acessar o sistema — até 8 semanas',       pontos:  5, conquistado: loginNestaSemanaConcluido.value,        contador: contadorLoginSemanalProf.value, maxContador: 8 },
   { emoji: '🏅', nome: 'Destaque para estudante', desc: 'Reconhecer estudantes — até 8 vezes',      pontos: 20, conquistado: contadorDadoDestaque.value > 0,          contador: contadorDadoDestaque.value, maxContador: 8 },
   { emoji: '🚀', nome: 'Criar missão',            desc: 'Criar uma missão da semana — até 8 vezes',   pontos: 20, conquistado: contadorCriouMissao.value > 0,           contador: contadorCriouMissao.value, maxContador: 8 },
 ])
@@ -700,13 +706,16 @@ const RECOMPENSAS_CONFIG = [
 
 const recompensas = computed(() => {
   const pts = estrelas.value
+  const isConversacao = turmaNivel.value === 'CONVERSACAO'
   let encontrouProxima = false
-  return RECOMPENSAS_CONFIG.map((r) => {
-    const atingido = pts >= r.limiar
-    const proxima  = !atingido && !encontrouProxima
-    if (proxima) encontrouProxima = true
-    return { ...r, atingido, proxima, jaRequisitado: recompensasRequisitadas.value.has(r.nivel) }
-  })
+  return RECOMPENSAS_CONFIG
+    .filter((r) => !(isConversacao && r.nivel === 'Nível 5'))
+    .map((r) => {
+      const atingido = pts >= r.limiar
+      const proxima  = !atingido && !encontrouProxima
+      if (proxima) encontrouProxima = true
+      return { ...r, atingido, proxima, jaRequisitado: recompensasRequisitadas.value.has(r.nivel) }
+    })
 })
 
 const nivelAtual = computed(() => {
@@ -790,16 +799,16 @@ const presencasRegulares = computed(() =>
 )
 
 const formasDeGanhar = computed(() => [
-  { emoji: '🌟', nome: 'Presença na primeira aula',       desc: 'Bônus especial de boas-vindas',                    pontos: 30,  conquistado: jaTeveBoasVindas.value,                 contador: null },
-  { emoji: '📅', nome: 'Presença em aula',                desc: 'Da 2ª à 8ª aula — por aula comparecida',           pontos: 10,  conquistado: presencasRegulares.value >= 1,          contador: jaTeveBoasVindas.value ? totalPresencas.value - 1 : totalPresencas.value, maxContador: 7 },
-  { emoji: '🔥', nome: 'Sequência de 3 presenças',        desc: 'Bônus por consistência',                           pontos: 20,  conquistado: user.value?.bonusSequenciaSemestre ?? false, contador: null },
-  { emoji: '🏁', nome: 'Presença em todas as aulas',      desc: 'Semestre completo sem faltas',                     pontos: 30,  conquistado: totalPresencas.value >= 8,              contador: null },
-  { emoji: '📬', nome: 'Missão da Semana',                desc: 'Atividade entre aulas aberta pelo professor',       pontos: 10,  conquistado: missaoRespondida.value,                 contador: contadorMissoes.value, maxContador: 8 },
-  { emoji: '👤', nome: 'Perfil nível 1 completo',         desc: 'Preencher informações básicas',                    pontos: 10,  conquistado: jaGanhouPerfilN1.value,                 contador: null },
-  { emoji: '📸', nome: 'Perfil nível 2 completo',         desc: 'Adicionar foto de perfil',                         pontos: 10,  conquistado: jaGanhouPerfilN2.value,                 contador: null },
-  { emoji: '🔐', nome: 'Login na semana',                 desc: 'Acessar a plataforma ao menos uma vez por semana',  pontos:  5,  conquistado: loginNestaSemanaConcluido.value,        contador: contadorLoginSemanal.value, maxContador: 8 },
-  { emoji: '✨', nome: 'Participação destaque em aula',   desc: 'Escolhido pelo professor — semanal e opcional',     pontos: 15,  conquistado: jaFoiDestaque.value,                    contador: totalDestaques.value, maxContador: 8 },
-  { emoji: '🤝', nome: 'Meta Coletiva da Turma',          desc: '75% da turma com ≥75% de presença até a 4ª aula',  pontos: 20,  conquistado: metaColetiva.value.atingida,             contador: null },
+  { emoji: '🌟', nome: 'Presença na primeira aula',       desc: 'Bônus especial de boas-vindas',                    pontos: 30,  conquistado: jaTeveBoasVindas.value,                 contador: null,                             link: '/aluno/minha-presenca',       linkLabel: 'Ver presenças' },
+  { emoji: '📅', nome: 'Presença em aula',                desc: 'Da 2ª à 8ª aula — por aula comparecida',           pontos: 10,  conquistado: presencasRegulares.value >= 1,          contador: jaTeveBoasVindas.value ? totalPresencas.value - 1 : totalPresencas.value, maxContador: 7, link: '/aluno/minha-presenca', linkLabel: 'Ver presenças' },
+  { emoji: '🔥', nome: 'Sequência de 3 presenças',        desc: 'Bônus por consistência',                           pontos: 20,  conquistado: user.value?.bonusSequenciaSemestre ?? false, contador: null,                          link: '/aluno/minha-presenca',       linkLabel: 'Ver presenças' },
+  { emoji: '🏁', nome: 'Presença em todas as aulas',      desc: 'Semestre completo sem faltas',                     pontos: 30,  conquistado: totalPresencas.value >= 8,              contador: null,                             link: '/aluno/minha-presenca',       linkLabel: 'Ver presenças' },
+  { emoji: '📬', nome: 'Missão da Semana',                desc: 'Atividade entre aulas aberta pelo professor',       pontos: 10,  conquistado: missaoRespondida.value,                 contador: contadorMissoes.value,            maxContador: 8, link: '/aluno/minhas-atividades', linkLabel: 'Ver atividades' },
+  { emoji: '👤', nome: 'Perfil nível 1 completo',         desc: 'Preencher informações básicas',                    pontos: 10,  conquistado: jaGanhouPerfilN1.value,                 contador: null,                             link: user.value?.id ? `/profile/${user.value.id}` : null, linkLabel: 'Ir para o perfil' },
+  { emoji: '📸', nome: 'Perfil nível 2 completo',         desc: 'Adicionar foto de perfil',                         pontos: 10,  conquistado: jaGanhouPerfilN2.value,                 contador: null,                             link: user.value?.id ? `/profile/${user.value.id}` : null, linkLabel: 'Ir para o perfil' },
+  { emoji: '🔐', nome: 'Login na semana',                 desc: 'Acessar o sistema ao menos uma vez por semana',  pontos:  5,  conquistado: loginNestaSemanaConcluido.value,        contador: contadorLoginSemanal.value,       maxContador: 8, link: null },
+  { emoji: '✨', nome: 'Participação destaque em aula',   desc: 'Escolhido pelo professor — semanal e opcional',     pontos: 15,  conquistado: jaFoiDestaque.value,                    contador: totalDestaques.value,             maxContador: 8, link: '/aluno/minha-presenca', linkLabel: 'Ver presenças' },
+  { emoji: '🤝', nome: 'Meta Coletiva da Turma',          desc: '75% da turma com ≥75% de presença até a 4ª aula',  pontos: 20,  conquistado: metaColetiva.value.atingida,             contador: null,                             link: '/aluno/minha-turma',          linkLabel: 'Ver minha turma' },
 ])
 
 // ── Meta Coletiva ────────────────────────────────────────────────────────────
@@ -1033,16 +1042,15 @@ onMounted(async () => {
 
     if (user.value?.id && (isAluno.value || isProfessor.value)) {
       if (isAluno.value) {
-        const { data: matricula } = await supabase
+        const { data: todasMatriculas } = await supabase
           .from('turma_aluno')
-          .select('turma_id, dt_inclusao, turma:turma_id(status)')
+          .select('turma_id, dt_inclusao, turma:turma_id(status, nivel)')
           .eq('aluno_id', user.value.id)
-          .eq('turma.status', 'ATIVA')
           .order('dt_inclusao', { ascending: false })
-          .limit(1)
-          .maybeSingle()
+        const matricula = (todasMatriculas || []).find((m) => m.turma?.status === 'ATIVA') ?? null
 
         const turmaId = matricula?.turma?.status === 'ATIVA' ? matricula.turma_id : null
+        turmaNivel.value = matricula?.turma?.nivel ?? null
 
         if (turmaId) {
           temTurmaAtiva.value = true

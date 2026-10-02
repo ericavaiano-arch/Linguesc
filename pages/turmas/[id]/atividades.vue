@@ -225,7 +225,6 @@
           <p class="text-sm text-amber-700">
             <template v-if="atividadeSelecionada.tipo_missao === 'MISSAO'">
               Missão opcional da semana. Os estudantes respondem pelo sistema.
-              Confira as respostas abaixo e marque quem você considera como participante.
             </template>
             <template v-else>
               Digite a nota (0–10) de cada estudante e clique em 💬 para
@@ -242,23 +241,34 @@
             <span class="text-base">⭐</span>
             <p class="text-xs font-bold text-amber-800 uppercase tracking-wider">Respostas dos estudantes</p>
             <span class="ml-auto flex items-center gap-1.5">
+              <span v-if="atividadeSelecionada.conteudo_json?.anonimo" class="inline-flex items-center gap-1 bg-gray-100 text-gray-500 text-xs font-semibold px-2 py-0.5 rounded-full">
+                🔒 Anônima
+              </span>
               <span class="inline-flex items-center gap-1 bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-0.5 rounded-full">
                 {{ registros.filter(r => r.respondido_em).length }}/{{ registros.length }} responderam
               </span>
             </span>
           </div>
 
+          <!-- Aviso modo anônimo -->
+          <div v-if="atividadeSelecionada.conteudo_json?.anonimo" class="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-start gap-2">
+            <span class="text-gray-400 mt-0.5">🔒</span>
+            <p class="text-xs text-gray-500 leading-relaxed">Esta missão está em <strong>modo anônimo</strong>. As identidades dos estudantes não são exibidas para garantir respostas mais sinceras.</p>
+          </div>
+
           <!-- Respondidos -->
           <div v-if="registros.some(r => r.respondido_em)" class="divide-y divide-gray-50">
             <div
-              v-for="r in registros.filter(r => r.respondido_em)"
+              v-for="(r, idx) in registros.filter(r => r.respondido_em)"
               :key="r.aluno_id"
               class="px-4 py-3.5"
             >
               <div class="flex items-center justify-between gap-2 mb-2">
                 <div class="flex items-center gap-2">
                   <span class="w-5 h-5 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-[11px] font-bold flex-shrink-0">✓</span>
-                  <span class="text-sm font-semibold text-gray-800">{{ r.nome }}</span>
+                  <span class="text-sm font-semibold text-gray-800">
+                    {{ atividadeSelecionada.conteudo_json?.anonimo ? `Participante ${idx + 1}` : r.nome }}
+                  </span>
                 </div>
                 <span class="text-[11px] text-gray-400 flex-shrink-0">{{ formatarDataCurta(r.respondido_em) }}</span>
               </div>
@@ -279,14 +289,20 @@
           <div v-if="registros.some(r => !r.respondido_em)" class="border-t border-gray-100 bg-gray-50/60">
             <p class="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">Aguardando resposta</p>
             <div class="px-4 pb-3 flex flex-wrap gap-2">
-              <span
-                v-for="r in registros.filter(r => !r.respondido_em)"
-                :key="r.aluno_id"
-                class="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-500 text-xs font-medium px-2.5 py-1 rounded-full"
-              >
-                <span class="w-3.5 h-3.5 rounded-full bg-gray-100 flex items-center justify-center text-[9px] text-gray-400">–</span>
-                {{ r.nome }}
+              <!-- Em modo anônimo: mostra só o número, não os nomes -->
+              <span v-if="atividadeSelecionada.conteudo_json?.anonimo" class="text-xs text-gray-400">
+                {{ registros.filter(r => !r.respondido_em).length }} estudante(s) ainda não responderam
               </span>
+              <template v-else>
+                <span
+                  v-for="r in registros.filter(r => !r.respondido_em)"
+                  :key="r.aluno_id"
+                  class="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-500 text-xs font-medium px-2.5 py-1 rounded-full"
+                >
+                  <span class="w-3.5 h-3.5 rounded-full bg-gray-100 flex items-center justify-center text-[9px] text-gray-400">–</span>
+                  {{ r.nome }}
+                </span>
+              </template>
             </div>
           </div>
         </div>
@@ -506,8 +522,9 @@
           <!-- PASSO 1: Escolher tipo (só na criação) -->
           <div v-if="modo === 'criar' && !form.tipoEscolhido">
             <p class="text-sm font-medium text-gray-700 mb-3">O que você quer criar?</p>
-            <div class="grid grid-cols-2 gap-3">
+            <div :class="turma?.nivel === 'CONVERSACAO' ? 'grid grid-cols-1 gap-3' : 'grid grid-cols-2 gap-3'">
               <button
+                v-if="turma?.nivel !== 'CONVERSACAO'"
                 @click="escolherTipoCriacao('NOTA')"
                 class="flex flex-col items-center gap-2 py-5 rounded-xl border-2 border-gray-200 hover:border-green-400 hover:bg-green-50 text-gray-600 hover:text-green-700 transition"
               >
@@ -517,11 +534,19 @@
               </button>
               <button
                 @click="escolherTipoCriacao('MISSAO')"
-                class="flex flex-col items-center gap-2 py-5 rounded-xl border-2 border-gray-200 hover:border-amber-400 hover:bg-amber-50 text-gray-600 hover:text-amber-700 transition"
+                :disabled="bloqueioMissao.bloqueado"
+                class="flex flex-col items-center gap-2 py-5 rounded-xl border-2 transition"
+                :class="bloqueioMissao.bloqueado
+                  ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
+                  : 'border-gray-200 hover:border-amber-400 hover:bg-amber-50 text-gray-600 hover:text-amber-700'"
               >
-                <span class="text-3xl">⭐</span>
-                <span class="text-sm font-semibold">Missão da Semana</span>
-                <span class="text-xs text-gray-400">Interativa · +20 ⭐</span>
+                <span class="text-3xl">{{ bloqueioMissao.bloqueado ? '🔒' : '⭐' }}</span>
+                <span class="text-sm font-semibold" :class="bloqueioMissao.bloqueado ? 'text-gray-400' : ''">Missão da Semana</span>
+                <span class="text-[10px] text-center leading-tight px-1" :class="bloqueioMissao.bloqueado ? 'text-gray-400' : 'text-gray-400'">
+                  {{ bloqueioMissao.bloqueado
+                    ? (bloqueioMissao.motivo === 'ativa' ? 'Encerre a missão ativa' : 'Já criada neste ciclo')
+                    : 'Interativa · +20 ⭐' }}
+                </span>
               </button>
             </div>
           </div>
@@ -616,9 +641,28 @@
               <div class="border-t border-gray-100 pt-4">
                 <p class="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-4">Configuração da missão</p>
 
+                <!-- Modo Anônimo -->
+                <div class="mt-4 flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+                  <div>
+                    <p class="text-sm font-medium text-gray-700">🔒 Modo Anônimo</p>
+                    <p class="text-xs text-gray-400 mt-0.5">Os estudantes não serão identificados nas respostas</p>
+                  </div>
+                  <button
+                    type="button"
+                    @click="form.anonimo = !form.anonimo"
+                    class="relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none"
+                    :class="form.anonimo ? 'bg-green-500' : 'bg-gray-200'"
+                  >
+                    <span
+                      class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                      :class="form.anonimo ? 'translate-x-6' : 'translate-x-1'"
+                    ></span>
+                  </button>
+                </div>
+
                 <!-- Formato da resposta -->
                 <div class="mb-4">
-                  <label class="text-sm font-medium text-gray-700 mb-2 block">Formato da resposta</label>
+                  <label class="text-sm font-medium text-gray-700 mb-2 mt-4 block">Formato da resposta</label>
                   <div class="grid grid-cols-2 gap-3">
                     <button
                       type="button"
@@ -704,6 +748,7 @@ const turmaId = Number(route.params.id);
 
 const turma = ref(null);
 const atividades = ref([]);
+const aulasDatas = ref([]); // datas das aulas da turma para calcular o ciclo
 const atividadeSelecionada = ref(null);
 const registros = ref([]);
 const registrosSnapshot = ref(""); // JSON dos registros ao carregar/salvar
@@ -728,8 +773,57 @@ const form = reactive({
   pergunta_missao: "",
   opcoes_missao: ["", "", "", ""],
   data_final: "",
+  anonimo: false,
   tipoEscolhido: false, // controla o step de seleção no drawer de criação
 });
+
+// ── Ciclo de missão (última aula ≤ hoje, fallback: segunda da semana) ────────
+const inicioCicloAtual = computed(() => {
+  const hoje = new Date()
+  hoje.setHours(23, 59, 59, 999)
+  const passadas = aulasDatas.value
+    .map((d) => new Date(d + 'T00:00:00'))
+    .filter((d) => d <= hoje)
+    .sort((a, b) => b - a)
+
+  if (passadas.length > 0) {
+    const inicio = new Date(passadas[0])
+    inicio.setHours(0, 0, 0, 0)
+    return inicio
+  }
+
+  // Fallback: segunda-feira da semana atual
+  const d = new Date()
+  const dia = d.getDay()
+  const diff = dia === 0 ? -6 : 1 - dia
+  d.setDate(d.getDate() + diff)
+  d.setHours(0, 0, 0, 0)
+  return d
+})
+
+// ── Bloqueio de criação de missão ─────────────────────────────────────────
+const bloqueioMissao = computed(() => {
+  const ativa = atividades.value.find(
+    (a) => a.tipo_missao === 'MISSAO' && a.status === 'PUBLICADA'
+  )
+  if (ativa) {
+    return { bloqueado: true, motivo: 'ativa', msg: 'Já existe uma missão ativa nesta turma. Encerre-a antes de criar uma nova.' }
+  }
+
+  const ciclo = inicioCicloAtual.value
+  const noCiclo = atividades.value.find(
+    (a) => a.tipo_missao === 'MISSAO' && new Date(a.criado_em) >= ciclo
+  )
+  if (noCiclo) {
+    return {
+      bloqueado: true,
+      motivo: 'ciclo',
+      msg: `A missão "${noCiclo.titulo}" já foi criada neste ciclo. Uma nova só pode ser criada após a próxima aula.`,
+    }
+  }
+
+  return { bloqueado: false, motivo: null, msg: null }
+})
 
 // ── Filtro de status ───────────────────────────────────────────────────────
 const filtroAtivo = ref('todas')
@@ -919,6 +1013,15 @@ async function carregarTurma() {
   turma.value = data;
 }
 
+async function carregarAulas() {
+  const { data } = await supabase
+    .from("aula")
+    .select("data")
+    .eq("turma_id", turmaId)
+    .order("data", { ascending: false });
+  aulasDatas.value = (data || []).map((a) => a.data);
+}
+
 async function carregarAtividades() {
   const { data, error } = await supabase
     .from("atividade")
@@ -1090,14 +1193,19 @@ function abrirCriacao() {
   form.pergunta_missao = "";
   form.opcoes_missao = ["", "", "", ""];
   form.data_final = umaSemanaAPartirDeHoje();
+  form.anonimo = false;
   form.tipoEscolhido = false;
   painelAberto.value = true;
 }
 
 function escolherTipoCriacao(tipo) {
+  if (tipo === "MISSAO" && bloqueioMissao.value.bloqueado) {
+    $toast.error(bloqueioMissao.value.msg)
+    return
+  }
   if (tipo === "MISSAO") {
     form.tipo_missao = "MISSAO";
-    form.tipo = "NOTA"; // missões têm tipo NOTA no banco (nota não é usada, mas manter consistência)
+    form.tipo = "NOTA";
   } else {
     form.tipo_missao = "NORMAL";
     form.tipo = "NOTA";
@@ -1115,6 +1223,7 @@ function abrirEdicao(atividade) {
   form.formato_missao = conteudo.formato ?? "multipla_escolha";
   form.pergunta_missao = conteudo.pergunta ?? "";
   form.opcoes_missao = conteudo.opcoes ?? ["", "", "", ""];
+  form.anonimo = conteudo.anonimo ?? false;
   // Converter timestamptz → datetime-local (sem segundos)
   form.data_final = atividade.data_final
     ? atividade.data_final.slice(0, 16)
@@ -1129,6 +1238,13 @@ function fecharPainel() {
 
 async function salvar() {
   if (!form.titulo.trim()) return;
+
+  // Guard: bloqueia criação de missão duplicada
+  if (modo.value === 'criar' && form.tipo_missao === 'MISSAO' && bloqueioMissao.value.bloqueado) {
+    $toast.error(bloqueioMissao.value.msg)
+    return
+  }
+
   salvandoForm.value = true;
   try {
     const conteudo_json =
@@ -1136,6 +1252,7 @@ async function salvar() {
         ? {
             formato: form.formato_missao,
             pergunta: form.titulo.trim(),
+            anonimo: form.anonimo,
             ...(form.formato_missao === "multipla_escolha"
               ? {
                   opcoes: form.opcoes_missao
@@ -1267,7 +1384,7 @@ async function turmasIdsDoProfessor(professorId) {
 }
 
 onMounted(async () => {
-  await Promise.all([carregarTurma(), carregarAtividades()]);
+  await Promise.all([carregarTurma(), carregarAtividades(), carregarAulas()]);
   loading.value = false;
 });
 </script>
