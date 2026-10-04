@@ -1,6 +1,5 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex flex-col items-center justify-start py-10 px-4">
-    <!-- Logo / Cabeçalho -->
     <div class="mb-8 text-center">
       <div class="flex justify-center items-center gap-5 mb-3">
         <img src="~/assets/images/logo_linguesc.png" alt="Linguesc" class="h-14 w-auto" />
@@ -10,11 +9,9 @@
       <p class="text-sm text-gray-500">Inscrição de estudante</p>
     </div>
 
-    <!-- PASSO: AUTH -->
     <Transition name="fade" mode="out-in">
       <div v-if="passo === 'auth'" key="auth" class="w-full max-w-md">
         <div class="bg-white rounded-3xl shadow-lg border border-gray-100 p-8">
-          <!-- escolher modo -->
           <div v-if="modoAuth === 'escolher'">
             <h2 class="text-xl font-bold text-gray-800 mb-1">Bem-vindo(a)!</h2>
             <p class="text-sm text-gray-500 mb-6">Para se inscrever, nos diga se você já tem uma conta.</p>
@@ -34,7 +31,6 @@
             </div>
           </div>
 
-          <!-- Login -->
           <div v-else-if="modoAuth === 'login'">
             <button @click="modoAuth = 'escolher'" class="text-sm text-green-600 hover:underline mb-4 flex items-center gap-1">← Voltar</button>
             <h2 class="text-xl font-bold text-gray-800 mb-1">Entrar com minha conta</h2>
@@ -74,7 +70,6 @@
             </form>
           </div>
 
-          <!-- Cadastro -->
           <div v-else-if="modoAuth === 'cadastro'">
             <button @click="modoAuth = 'escolher'" class="text-sm text-green-600 hover:underline mb-4 flex items-center gap-1">← Voltar</button>
             <h2 class="text-xl font-bold text-gray-800 mb-1">Criar minha conta</h2>
@@ -171,7 +166,6 @@
       </div>
     </Transition>
 
-    <!-- PASSO: NÍVEL -->
     <Transition name="fade" mode="out-in">
       <div v-if="passo === 'nivel'" key="nivel" class="w-full max-w-3xl">
         <div class="bg-white rounded-3xl shadow-lg border border-gray-100 p-8">
@@ -185,10 +179,9 @@
               :class="nivelSelecionado?.id === n.id ? 'border-green-500 bg-green-50' : 'border-gray-200'"
             >
               <div class="flex items-start gap-4">
-                <!-- <span class="text-3xl mt-0.5 shrink-0">{{ n.emoji }}</span> -->
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center justify-between gap-4 flex-wrap">
-                    <h3 class="font-bold text-gray-800 text-base">{{ n.label }}</h3>
+                    <h3 class="font-bold text-blue-900 text-base">{{ n.label }}</h3>
                     <button
                       @click="confirmarNivel(n)"
                       class="shrink-0 px-5 py-2 rounded-xl text-sm font-semibold transition active:scale-95"
@@ -199,8 +192,8 @@
                       {{ nivelSelecionado?.id === n.id ? '✓ Selecionado' : 'Selecionar →' }}
                     </button>
                   </div>
-                  <p class="text-sm font-medium text-gray-600 mt-1 mb-3">{{ n.desc }}</p>
-                  <p class="text-sm text-gray-400 leading-relaxed border-t border-gray-100 pt-3">{{ n.detalhe }}</p>
+                  <p class="text-sm font-medium text-gray-700 mt-1 mb-3">{{ n.desc }}</p>
+                  <p class="text-sm text-gray-600 leading-relaxed border-t border-gray-100 pt-3">{{ n.detalhe }}</p>
                 </div>
               </div>
             </div>
@@ -209,13 +202,11 @@
       </div>
     </Transition>
 
-    <!-- PASSO: TURMA -->
     <Transition name="fade" mode="out-in">
       <div v-if="passo === 'turma'" key="turma" class="w-full max-w-xl">
         <div class="bg-white rounded-3xl shadow-lg border border-gray-100 p-8">
           <button @click="inscricaoExistente ? null : passo = 'nivel'" :class="inscricaoExistente ? 'hidden' : ''" class="text-sm text-green-600 hover:underline mb-4 flex items-center gap-1">← Voltar ao nível</button>
 
-          <!-- Banner de pré-inscrição existente -->
           <div v-if="inscricaoExistente" class="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3.5 flex items-start gap-3 mb-5">
             <span class="text-xl flex-shrink-0">📋</span>
             <div>
@@ -238,7 +229,6 @@
             Carregando turmas...
           </div>
 
-          <!-- Modo pré-inscrição existente: exibe apenas a turma já escolhida -->
           <div v-else-if="inscricaoExistente && !modoTrocarTurma" class="mt-4">
             <div v-if="turmaClicada" class="border-2 border-green-500 bg-green-50 rounded-2xl px-5 py-4">
               <div class="flex items-start justify-between gap-2">
@@ -285,7 +275,7 @@
           <div v-else-if="!inscricaoExistente && turmasFiltradas.length === 0" class="text-center py-8">
             <div class="text-4xl mb-3">📭</div>
             <p class="text-gray-500 text-sm">Nenhuma turma disponível no momento.</p>
-            <p class="text-gray-400 text-xs mt-1">Por favor, entre em contato em: linguesc.cct@udesc.br ou udescinteragir@gmail.com</p>
+            <p class="text-gray-400 text-xs mt-1">Por favor, entre em contato em: linguesc.cct@udesc.br</p>
           </div>
 
           <div v-else-if="!inscricaoExistente || modoTrocarTurma" class="mt-4 space-y-6">
@@ -293,7 +283,6 @@
               <button @click="modoTrocarTurma = false; turmaClicada = turmaAnterior" class="text-xs text-green-600 hover:underline flex items-center gap-1">← Manter turma atual</button>
             </div>
 
-            <!-- Turmas do nível exato -->
             <div v-if="turmasNivelExato.length">
               <div class="flex items-center gap-2 mb-3">
                 <span class="text-xs font-bold text-green-700 uppercase tracking-wide">Turmas do seu nível</span>
@@ -334,7 +323,6 @@
               </div>
             </div>
 
-            <!-- Turmas de outros níveis -->
             <div v-if="turmasOutrosNiveis.length">
               <div class="flex items-center gap-2 mb-3">
                 <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Outras turmas disponíveis</span>
@@ -374,7 +362,6 @@
             </div>
           </div>
 
-          <!-- confirmação inline / motivo -->
           <Transition name="fade">
             <div v-if="turmaClicada && (!inscricaoExistente || modoTrocarTurma)" class="mt-5 border-t border-gray-100 pt-5">
               <div v-if="turmaNivelInferior">
@@ -419,7 +406,6 @@
       </div>
     </Transition>
 
-    <!-- PASSO: SUCESSO -->
     <Transition name="fade" mode="out-in">
       <div v-if="passo === 'sucesso'" key="sucesso" class="w-full max-w-md">
         <div class="bg-white rounded-3xl shadow-lg border border-gray-100 p-10 text-center">
@@ -427,8 +413,8 @@
           <h2 class="text-xl font-bold text-gray-800 mb-2">{{ inscricaoExistente ? 'Pré-inscrição atualizada!' : 'Pré-inscrição realizada!' }}</h2>
           <p class="text-sm text-gray-500 mb-6 leading-relaxed">
             {{ inscricaoExistente
-              ? 'Suas preferências foram atualizadas com sucesso. Entraremos em contato em breve.'
-              : 'Sua solicitação foi enviada com sucesso. Entraremos em contato em breve para confirmar sua matrícula.' }}
+              ? 'Suas preferências foram atualizadas. Você receberá um e-mail de confirmação. Lembrando que a pré-inscrição não garante vaga, a confirmação da matrícula será feita pela equipe Linguesc.'
+              : 'Sua pré-inscrição foi recebida e você receberá um e-mail de confirmação. Atenção: a pré-inscrição não garante vaga. A confirmação da sua matrícula será realizada pela equipe Linguesc.' }}
           </p>
           <div v-if="nivelSelecionado" class="bg-green-50 border border-green-200 rounded-2xl px-5 py-4 mb-4 text-left">
             <p class="text-xs text-gray-400 mb-1">Nível selecionado</p>
@@ -439,7 +425,7 @@
             <p class="font-semibold text-gray-800">{{ turmaConfirmada.nome }}</p>
           </div>
           <p class="text-xs text-gray-400">Em caso de dúvidas, entre em contato em:</p>
-          <p class="text-xs text-gray-700"> linguesc.cct@udesc.br ou udescinteragir@gmail.com</p>
+          <p class="text-xs text-gray-700">linguesc.cct@udesc.br</p>
           <div class="mt-6 pt-5 border-t border-gray-100">
             <button
               @click="() => { modoTrocarTurma = false; passo = 'turma' }"
