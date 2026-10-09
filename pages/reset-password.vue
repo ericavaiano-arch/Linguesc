@@ -50,8 +50,8 @@
         <div class="text-5xl mb-4">✅</div>
         <h2 class="text-xl font-bold text-gray-800 mb-2">Senha redefinida!</h2>
         <p class="text-gray-500 text-sm mb-6">Sua senha foi atualizada com sucesso.</p>
-        <NuxtLink to="/" class="text-sm font-semibold text-green-600 hover:underline">
-          Ir para o login →
+        <NuxtLink :to="origemInscricao ? '/inscricao' : '/'" class="text-sm font-semibold text-green-600 hover:underline">
+          {{ origemInscricao ? 'Voltar à inscrição →' : 'Ir para o login →' }}
         </NuxtLink>
       </div>
 
@@ -61,10 +61,10 @@
         <h2 class="text-xl font-bold text-gray-800 mb-2">Link inválido ou expirado</h2>
         <p class="text-gray-500 text-sm mb-6">
           O link de redefinição expirou ou já foi utilizado.<br>
-          Solicite um novo link na tela de login.
+          Solicite um novo link {{ origemInscricao ? 'na página de inscrição' : 'na tela de login' }}.
         </p>
-        <NuxtLink to="/" class="text-sm font-semibold text-green-600 hover:underline">
-          ← Voltar ao login
+        <NuxtLink :to="origemInscricao ? '/inscricao' : '/'" class="text-sm font-semibold text-green-600 hover:underline">
+          ← Voltar {{ origemInscricao ? 'à inscrição' : 'ao login' }}
         </NuxtLink>
       </div>
 
@@ -79,12 +79,16 @@ import { supabase } from '~/utils/supabase'
 
 const { $toast } = useNuxtApp()
 
+const origemInscricao = ref(false)
+
 const estado = ref('verificando')
 const novaSenha = ref('')
 const confirmarSenha = ref('')
 const carregando = ref(false)
 
 onMounted(async () => {
+  origemInscricao.value = localStorage.getItem('pwResetFrom') === 'inscricao'
+
   const hash = typeof window !== 'undefined' ? window.location.hash : ''
 
   // Erro explícito no hash (link expirado/inválido enviado pelo Supabase)
@@ -138,6 +142,7 @@ async function redefinirSenha() {
       return
     }
     await supabase.auth.signOut()
+    localStorage.removeItem('pwResetFrom')
     estado.value = 'sucesso'
   } finally {
     carregando.value = false

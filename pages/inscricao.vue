@@ -68,6 +68,15 @@
                 <span v-else>Entrar</span>
               </button>
             </form>
+            <div class="text-center mt-3">
+              <button
+                type="button"
+                @click="mostrarModalEsqueciSenha = true"
+                class="text-sm text-gray-400 hover:text-green-600 transition"
+              >
+                Esqueci minha senha
+              </button>
+            </div>
           </div>
 
           <div v-else-if="modoAuth === 'cadastro'">
@@ -437,6 +446,52 @@
         </div>
       </div>
     </Transition>
+
+    <div
+      v-if="mostrarModalEsqueciSenha"
+      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4"
+      @click.self="fecharModalEsqueciSenha"
+    >
+      <div class="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+        <h2 class="text-lg font-bold text-gray-800 mb-1">Redefinir senha</h2>
+
+        <div v-if="!emailEnviado">
+          <p class="text-sm text-gray-500 mb-4 leading-relaxed">
+            Informe o e-mail da sua conta. Enviaremos um link para criar uma nova senha.
+          </p>
+          <input
+            v-model="emailReset"
+            type="email"
+            placeholder="seuemail@exemplo.com"
+            class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition mb-3"
+          />
+          <p v-if="erroReset" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-3">{{ erroReset }}</p>
+          <button
+            @click="enviarLinkReset"
+            :disabled="!emailReset || enviandoReset"
+            class="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-semibold py-2.5 rounded-xl transition flex items-center justify-center gap-2"
+          >
+            <div v-if="enviandoReset" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            {{ enviandoReset ? 'Enviando...' : 'Enviar link' }}
+          </button>
+        </div>
+
+        <div v-else class="text-center py-4">
+          <div class="text-3xl mb-3">📬</div>
+          <p class="text-sm text-gray-700 font-semibold mb-1">E-mail enviado!</p>
+          <p class="text-xs text-gray-500 leading-relaxed">
+            Se o e-mail estiver cadastrado, você receberá o link em instantes.
+            Verifique também a caixa de spam.
+          </p>
+          <button
+            @click="fecharModalEsqueciSenha"
+            class="mt-4 text-sm font-semibold text-green-600 hover:underline"
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -516,6 +571,38 @@ const loginEmail = ref('')
 const loginSenha = ref('')
 const erroAuth = ref('')
 const carregandoAuth = ref(false)
+
+// Esqueci a senha
+const mostrarModalEsqueciSenha = ref(false)
+const emailReset = ref('')
+const enviandoReset = ref(false)
+const emailEnviado = ref(false)
+const erroReset = ref('')
+
+function fecharModalEsqueciSenha() {
+  mostrarModalEsqueciSenha.value = false
+  emailReset.value = ''
+  emailEnviado.value = false
+  erroReset.value = ''
+}
+
+async function enviarLinkReset() {
+  if (!emailReset.value) return
+  erroReset.value = ''
+  enviandoReset.value = true
+  try {
+    await $fetch('/api/forgot-password', {
+      method: 'POST',
+      body: { email: emailReset.value },
+    })
+    localStorage.setItem('pwResetFrom', 'inscricao')
+    emailEnviado.value = true
+  } catch {
+    erroReset.value = 'Não foi possível enviar o e-mail. Tente novamente.'
+  } finally {
+    enviandoReset.value = false
+  }
+}
 
 // Auth - cadastro
 const cadNome = ref('')
