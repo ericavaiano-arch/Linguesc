@@ -14,7 +14,8 @@ export default defineEventHandler(async (event) => {
     { auth: { autoRefreshToken: false, persistSession: false } },
   )
 
-  const appUrl = process.env.VITE_APP_URL || 'http://localhost:3000'
+  const config = useRuntimeConfig()
+  const appUrl = config.appUrl as string
 
   const { data, error } = await supabaseAdmin.auth.admin.generateLink({
     type: 'recovery',

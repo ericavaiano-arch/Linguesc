@@ -1,4 +1,7 @@
 export default defineNuxtConfig({
+  runtimeConfig: {
+    appUrl: process.env.VITE_APP_URL || 'http://localhost:3000',
+  },
   app: {
     head: {
       title: 'Linguesc',
