@@ -14,8 +14,9 @@ export default defineEventHandler(async (event) => {
     { auth: { autoRefreshToken: false, persistSession: false } },
   )
 
-  const config = useRuntimeConfig()
-  const appUrl = config.appUrl as string
+  const host = getRequestHost(event, { xForwardedHost: true })
+  const protocol = host.startsWith('localhost') ? 'http' : 'https'
+  const appUrl = process.env.VITE_APP_URL || `${protocol}://${host}`
 
   const { data, error } = await supabaseAdmin.auth.admin.generateLink({
     type: 'recovery',
