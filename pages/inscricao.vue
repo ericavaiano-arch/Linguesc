@@ -718,6 +718,7 @@ async function irParaNivel() {
       .from('turma')
       .select('id, nome, sala, descricao, nivel, professor:usuarios!professor_id(nome), aulas:aula(data, hora_inicio, hora_fim)')
       .eq('status', 'ATIVA')
+      .eq('is_teste', false)
       .order('nome', { ascending: true }),
     supabase
       .from('pre_inscricao')
