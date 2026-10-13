@@ -436,14 +436,14 @@ async function enviarResposta() {
   enviando.value = true
   try {
     const m = missaoAtual.value
-    const formato = m.conteudo_json?.formato
+    const formato = m.conteudo_json?.formato ?? 'texto_livre'
     const payload = {
       atividade_id: m.id,
       aluno_id: alunoId,
       feito: true,
       respondido_em: new Date().toISOString(),
       resposta_opcao: formato === 'multipla_escolha' ? opcaoSelecionada.value : null,
-      resposta_texto: formato === 'texto_livre' ? respostaTexto.value.trim() : null,
+      resposta_texto: formato !== 'multipla_escolha' ? respostaTexto.value.trim() : null,
     }
     if (m.registro?._id) payload.id = m.registro._id
 

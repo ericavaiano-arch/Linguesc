@@ -13,10 +13,22 @@
     </div>
 
     <div v-else-if="isProfessor" class="space-y-6">
-      <div class="mb-2">
-        <h2 class="text-xl font-bold text-gray-800">Gamificação do Professor</h2>
-        <p class="text-sm text-gray-500 mt-1">Acompanhe suas atividades, acumule estrelas e troque por recompensas.</p>
+      <!-- ── INTRO: como funciona ── -->
+      <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-100 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-xl flex-shrink-0">🎮</div>
+          <div>
+            <h2 class="text-base font-bold text-gray-800 leading-tight">Como funciona a gamificação?</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Seu guia de estrelas e recompensas</p>
+          </div>
+        </div>
+        <div class="px-6 py-5">
+          <p class="text-sm text-gray-600 leading-relaxed">
+            Como professor, você também acumula <strong class="text-amber-700">⭐ estrelas</strong> ao engajar seus alunos: crie missões da semana, reconheça alunos destaque e complete seu perfil. Acompanhe seu progresso e troque estrelas por recompensas abaixo.
+          </p>
+        </div>
       </div>
+
       <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex items-center gap-6 flex-wrap">
         <div class="flex flex-col items-center bg-amber-50 border border-amber-200 rounded-xl px-6 py-4 min-w-[130px]">
           <span class="text-xl mb-1">⭐</span>
@@ -130,6 +142,11 @@
               <div>
                 <p class="text-sm font-semibold" :class="forma.conquistado ? 'text-green-800' : 'text-gray-700'">{{ forma.nome }}</p>
                 <p class="text-[11px] text-gray-400 mt-0.5">{{ forma.desc }}</p>
+                <NuxtLink
+                  v-if="forma.link"
+                  :to="forma.link"
+                  class="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-500 hover:text-indigo-700 mt-1"
+                >{{ forma.linkLabel }} →</NuxtLink>
               </div>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0 ml-2">
@@ -624,6 +641,7 @@ const { user, isAluno, isProfessor, isAdmin, reidratar } = useAuth()
 
 const loading = ref(true)
 const turmaNivel = ref(null) // nivel da turma ativa do aluno (ex: 'CONVERSACAO')
+const profTurmaId = ref(null)
 
 // ── Dados do aluno — lidos diretamente do user reativo do useAuth ────────────
 // `user` já é um ref global; computed abaixo reage automaticamente a mudanças
@@ -681,11 +699,11 @@ const contadorDadoDestaque = computed(() =>
 )
 
 const formasDeGanharProfessor = computed(() => [
-  { emoji: '👤', nome: 'Perfil nível 1',          desc: 'Completar o perfil básico',                  pontos: 10, conquistado: jaGanhouPerfilN1.value,                 contador: null },
-  { emoji: '📸', nome: 'Perfil nível 2',          desc: 'Completar o perfil avançado',                pontos: 10, conquistado: jaGanhouPerfilN2.value,                 contador: null },
-  { emoji: '🔐', nome: 'Login semanal',           desc: 'Acessar o sistema — até 8 semanas',       pontos:  5, conquistado: loginNestaSemanaConcluido.value,        contador: contadorLoginSemanalProf.value, maxContador: 8 },
-  { emoji: '🏅', nome: 'Destaque para estudante', desc: 'Reconhecer estudantes — até 8 vezes',      pontos: 20, conquistado: contadorDadoDestaque.value > 0,          contador: contadorDadoDestaque.value, maxContador: 8 },
-  { emoji: '🚀', nome: 'Criar missão',            desc: 'Criar uma missão da semana — até 8 vezes',   pontos: 20, conquistado: contadorCriouMissao.value > 0,           contador: contadorCriouMissao.value, maxContador: 8 },
+  { emoji: '👤', nome: 'Perfil nível 1',          desc: 'Completar o perfil básico',                  pontos: 10, conquistado: jaGanhouPerfilN1.value,                 contador: null,                              link: user.value?.id ? `/profile/${user.value.id}` : null,              linkLabel: 'Ir para o perfil' },
+  { emoji: '📸', nome: 'Perfil nível 2',          desc: 'Completar o perfil avançado',                pontos: 10, conquistado: jaGanhouPerfilN2.value,                 contador: null,                              link: user.value?.id ? `/profile/${user.value.id}` : null,              linkLabel: 'Ir para o perfil' },
+  { emoji: '🔐', nome: 'Login semanal',           desc: 'Acessar o sistema — até 8 semanas',          pontos:  5, conquistado: loginNestaSemanaConcluido.value,        contador: contadorLoginSemanalProf.value,     maxContador: 8, link: null },
+  { emoji: '🏅', nome: 'Destaque para estudante', desc: 'Reconhecer estudantes — até 8 vezes',        pontos: 20, conquistado: contadorDadoDestaque.value > 0,          contador: contadorDadoDestaque.value,        maxContador: 8, link: profTurmaId.value ? `/chamada-manual/${profTurmaId.value}` : null,      linkLabel: 'Ir para a chamada' },
+  { emoji: '🚀', nome: 'Criar missão',            desc: 'Criar uma missão da semana — até 8 vezes',   pontos: 20, conquistado: contadorCriouMissao.value > 0,           contador: contadorCriouMissao.value,         maxContador: 8, link: profTurmaId.value ? `/turmas/${profTurmaId.value}/atividades` : null, linkLabel: 'Ir para atividades' },
 ])
 const potencialProfessor = [
   { valor: 60,  label: 'perfil + 8 logins (garantido)', destaque: false },
@@ -696,7 +714,7 @@ const potencialProfessor = [
 
 // ── Configuração das recompensas ────────────────────────────────────────────
 const RECOMPENSAS_CONFIG = [
-  { nivel: 'Nível 1', nome: 'Doce / bombom',                    emoji: '🍬', limiar: 50  },
+  { nivel: 'Nível 1', nome: 'Doce / bombom',                    emoji: '🍬', limiar: 60  },
   { nivel: 'Nível 2', nome: 'Sticker personalizado',            emoji: '🎨', limiar: 90  },
   { nivel: 'Nível 3', nome: 'Marca-página',                     emoji: '🔖', limiar: 150 },
   { nivel: 'Nível 4', nome: 'Bottom do Linguesc',               emoji: '📌', limiar: 210 },
@@ -1080,6 +1098,7 @@ onMounted(async () => {
           .maybeSingle()
 
         if (profTurma) {
+          profTurmaId.value = profTurma.id
           carregarRequisitadas(profTurma.id)
 
           const { data: historico } = await supabase

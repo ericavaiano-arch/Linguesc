@@ -233,6 +233,49 @@
           </p>
         </div>
 
+        <!-- ── Prévia da visão do aluno ── -->
+        <details class="border-b border-gray-100 group">
+          <summary class="px-3.5 py-2.5 flex items-center gap-2 cursor-pointer select-none bg-indigo-50 hover:bg-indigo-100 transition list-none">
+            <span class="text-indigo-500 text-xs">👁️</span>
+            <span class="text-xs font-semibold text-indigo-700 flex-1">Como o aluno vê esta atividade</span>
+            <span class="text-indigo-400 text-xs group-open:rotate-180 transition-transform">▾</span>
+          </summary>
+          <div class="p-4 bg-indigo-50/50">
+            <!-- Preview de missão -->
+            <template v-if="atividadeSelecionada.tipo_missao === 'MISSAO'">
+              <div class="bg-white border border-indigo-100 rounded-xl p-4 space-y-3 shadow-sm">
+                <div>
+                  <p class="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1.5">
+                    ⭐ Missão da Semana
+                    <span v-if="atividadeSelecionada.data_final" class="ml-2 font-normal normal-case text-gray-400">· prazo: {{ formatarDataCurta(atividadeSelecionada.data_final) }}</span>
+                  </p>
+                  <p class="text-sm font-semibold text-gray-800 leading-snug">{{ atividadeSelecionada.conteudo_json?.pergunta || atividadeSelecionada.titulo }}</p>
+                </div>
+                <!-- Múltipla escolha -->
+                <div v-if="atividadeSelecionada.conteudo_json?.formato === 'multipla_escolha' && atividadeSelecionada.conteudo_json?.opcoes?.length" class="space-y-2 pt-1">
+                  <div v-for="(op, i) in atividadeSelecionada.conteudo_json.opcoes" :key="i" class="flex items-center gap-2.5 text-sm text-gray-600">
+                    <span class="w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 bg-white"></span>
+                    {{ op }}
+                  </div>
+                </div>
+                <!-- Texto livre -->
+                <div v-else class="pt-1">
+                  <div class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-400 bg-gray-50 leading-relaxed">Escreva sua resposta aqui...</div>
+                </div>
+                <p class="text-[10px] text-gray-400">✓ Qualquer resposta válida dentro do prazo conta — <strong class="text-amber-600">+10 ⭐</strong></p>
+              </div>
+            </template>
+            <!-- Preview de prova -->
+            <template v-else>
+              <div class="bg-white border border-indigo-100 rounded-xl p-4 shadow-sm">
+                <p class="text-sm font-semibold text-gray-700 mb-1">📝 {{ atividadeSelecionada.titulo }}</p>
+                <p v-if="atividadeSelecionada.descricao" class="text-xs text-gray-500 mb-2 leading-relaxed">{{ atividadeSelecionada.descricao }}</p>
+                <p class="text-xs text-gray-400">O aluno visualiza a nota e o feedback individual após o professor salvar os registros.</p>
+              </div>
+            </template>
+          </div>
+        </details>
+
         <!-- Painel de respostas — apenas para missões -->
         <!-- ── Respostas da missão da semana ── -->
         <div v-if="atividadeSelecionada.tipo_missao === 'MISSAO'">
