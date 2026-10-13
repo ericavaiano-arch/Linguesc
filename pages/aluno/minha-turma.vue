@@ -231,8 +231,8 @@
               </svg>
             </div>
             <span class="turma-stat-label">Carga horária</span>
-            <span class="turma-stat-value">{{ aulas.length * 1 }}h</span>
-            <span class="turma-stat-sub">Semestre</span>
+            <span class="turma-stat-value">1h30</span>
+            <span class="turma-stat-sub">Semana</span>
           </div>
         </div>
       </div>
