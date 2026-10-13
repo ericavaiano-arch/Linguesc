@@ -699,9 +699,9 @@ const contadorDadoDestaque = computed(() =>
 )
 
 const formasDeGanharProfessor = computed(() => [
-  { emoji: '👤', nome: 'Perfil nível 1',          desc: 'Completar o perfil básico',                  pontos: 10, conquistado: jaGanhouPerfilN1.value,                 contador: null,                              link: user.value?.id ? `/profile/${user.value.id}` : null,              linkLabel: 'Ir para o perfil' },
-  { emoji: '📸', nome: 'Perfil nível 2',          desc: 'Completar o perfil avançado',                pontos: 10, conquistado: jaGanhouPerfilN2.value,                 contador: null,                              link: user.value?.id ? `/profile/${user.value.id}` : null,              linkLabel: 'Ir para o perfil' },
-  { emoji: '🔐', nome: 'Login semanal',           desc: 'Acessar o sistema — até 8 semanas',          pontos:  5, conquistado: loginNestaSemanaConcluido.value,        contador: contadorLoginSemanalProf.value,     maxContador: 8, link: null },
+  { emoji: '👤', nome: 'Perfil nível 1',          desc: 'Preencher informações básicas',                  pontos: 10, conquistado: jaGanhouPerfilN1.value,                 contador: null,                              link: user.value?.id ? `/profile/${user.value.id}` : null,              linkLabel: 'Ir para o perfil' },
+  { emoji: '📸', nome: 'Perfil nível 2',          desc: 'Adicionar foto de perfil',                pontos: 10, conquistado: jaGanhouPerfilN2.value,                 contador: null,                              link: user.value?.id ? `/profile/${user.value.id}` : null,              linkLabel: 'Ir para o perfil' },
+  { emoji: '🔐', nome: 'Login semanal',           desc: 'Acessar o sistema — até 8 vezes',          pontos:  5, conquistado: loginNestaSemanaConcluido.value,        contador: contadorLoginSemanalProf.value,     maxContador: 8, link: null },
   { emoji: '🏅', nome: 'Destaque para estudante', desc: 'Reconhecer estudantes — até 8 vezes',        pontos: 20, conquistado: contadorDadoDestaque.value > 0,          contador: contadorDadoDestaque.value,        maxContador: 8, link: profTurmaId.value ? `/chamada-manual/${profTurmaId.value}` : null,      linkLabel: 'Ir para a chamada' },
   { emoji: '🚀', nome: 'Criar missão',            desc: 'Criar uma missão da semana — até 8 vezes',   pontos: 20, conquistado: contadorCriouMissao.value > 0,           contador: contadorCriouMissao.value,         maxContador: 8, link: profTurmaId.value ? `/turmas/${profTurmaId.value}/atividades` : null, linkLabel: 'Ir para atividades' },
 ])
