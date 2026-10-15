@@ -7,6 +7,15 @@
         <p class="text-gray-500 mt-2">Estudantes aguardando vinculação a uma turma.</p>
         <div class="w-20 h-1 bg-green-600 mt-4 rounded"></div>
       </div>
+      <button
+        @click="exportarExcel"
+        class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition shadow-sm"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12v6m0 0l-3-3m3 3l3-3M12 3v9" />
+        </svg>
+        Exportar Excel
+      </button>
     </div>
 
     <!-- Stats -->
@@ -292,6 +301,62 @@ async function carregar() {
   todos.value = inscricoes ?? []
   turmasDisponiveis.value = turmas ?? []
   loading.value = false
+}
+
+function exportarExcel() {
+  const cabecalho = ['Nome', 'E-mail', 'CPF', 'Nível', 'Turma escolhida', 'Motivo', 'Status', 'Data de inscrição']
+
+  const linhas = todos.value.map((r) => [
+    r.nome ?? '',
+    r.email ?? '',
+    formatCpf(r.cpf),
+    NIVEL_MAP[r.nivel_preferido] ?? r.nivel_preferido ?? '',
+    r.turma_nome ?? '',
+    r.motivo ?? '',
+    r.ativo ? 'Ativado' : 'Pendente',
+    r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : '',
+  ])
+
+  const larguras = [30, 35, 18, 16, 30, 60, 12, 18]
+
+  const cols = larguras.map((w) => `<Col ss:Width="${w * 5.5}" />`).join('')
+
+  const escaparXml = (v) => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
+  const celulaStr = (v) => `<Cell><Data ss:Type="String">${escaparXml(v)}</Data></Cell>`
+
+  const linhaXml = (celulas, negrito = false) =>
+    `<Row>${celulas.map((v) => negrito
+      ? `<Cell ss:StyleID="cabecalho"><Data ss:Type="String">${escaparXml(v)}</Data></Cell>`
+      : celulaStr(v)
+    ).join('')}</Row>`
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+  <Styles>
+    <Style ss:ID="cabecalho">
+      <Font ss:Bold="1" ss:Color="#FFFFFF"/>
+      <Interior ss:Color="#16A34A" ss:Pattern="Solid"/>
+    </Style>
+  </Styles>
+  <Worksheet ss:Name="Pré-inscrições">
+    <Table>
+      ${cols}
+      ${linhaXml(cabecalho, true)}
+      ${linhas.map((l) => linhaXml(l)).join('\n      ')}
+    </Table>
+  </Worksheet>
+</Workbook>`
+
+  const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `pre-inscricoes_${new Date().toISOString().slice(0, 10)}.xls`
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 onMounted(carregar)
