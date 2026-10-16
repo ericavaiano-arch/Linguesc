@@ -169,10 +169,10 @@
                 </button>
               </div>
 
-              <!-- Linha 3: atividades (admin) -->
+              <!-- Linha 3: atividades + membros (admin) -->
               <div
                 class="grid border-t border-gray-100"
-                style="grid-template-columns: 1fr"
+                style="grid-template-columns: 1fr 1px 1fr"
               >
                 <button
                   @click.stop="navegar(`/turmas/${turma.id}/atividades`)"
@@ -180,6 +180,14 @@
                 >
                   <span class="text-base leading-none">📝</span>
                   Atividades
+                </button>
+                <div class="bg-gray-100 self-stretch"></div>
+                <button
+                  @click.stop="navegar(`/turmas/${turma.id}/membros`)"
+                  class="flex flex-col items-center justify-center gap-1 py-2.5 text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition"
+                >
+                  <span class="text-base leading-none">👥</span>
+                  Membros
                 </button>
               </div>
 
@@ -320,11 +328,10 @@
                 </span>
               </div>
 
-              <!-- Ações -->
-              <!-- Ações -->
+              <!-- Ações — linha 1 -->
               <div
                 class="grid border-t border-gray-100"
-                style="grid-template-columns: 1fr 1px 1fr 1px 1fr 1px 1fr"
+                style="grid-template-columns: 1fr 1px 1fr 1px 1fr"
               >
                 <button
                   @click.stop="$router.push(`/chamada-manual/${turma.id}`)"
@@ -349,13 +356,26 @@
                   <span class="text-base leading-none">📅</span>
                   Calendário
                 </button>
-                <div class="bg-gray-100 self-stretch"></div>
+              </div>
+              <!-- Ações — linha 2 -->
+              <div
+                class="grid border-t border-gray-100"
+                style="grid-template-columns: 1fr 1px 1fr"
+              >
                 <button
                   @click.stop="$router.push(`/turmas/${turma.id}/atividades`)"
                   class="flex flex-col items-center justify-center gap-1 py-2.5 text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition"
                 >
                   <span class="text-base leading-none">📝</span>
                   Atividades
+                </button>
+                <div class="bg-gray-100 self-stretch"></div>
+                <button
+                  @click.stop="$router.push(`/turmas/${turma.id}/membros`)"
+                  class="flex flex-col items-center justify-center gap-1 py-2.5 text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition"
+                >
+                  <span class="text-base leading-none">👥</span>
+                  Membros
                 </button>
               </div>
             </div>

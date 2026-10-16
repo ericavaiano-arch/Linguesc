@@ -489,6 +489,111 @@
         <!-- Grid de cards -->
         <div class="p-6">
           <div class="alunos-grid">
+            <!-- Card do professor -->
+            <div
+              v-if="professorInfo"
+              class="aluno-card aluno-card--professor"
+            >
+              <!-- Badge do professor -->
+              <div class="flex justify-end mb-3">
+                <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                  Professor(a)
+                </span>
+              </div>
+
+              <!-- Avatar / Foto / Emoji -->
+              <div class="flex flex-col items-center mb-4">
+                <div
+                  v-if="professorInfo.avatar_url && !professorInfo.avatar_url.includes('/')"
+                  class="w-20 h-20 rounded-full bg-gray-50 border-2 border-gray-200 flex items-center justify-center text-4xl select-none"
+                >
+                  {{ professorInfo.avatar_url }}
+                </div>
+                <div
+                  v-else-if="professorInfo.avatar_url && professorInfo.avatar_url.includes('/') && meuNivelLogado >= 2 && professorInfo.nivel >= 2"
+                  class="aluno-foto-wrap aluno-foto-wrap--nivel2"
+                >
+                  <img v-if="professorInfo.signedUrl" :src="professorInfo.signedUrl" :alt="professorInfo.nome" class="aluno-foto" />
+                  <div v-else class="aluno-foto bg-blue-50 flex items-center justify-center">
+                    <svg class="w-10 h-10 text-blue-200" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-5.33 0-8 2.67-8 4v1h16v-1c0-1.33-2.67-4-8-4z" />
+                    </svg>
+                  </div>
+                </div>
+                <div v-else class="flex flex-col items-center gap-2">
+                  <div class="w-20 h-20 rounded-full bg-indigo-50 border-2 border-gray-200 flex items-center justify-center">
+                    <svg class="w-10 h-10 text-indigo-300" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-5.33 0-8 2.67-8 4v1h16v-1c0-1.33-2.67-4-8-4z" />
+                    </svg>
+                  </div>
+                  <button
+                    v-if="professorInfo.avatar_url && professorInfo.avatar_url.includes('/') && professorInfo.nivel >= 2 && meuNivelLogado < 2"
+                    class="flex items-center gap-1 text-[11px] text-gray-400 hover:text-green-600 transition"
+                    @click="modalBloqueadoTipo = 'foto'"
+                  >
+                    <svg class="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 10V8a6 6 0 1112 0v2M5 10h14a1 1 0 011 1v9a1 1 0 01-1 1H5a1 1 0 01-1-1v-9a1 1 0 011-1z" />
+                    </svg>
+                    Foto bloqueada
+                  </button>
+                </div>
+              </div>
+
+              <!-- Nome -->
+              <h3 class="text-sm font-semibold text-gray-800 text-center mb-1 leading-tight">
+                {{ professorInfo.nome }}
+              </h3>
+
+              <!-- Informações adicionais — só se EU sou nível >= 1 -->
+              <template v-if="meuNivelLogado >= 1">
+                <div class="flex flex-col gap-1 mt-3 w-full">
+                  <div v-if="professorInfo.curso && campoVisivelAluno(professorInfo, CAMPOS.curso)" class="flex items-center gap-1.5 text-xs text-gray-500">
+                    <svg class="w-3.5 h-3.5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0v6m0 0H9m3 0h3" />
+                    </svg>
+                    <span class="truncate">{{ professorInfo.curso }}</span>
+                  </div>
+                  <div v-if="professorInfo.data_nascimento && campoVisivelAluno(professorInfo, CAMPOS.idade)" class="flex items-center gap-1.5 text-xs text-gray-500">
+                    <svg class="w-3.5 h-3.5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span>{{ calcularIdade(professorInfo.data_nascimento) }} anos</span>
+                  </div>
+                </div>
+                <div v-if="interesses(professorInfo).length && campoVisivelAluno(professorInfo, CAMPOS.interesses)" class="mt-3 w-full">
+                  <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5 flex items-center gap-1">
+                    <svg class="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                    </svg>
+                    Interesses
+                  </p>
+                  <div class="flex flex-wrap gap-1">
+                    <span v-for="(item, i) in interesses(professorInfo)" :key="i" class="text-[11px] px-2 py-0.5 bg-green-50 text-green-700 border border-green-100 rounded-full">{{ item }}</span>
+                  </div>
+                </div>
+                <div v-if="professorInfo.motivacoes && campoVisivelAluno(professorInfo, CAMPOS.motivacao)" class="mt-3 w-full">
+                  <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5 flex items-center gap-1">
+                    <svg class="w-3 h-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Motivações
+                  </p>
+                  <p class="text-xs text-gray-600 bg-gray-50 rounded-xl px-3 py-2 leading-relaxed line-clamp-3">{{ professorInfo.motivacoes }}</p>
+                </div>
+              </template>
+              <template v-else>
+                <button
+                  class="mt-3 w-full text-center text-xs text-gray-400 hover:text-green-600 transition leading-relaxed px-1 py-1"
+                  @click="modalBloqueadoTipo = 'infos'"
+                >
+                  <svg class="w-3.5 h-3.5 inline mr-1 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M6 10V8a6 6 0 1112 0v2M5 10h14a1 1 0 011 1v9a1 1 0 01-1 1H5a1 1 0 01-1-1v-9a1 1 0 011-1z" />
+                  </svg>
+                  Aumente seu nível para ver as informações do professor
+                </button>
+              </template>
+            </div>
+
             <div
               v-for="aluno in alunosAtivos"
               :key="aluno.id"
@@ -949,6 +1054,7 @@ const RECOMPENSA_ESTRELAS = 20; // fixo por enquanto; substituir por config futu
 const loading = ref(true);
 const turma = ref(null);
 const nomeProfessor = ref("—");
+const professorInfo = ref(null);
 const todosAlunos = ref([]);
 const todasPresencas = ref([]);
 const totalAulas = ref(0);
@@ -1170,7 +1276,7 @@ onMounted(async () => {
 
   const [{ data: professorData }, { data: vinculosData }, { data: aulasData }] =
     await Promise.all([
-      supabase.from("usuarios").select("nome").eq("id", professorId).single(),
+      supabase.from("usuarios").select("id, nome, nivel_perfil, avatar_url, curso, data_nascimento, interesses, motivacao_ingles, campos_visiveis").eq("id", professorId).single(),
       supabase
         .from("turma_aluno")
         .select(
@@ -1185,6 +1291,20 @@ onMounted(async () => {
     ]);
 
   nomeProfessor.value = professorData?.nome ?? "—";
+  if (professorData) {
+    professorInfo.value = {
+      id: professorId,
+      nome: professorData.nome ?? "—",
+      nivel: professorData.nivel_perfil ?? 0,
+      avatar_url: professorData.avatar_url ?? null,
+      signedUrl: null,
+      curso: professorData.curso ?? null,
+      data_nascimento: professorData.data_nascimento ?? null,
+      interesses: professorData.interesses ?? null,
+      motivacoes: professorData.motivacao_ingles ?? null,
+      campos_visiveis: professorData.campos_visiveis ?? 63,
+    };
+  }
   aulas.value = aulasData || [];
 
   // Nível do usuário logado — determina o que pode ser exibido
@@ -1212,6 +1332,10 @@ onMounted(async () => {
       .filter((a) => a.ativo && a.nivel >= 2 && a.avatar_url?.includes('/'))
       .map((a) => a.id);
 
+    if (professorInfo.value?.nivel >= 2 && professorInfo.value?.avatar_url?.includes('/')) {
+      nivel2Ids.push(professorInfo.value.id);
+    }
+
     if (nivel2Ids.length > 0) {
       const paths = nivel2Ids.map((id) => `${id}/avatar.jpg`);
       const { data: signedData } = await supabase.storage
@@ -1226,6 +1350,9 @@ onMounted(async () => {
           ...a,
           signedUrl: urlMap[a.id] ?? null,
         }));
+        if (professorInfo.value && urlMap[professorInfo.value.id]) {
+          professorInfo.value = { ...professorInfo.value, signedUrl: urlMap[professorInfo.value.id] };
+        }
       }
     }
   }
@@ -1389,6 +1516,10 @@ function formatarDataCurta(dataStr) {
 
 .aluno-card--nivel2 {
   border-color: #bfdbfe;
+}
+
+.aluno-card--professor {
+  border-color: #e0e7ff;
 }
 
 .aluno-foto-wrap {

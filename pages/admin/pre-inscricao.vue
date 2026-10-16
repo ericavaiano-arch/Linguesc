@@ -231,13 +231,15 @@ const temFiltro = computed(() =>
   busca.value || filtroTurma.value || filtroStatus.value || filtroNivel.value
 )
 
+const norm = (s) => (s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+
 const filtrados = computed(() => {
-  const termo = busca.value.trim().toLowerCase()
+  const termo = norm(busca.value.trim())
   return todos.value.filter((r) => {
     if (termo) {
       const ok =
-        r.nome.toLowerCase().includes(termo) ||
-        r.email.toLowerCase().includes(termo) ||
+        norm(r.nome).includes(termo) ||
+        norm(r.email).includes(termo) ||
         (r.cpf ?? '').replace(/\D/g, '').includes(termo.replace(/\D/g, ''))
       if (!ok) return false
     }
