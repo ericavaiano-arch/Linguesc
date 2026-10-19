@@ -75,7 +75,7 @@ export default defineEventHandler(async (event) => {
 
   await transporter.sendMail({
     from: `"Linguesc" <${process.env.BREVO_SENDER_EMAIL}>`,
-    to: 'eric.cvsilveira@gmail.com',
+    to: 'linguesc.cct@udesc.br',
     subject: `[Linguesc] Requisição de recompensa — ${recompensa.nome}`,
     html: `
       <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 24px;">
