@@ -237,10 +237,11 @@ const filtrados = computed(() => {
   const termo = norm(busca.value.trim())
   return todos.value.filter((r) => {
     if (termo) {
+      const termoDigits = termo.replace(/\D/g, '')
       const ok =
         norm(r.nome).includes(termo) ||
         norm(r.email).includes(termo) ||
-        (r.cpf ?? '').replace(/\D/g, '').includes(termo.replace(/\D/g, ''))
+        (termoDigits.length > 0 && (r.cpf ?? '').replace(/\D/g, '').includes(termoDigits))
       if (!ok) return false
     }
     if (filtroTurma.value === '__sem_turma__' && r.turma_nome) return false
@@ -296,13 +297,18 @@ async function confirmarVinculo() {
 
 async function carregar() {
   loading.value = true
-  const [inscricoes, { data: turmas }] = await Promise.all([
-    $fetch('/api/admin/pre-inscricoes'),
-    supabase.from('turma').select('id, nome').eq('status', 'ATIVA').order('nome'),
-  ])
-  todos.value = inscricoes ?? []
-  turmasDisponiveis.value = turmas ?? []
-  loading.value = false
+  try {
+    const [inscricoes, { data: turmas }] = await Promise.all([
+      $fetch('/api/admin/pre-inscricoes'),
+      supabase.from('turma').select('id, nome').eq('status', 'ATIVA').order('nome'),
+    ])
+    todos.value = inscricoes ?? []
+    turmasDisponiveis.value = turmas ?? []
+  } catch (e) {
+    console.error('[pre-inscricao] erro ao carregar:', e)
+  } finally {
+    loading.value = false
+  }
 }
 
 function exportarExcel() {

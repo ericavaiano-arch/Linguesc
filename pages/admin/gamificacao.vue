@@ -27,6 +27,25 @@
       </div>
     </div>
 
+    <!-- Totalizador por nível de perfil -->
+    <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 mb-6">
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">Distribuição por nível de perfil</p>
+      <div class="grid grid-cols-3 gap-4">
+        <div
+          v-for="item in distribuicaoNivel"
+          :key="item.nivel"
+          class="flex items-center justify-between rounded-xl border px-5 py-4"
+          :class="item.bgClass"
+        >
+          <div class="flex flex-col">
+            <span class="text-3xl font-extrabold leading-none" :class="item.textClass">{{ item.total }}</span>
+            <span class="text-xs font-semibold mt-1.5" :class="item.labelClass">{{ item.label }}</span>
+          </div>
+          <span class="text-sm font-bold px-3 py-1.5 rounded-full" :class="item.badgeClass">{{ item.pct }}%</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Filtros -->
     <div class="bg-white border border-gray-200 rounded-2xl p-4 mb-6 flex flex-wrap items-center gap-4">
       <div class="flex items-center gap-2">
@@ -375,6 +394,19 @@ onMounted(async () => {
   turmasDisponiveis.value = (turmas || []).sort((a, b) => a.nome.localeCompare(b.nome))
 
   loading.value = false
+})
+
+const distribuicaoNivel = computed(() => {
+  const total = todasLinhas.value.length || 1
+  const configs = [
+    { nivel: 0, label: 'Nível 0 — sem dados', bgClass: 'bg-gray-50 border-gray-200', textClass: 'text-gray-600', labelClass: 'text-gray-400', badgeClass: 'bg-gray-100 text-gray-500' },
+    { nivel: 1, label: 'Nível 1 — básico',    bgClass: 'bg-blue-50 border-blue-100',  textClass: 'text-blue-700', labelClass: 'text-blue-400', badgeClass: 'bg-blue-100 text-blue-600' },
+    { nivel: 2, label: 'Nível 2 — intermediário', bgClass: 'bg-amber-50 border-amber-100', textClass: 'text-amber-700', labelClass: 'text-amber-500', badgeClass: 'bg-amber-100 text-amber-700' },
+  ]
+  return configs.map(c => {
+    const qtd = todasLinhas.value.filter(l => (l.nivel_perfil || 0) === c.nivel).length
+    return { ...c, total: qtd, pct: Math.round(qtd / total * 100) }
+  })
 })
 
 const stats = computed(() => ({

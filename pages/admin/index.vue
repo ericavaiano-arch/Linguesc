@@ -21,7 +21,7 @@
           class="border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
         >
           <option value="">Todos os professores</option>
-          <option v-for="prof in professores" :key="prof.id" :value="prof.id">
+          <option v-for="prof in professoresDasAtivas" :key="prof.id" :value="prof.id">
             {{ prof.nome }}
           </option>
         </select>
@@ -374,6 +374,7 @@ onMounted(async () => {
         supabase
           .from("turma")
           .select("id, nome, professor_id, status")
+          .eq("is_teste", false)
           .order("nome"),
         supabase
           .from("aula")
@@ -441,6 +442,15 @@ const turmasFiltradasIds = computed(
 const professoresMap = computed(() =>
   Object.fromEntries(professores.value.map((p) => [p.id, p.nome])),
 );
+
+const professoresDasAtivas = computed(() => {
+  const ids = new Set(
+    todasTurmas.value
+      .filter((t) => t.status === "ATIVA")
+      .map((t) => t.professor_id),
+  );
+  return professores.value.filter((p) => ids.has(p.id));
+});
 
 function aulasRealizadasDaTurma(turmaId) {
   return todasAulas.value.filter(
