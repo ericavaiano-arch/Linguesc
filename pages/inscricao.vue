@@ -9,6 +9,33 @@
       <p class="text-sm text-gray-500">Inscrição de estudante</p>
     </div>
 
+    <!-- Carregando flag -->
+    <div v-if="verificandoFlag" class="flex items-center gap-2 text-green-700 text-sm py-12">
+      <div class="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+      Carregando...
+    </div>
+
+    <!-- Inscrições encerradas -->
+    <div v-else-if="!inscricoesAbertas" class="w-full max-w-md">
+      <div class="bg-white rounded-3xl shadow-lg border border-gray-100 p-10 text-center">
+        <div class="text-5xl mb-4">🔒</div>
+        <h2 class="text-xl font-bold text-gray-800 mb-2">Inscrições encerradas</h2>
+        <p class="text-sm text-gray-500 mb-6 leading-relaxed">
+          As inscrições deste semestre já foram finalizadas. Para dúvidas, entre em contato em:
+          <span class="block mt-1 font-medium text-gray-700">linguesc.cct@udesc.br</span>
+        </p>
+        <NuxtLink
+          to="/"
+          class="inline-block w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3.5 rounded-xl transition active:scale-95 text-sm"
+        >
+          Ir para o login
+        </NuxtLink>
+      </div>
+    </div>
+
+    <!-- Conteúdo normal de inscrição -->
+    <template v-else>
+
     <Transition name="fade" mode="out-in">
       <div v-if="passo === 'auth'" key="auth" class="w-full max-w-md">
         <div class="bg-white rounded-3xl shadow-lg border border-gray-100 p-8">
@@ -447,6 +474,8 @@
       </div>
     </Transition>
 
+    </template><!-- fim v-else inscricoesAbertas -->
+
     <div
       v-if="mostrarModalEsqueciSenha"
       class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4"
@@ -499,6 +528,20 @@
 import { supabase } from '~/utils/supabase'
 
 definePageMeta({ layout: 'auth' })
+
+const verificandoFlag = ref(true)
+const inscricoesAbertas = ref(true)
+
+onMounted(async () => {
+  try {
+    const data = await $fetch('/api/config-publica')
+    inscricoesAbertas.value = data?.inscricoes_abertas ?? true
+  } catch {
+    inscricoesAbertas.value = true
+  } finally {
+    verificandoFlag.value = false
+  }
+})
 
 const NIVEIS = [
   {
