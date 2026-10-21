@@ -323,14 +323,14 @@ onMounted(async () => {
     { data: turmas },
     { data: vinculos },
     { data: loginContagem },
-    { data: recompensaContagem },
+    recompensaCountData,
   ] = await Promise.all([
     supabase.from('usuarios').select('id, nome, estrelas, nivel_perfil, ativo').eq('ativo', true),
     supabase.from('usuario_papel').select('usuario_id, papel').eq('ativo', true),
     supabase.from('turma').select('id, nome, professor_id').in('status', ['ATIVA']).eq('is_teste', false),
     supabase.from('turma_aluno').select('turma_id, aluno_id'),
     supabase.from('login_historico').select('usuario_id'),
-    supabase.from('recompensa_requisicao').select('usuario_id'),
+    $fetch('/api/admin/recompensas-count').catch(() => ({})),
   ])
 
   // Logins por usuário
@@ -340,12 +340,8 @@ onMounted(async () => {
   })
   mapaLogins.value = loginsMap
 
-  // Recompensas por usuário
-  const recompMap = {}
-  ;(recompensaContagem || []).forEach(r => {
-    recompMap[r.usuario_id] = (recompMap[r.usuario_id] || 0) + 1
-  })
-  mapaRecompensas.value = recompMap
+  // Recompensas por usuário (via server route com admin client)
+  mapaRecompensas.value = recompensaCountData || {}
 
   // Turmas por aluno
   const turmasAluno = {}
@@ -388,7 +384,7 @@ onMounted(async () => {
         ? (turmasProfessor[u.id] || [])
         : (turmasAluno[u.id] || []),
       qtd_logins: loginsMap[u.id] || 0,
-      qtd_recompensas: recompMap[u.id] || 0,
+      qtd_recompensas: mapaRecompensas.value[u.id] || 0,
     }))
 
   turmasDisponiveis.value = (turmas || []).sort((a, b) => a.nome.localeCompare(b.nome))

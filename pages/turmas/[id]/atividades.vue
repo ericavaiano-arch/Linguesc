@@ -179,6 +179,15 @@
               🔒 Encerrada
             </span>
 
+            <!-- Botão deletar — só missões encerradas -->
+            <button
+              v-if="atividadeSelecionada.tipo_missao === 'MISSAO' && atividadeSelecionada.status === 'ENCERRADA'"
+              @click="confirmarDeletar"
+              class="text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition"
+            >
+              🗑️ Deletar
+            </button>
+
             <Transition name="fade">
               <div v-if="temAlteracoes" class="flex items-center gap-2">
                 <span
@@ -533,6 +542,44 @@
       </div>
     </Transition>
 
+    <!-- ── MODAL CONFIRMAR DELETAR MISSÃO ── -->
+    <Transition name="fade">
+      <div
+        v-if="modalDeletar"
+        class="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4"
+      >
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+          <div class="px-6 pt-6 pb-4">
+            <p class="text-2xl mb-3">🗑️</p>
+            <h3 class="text-base font-semibold text-gray-800 mb-1">Deletar missão?</h3>
+            <p class="text-sm text-gray-500 mb-3">
+              A missão <strong>{{ atividadeSelecionada?.titulo }}</strong> será removida permanentemente.
+            </p>
+            <div class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+              ⭐ Os <strong>+20 estrelas</strong> ganhos por criar esta missão serão descontados do seu saldo.
+              Você ganhará as estrelas novamente ao criar uma nova missão esta semana.
+            </div>
+          </div>
+          <div class="px-6 pb-6 flex gap-3">
+            <button
+              @click="modalDeletar = false"
+              class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition"
+            >
+              Cancelar
+            </button>
+            <button
+              @click="deletarMissao"
+              :disabled="deletando"
+              class="flex-1 px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white text-sm font-semibold transition flex items-center justify-center gap-2"
+            >
+              <div v-if="deletando" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              {{ deletando ? 'Deletando...' : 'Sim, deletar' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
     <!-- ── OVERLAY DRAWER ── -->
     <Transition name="fade">
       <div
@@ -806,6 +853,8 @@ const registroFeedback = ref(null);
 const textoFeedback = ref("");
 const modalEncerrar = ref(false);
 const encerrando = ref(false);
+const modalDeletar = ref(false);
+const deletando = ref(false);
 
 const form = reactive({
   titulo: "",
@@ -1043,6 +1092,63 @@ async function encerrarAtividade() {
     $toast.error("Erro ao encerrar atividade.");
   } finally {
     encerrando.value = false;
+  }
+}
+
+// ── Deletar missão ────────────────────────────────────────────────────────
+function confirmarDeletar() {
+  modalDeletar.value = true;
+}
+
+async function deletarMissao() {
+  deletando.value = true;
+  try {
+    const missaoId = atividadeSelecionada.value.id;
+
+    // Verifica quantas missões o professor já criou (para decidir se reverte estrelas)
+    const turmasIds = await turmasIdsDoProfessor(user.value?.id);
+    const { count } = await supabase
+      .from('atividade')
+      .select('id', { count: 'exact', head: true })
+      .eq('tipo_missao', 'MISSAO')
+      .in('turma_id', turmasIds);
+
+    // Se estava dentro do limite de 8, o bônus foi dado — reverte
+    if ((count ?? 0) <= 8 && user.value?.id) {
+      const { data: prof } = await supabase
+        .from('usuarios')
+        .select('estrelas')
+        .eq('id', user.value.id)
+        .single();
+
+      if (prof) {
+        const novoSaldo = Math.max(0, (prof.estrelas ?? 0) - 20);
+        await supabase.from('usuarios').update({ estrelas: novoSaldo }).eq('id', user.value.id);
+        atualizarEstrelasLocal(novoSaldo);
+        supabase.from('estrelas_historico').insert({
+          usuario_id: user.value.id,
+          quantidade: -20,
+          motivo: 'MISSAO_DELETADA',
+          descricao: 'Missão da semana deletada',
+          turma_id: turmaId ?? null,
+        }).then(() => {});
+      }
+    }
+
+    // Deleta registros de alunos e depois a missão
+    await supabase.from('atividade_aluno').delete().eq('atividade_id', missaoId);
+    const { error } = await supabase.from('atividade').delete().eq('id', missaoId);
+    if (error) throw error;
+
+    $toast.success('Missão deletada. -20 ⭐ removidos. Você ganhará as estrelas novamente ao criar uma nova missão esta semana.');
+    modalDeletar.value = false;
+    atividadeSelecionada.value = null;
+    await carregarAtividades();
+  } catch (err) {
+    console.error(err);
+    $toast.error('Erro ao deletar a missão.');
+  } finally {
+    deletando.value = false;
   }
 }
 
