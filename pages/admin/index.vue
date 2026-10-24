@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50 p-8">
-    <div class="mb-10 flex items-start justify-between">
+    <div class="mb-10 flex items-start justify-between gap-4">
       <div>
         <h1 class="text-3xl font-bold text-green-700">Dashboard Admin</h1>
         <p class="text-gray-500 mt-2">
@@ -8,6 +8,16 @@
         </p>
         <div class="w-20 h-1 bg-green-600 mt-4 rounded"></div>
       </div>
+      <button
+        v-if="!loading"
+        @click="exportarCSV"
+        :disabled="exportando"
+        class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 flex-shrink-0 mt-1"
+      >
+        <div v-if="exportando" class="w-3.5 h-3.5 border-2 border-gray-500 border-t-transparent rounded-full animate-spin"></div>
+        <span v-else>📥</span>
+        Exportar CSV
+      </button>
     </div>
 
     <!-- Filtros -->
@@ -333,6 +343,8 @@ const todasJustificativas = ref([]);
 const todosVinculos = ref([]);
 const professores = ref([]);
 const mapaEmails = ref({});
+const mapaEstrelas = ref({});
+const exportando = ref(false);
 const professorFiltro = ref("");
 const statusFiltro = ref("ATIVA");
 const semestreFiltro = ref(semestreAtual());
@@ -370,6 +382,7 @@ onMounted(async () => {
         { data: justificativasData },
         { data: professoresData },
         { data: todosAlunos },
+        { data: estrelasData },
       ] = await Promise.all([
         supabase
           .from("turma")
@@ -395,6 +408,7 @@ onMounted(async () => {
           .eq("ativo", true)
           .eq("usuarios.ativo", true),
         supabase.rpc("get_alunos_ativos"),
+        supabase.from("usuarios").select("id, estrelas").eq("ativo", true),
       ]);
 
       todasTurmas.value = turmasData || [];
@@ -406,6 +420,9 @@ onMounted(async () => {
         professoresData?.map((d) => d.usuarios).filter(Boolean) || [];
       mapaEmails.value = Object.fromEntries(
         (todosAlunos || []).map((a) => [a.id, a.email]),
+      );
+      mapaEstrelas.value = Object.fromEntries(
+        (estrelasData || []).map((u) => [u.id, u.estrelas ?? 0]),
       );
     })(),
   ]);
@@ -651,6 +668,46 @@ const opcoesGrafico = {
     },
   },
 };
+
+function exportarCSV() {
+  exportando.value = true;
+
+  const linhas = [
+    ["Nome", "Email", "Turma", "Professor", "Presenças", "Aulas até o momento", "Estrelas"],
+  ];
+
+  turmasFiltradas.value.forEach((turma) => {
+    const aulasRealizadas = aulasRealizadasDaTurma(turma.id);
+    const professorNome = professoresMap.value[turma.professor_id] ?? "—";
+    alunosAtivosDaTurma(turma.id).forEach((v) => {
+      const freq = frequenciaAlunoNaTurma(v.aluno_id, turma.id);
+      linhas.push([
+        v.usuarios?.nome || "",
+        mapaEmails.value[v.aluno_id] || "",
+        turma.nome,
+        professorNome,
+        freq?.totalValidas ?? 0,
+        aulasRealizadas.length,
+        mapaEstrelas.value[v.aluno_id] ?? 0,
+      ]);
+    });
+  });
+
+  const csv = linhas
+    .map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+
+  const bom = "﻿";
+  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `alunos_${new Date().toISOString().split("T")[0]}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+
+  exportando.value = false;
+}
 
 function formatarDataCurta(dataStr) {
   const d = new Date(dataStr + "T12:00:00");

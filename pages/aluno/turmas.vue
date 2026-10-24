@@ -47,7 +47,7 @@
 
         <div class="flex items-center justify-between">
           <p class="text-xs text-gray-400">Meta de frequência: <span class="font-semibold text-gray-600">{{ turma.meta_frequencia }}%</span></p>
-          <span class="text-xs text-green-600 font-semibold group-hover:underline">Ver {{ destino === 'minha-turma' ? 'turma' : destino === 'minhas-atividades' ? 'atividades' : 'presença' }} →</span>
+          <span class="text-xs text-green-600 font-semibold group-hover:underline">Ver {{ destino === 'minha-turma' ? 'turma' : destino === 'minhas-atividades' ? 'atividades' : destino === 'mural' ? 'mural' : 'presença' }} →</span>
         </div>
       </button>
     </div>
@@ -99,7 +99,11 @@ onMounted(async () => {
   }
 
   if (vinculos.length === 1) {
-    router.replace(`/aluno/${destino.value}?turma_id=${vinculos[0].turma_id}`)
+    if (destino.value === 'mural') {
+      router.replace(`/turmas/${vinculos[0].turma_id}/mural`)
+    } else {
+      router.replace(`/aluno/${destino.value}?turma_id=${vinculos[0].turma_id}`)
+    }
     return
   }
 
@@ -120,6 +124,10 @@ onMounted(async () => {
 })
 
 function navegar(turmaId) {
-  router.push(`/aluno/${destino.value}?turma_id=${turmaId}`)
+  if (destino.value === 'mural') {
+    router.push(`/turmas/${turmaId}/mural`)
+  } else {
+    router.push(`/aluno/${destino.value}?turma_id=${turmaId}`)
+  }
 }
 </script>

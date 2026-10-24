@@ -14,6 +14,7 @@
         <SidebarItem v-if="isAluno" to="/aluno/turmas?destino=minha-presenca" label="Minha Presença" icon="📅" :open="true" @click="$emit('toggle')" />
         <SidebarItem v-if="isAluno" to="/aluno/turmas?destino=minha-turma" label="Minha Turma" icon="👥" :open="true" @click="$emit('toggle')" />
         <SidebarItem v-if="isAluno" to="/aluno/turmas?destino=minhas-atividades" label="Minhas Atividades" icon="📚" :open="true" @click="$emit('toggle')" />
+        <SidebarItem v-if="isAluno" to="/aluno/turmas?destino=mural" label="Mural da Turma" icon="📌" :open="true" @click="$emit('toggle')" />
         <SidebarItem v-if="isAluno" to="/aluno/gamificacao" label="Recompensas" icon="🏆" :open="true" @click="$emit('toggle')" />
         <!-- <SidebarItem v-if="isAluno" to="/registroPresenca" label="Marcar Presença" icon="📷" :open="true" @click="$emit('toggle')" /> -->
 
@@ -33,6 +34,7 @@
           </div>
           <SidebarItem to="/admin" label="Dashboard Global" icon="📊" :open="true" @click="$emit('toggle')" />
           <SidebarItem to="/turmas" label="Turmas" icon="📚" :open="true" @click="$emit('toggle')" />
+          <SidebarItem to="/admin/calendario" label="Calendário de Aulas" icon="🗓️" :open="true" @click="$emit('toggle')" />
           <SidebarItem to="/admin/usuarios" label="Usuários" icon="👥" :open="true" @click="$emit('toggle')" />
           <SidebarItem to="/admin/cadastro-lote" label="Cadastro de Usuários - Lote" icon="📦" :open="true" @click="$emit('toggle')" />
           <SidebarItem to="/justificativas" label="Justificativas" icon="📝" :open="true" @click="$emit('toggle')" />

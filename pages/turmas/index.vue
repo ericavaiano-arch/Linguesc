@@ -169,10 +169,10 @@
                 </button>
               </div>
 
-              <!-- Linha 3: atividades + membros (admin) -->
+              <!-- Linha 3: atividades + membros + mural (admin) -->
               <div
                 class="grid border-t border-gray-100"
-                style="grid-template-columns: 1fr 1px 1fr"
+                style="grid-template-columns: 1fr 1px 1fr 1px 1fr"
               >
                 <button
                   @click.stop="navegar(`/turmas/${turma.id}/atividades`)"
@@ -188,6 +188,14 @@
                 >
                   <span class="text-base leading-none">👥</span>
                   Membros
+                </button>
+                <div class="bg-gray-100 self-stretch"></div>
+                <button
+                  @click.stop="navegar(`/turmas/${turma.id}/mural`)"
+                  class="flex flex-col items-center justify-center gap-1 py-2.5 text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition"
+                >
+                  <span class="text-base leading-none">📌</span>
+                  Mural
                 </button>
               </div>
 
@@ -360,7 +368,7 @@
               <!-- Ações — linha 2 -->
               <div
                 class="grid border-t border-gray-100"
-                style="grid-template-columns: 1fr 1px 1fr"
+                style="grid-template-columns: 1fr 1px 1fr 1px 1fr"
               >
                 <button
                   @click.stop="$router.push(`/turmas/${turma.id}/atividades`)"
@@ -376,6 +384,14 @@
                 >
                   <span class="text-base leading-none">👥</span>
                   Membros
+                </button>
+                <div class="bg-gray-100 self-stretch"></div>
+                <button
+                  @click.stop="$router.push(`/turmas/${turma.id}/mural`)"
+                  class="flex flex-col items-center justify-center gap-1 py-2.5 text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition"
+                >
+                  <span class="text-base leading-none">📌</span>
+                  Mural
                 </button>
               </div>
             </div>

@@ -89,11 +89,12 @@
       <!-- Ações rápidas -->
       <div>
         <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Acesso rápido</p>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <button v-for="link in linksAluno" :key="link.href" @click="irPara(link.href)"
             class="bg-white border border-gray-100 rounded-2xl p-4 text-center hover:border-green-400 hover:shadow-md transition shadow-sm group">
             <span class="text-2xl block mb-2">{{ link.emoji }}</span>
             <p class="text-xs font-semibold text-gray-700 group-hover:text-green-700 transition">{{ link.label }}</p>
+            <p v-if="link.desc" class="text-[10px] text-gray-400 mt-1 leading-tight">{{ link.desc }}</p>
           </button>
         </div>
       </div>
@@ -213,6 +214,7 @@
             class="bg-white border border-gray-100 rounded-2xl p-4 text-center hover:border-blue-400 hover:shadow-md transition shadow-sm group">
             <span class="text-2xl block mb-2">{{ link.emoji }}</span>
             <p class="text-xs font-semibold text-gray-700 group-hover:text-blue-700 transition">{{ link.label }}</p>
+            <p v-if="link.desc" class="text-[10px] text-gray-400 mt-1 leading-tight">{{ link.desc }}</p>
           </button>
         </div>
       </div>
@@ -334,10 +336,11 @@ const corFrequencia = computed(() => {
 })
 
 const linksAluno = [
-  { emoji: '🏆', label: 'Recompensas',   href: '/aluno/gamificacao' },
-  { emoji: '📅', label: 'Presença',       href: '/aluno/turmas?destino=minha-presenca' },
-  { emoji: '📚', label: 'Atividades',     href: '/aluno/turmas?destino=minhas-atividades' },
-  { emoji: '👥', label: 'Minha turma',    href: '/aluno/turmas?destino=minha-turma' },
+  { emoji: '🏆', label: 'Recompensas',   desc: 'Suas estrelas e prêmios',              href: '/aluno/gamificacao' },
+  { emoji: '📅', label: 'Presença',       desc: 'Acompanhe sua frequência',             href: '/aluno/turmas?destino=minha-presenca' },
+  { emoji: '📚', label: 'Atividades',     desc: 'Missões e exercícios da turma',        href: '/aluno/turmas?destino=minhas-atividades' },
+  { emoji: '👥', label: 'Minha turma',    desc: 'Jornada e conteúdo das aulas',         href: '/aluno/turmas?destino=minha-turma' },
+  { emoji: '📌', label: 'Mural',          desc: 'Recados e links do professor',         href: '/aluno/turmas?destino=mural' },
 ]
 
 async function carregarDadosAluno() {
@@ -406,10 +409,11 @@ const turmasAtivasProf = ref([])
 const statsProf = reactive({ turmasAtivas: 0, freqBaixa: 0 })
 
 const linksProf = computed(() => [
-  { emoji: '🏆', label: 'Recompensas',   href: '/aluno/gamificacao' },
-  { emoji: '📊', label: 'Dashboard',     href: '/dashboard' },
-  { emoji: '📚', label: 'Minhas Turmas', href: '/turmas' },
-  { emoji: '👤', label: 'Meu perfil',    href: `/profile/${user.value?.id}` },
+  { emoji: '🏆', label: 'Recompensas',   desc: 'Suas estrelas e prêmios',              href: '/aluno/gamificacao' },
+  { emoji: '📊', label: 'Dashboard',     desc: 'Frequência e alunos em risco',         href: '/dashboard' },
+  { emoji: '📚', label: 'Minhas Turmas', desc: 'Gerenciar turmas e aulas',             href: '/turmas' },
+  { emoji: '📌', label: 'Mural',         desc: 'Publicar links e recados para a turma',href: '/turmas' },
+  { emoji: '👤', label: 'Meu perfil',    desc: 'Editar suas informações',              href: `/profile/${user.value?.id}` },
 ])
 
 async function carregarDadosProf() {
