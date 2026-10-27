@@ -889,6 +889,13 @@
               </div>
             </div>
 
+            <!-- Informações adicionais (1ª questão) -->
+            <div v-if="(previewQuestaoIdx === 0 || previewQuestoes.length <= 1) && atividadeSelecionada?.descricao"
+              class="bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3">
+              <p class="text-xs font-semibold text-gray-500 mb-1.5">📋 Informações adicionais</p>
+              <p class="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{{ atividadeSelecionada.descricao }}</p>
+            </div>
+
             <!-- Multi-questão -->
             <template v-if="previewQuestoes.length > 0">
               <img v-if="previewQuestaoAtual?.imagem_url" :src="previewQuestaoAtual.imagem_url" class="w-full rounded-2xl object-cover max-h-72 sm:max-h-96" />

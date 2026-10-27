@@ -295,6 +295,13 @@
               </div>
             </div>
 
+            <!-- Informações adicionais (1ª questão) -->
+            <div v-if="(questaoAtualIdx === 0 || !isMultiQuestao) && missaoAtual?.descricao"
+              class="bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3">
+              <p class="text-xs font-semibold text-gray-500 mb-1.5">📋 Informações adicionais</p>
+              <p class="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{{ missaoAtual.descricao }}</p>
+            </div>
+
             <!-- MULTI-QUESTÃO -->
             <template v-if="isMultiQuestao">
               <img v-if="questaoAtual?.imagem_url" :src="questaoAtual.imagem_url" class="w-full rounded-2xl object-cover max-h-72 sm:max-h-96" />
