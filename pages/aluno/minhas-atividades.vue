@@ -108,20 +108,20 @@
               <span class="text-blue-400 text-base mt-0.5">🔒</span>
               <div>
                 <p class="text-xs font-bold text-blue-700 mb-0.5">Esta missão é anônima</p>
-                <p class="text-xs text-blue-600 leading-relaxed">O professor <strong>não terá acesso</strong> a quem respondeu. Fique à vontade para ser sincero(a) — sua identidade não será revelada.</p>
+                <p class="text-xs text-blue-600 leading-relaxed">O professor <strong>não terá acesso</strong> a quem respondeu.</p>
               </div>
-            </div>
-
-            <!-- Pergunta -->
-            <div v-if="itemSelecionado.conteudo_json?.pergunta" class="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
-              <p class="text-xs font-semibold text-amber-700 mb-1">🎯 Pergunta</p>
-              <p class="text-sm text-gray-800 leading-relaxed">{{ itemSelecionado.conteudo_json.pergunta }}</p>
             </div>
 
             <!-- Descrição / informações adicionais -->
             <div v-if="itemSelecionado.descricao" class="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
               <p class="text-xs font-semibold text-gray-500 mb-1">📋 Informações adicionais</p>
               <p class="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{{ itemSelecionado.descricao }}</p>
+            </div>
+
+            <!-- Número de questões -->
+            <div v-if="itemSelecionado.conteudo_json?.questoes?.length > 1" class="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5">
+              <span>📝</span>
+              <span class="font-medium">{{ itemSelecionado.conteudo_json.questoes.length }} questões nesta missão</span>
             </div>
 
             <!-- Prazo -->
@@ -136,12 +136,24 @@
             <div v-if="itemSelecionado.registro?.respondido_em">
               <div class="bg-green-50 border border-green-200 rounded-xl px-4 py-4">
                 <p class="text-xs font-bold text-green-700 mb-2">✅ Você respondeu esta missão · <span class="font-normal text-green-600">+10 ⭐</span></p>
-                <div v-if="itemSelecionado.registro.resposta_opcao" class="bg-white border border-green-100 rounded-lg px-3 py-2 text-sm text-gray-700">
-                  <span class="text-xs font-semibold text-green-600 mr-1">Sua resposta:</span>{{ itemSelecionado.registro.resposta_opcao }}
-                </div>
-                <div v-else-if="itemSelecionado.registro.resposta_texto" class="bg-white border border-green-100 rounded-lg px-3 py-2.5 text-sm text-gray-700 whitespace-pre-line leading-relaxed">
-                  <span class="text-xs font-semibold text-green-600 block mb-1">Sua resposta:</span>{{ itemSelecionado.registro.resposta_texto }}
-                </div>
+                <!-- Multi-questão -->
+                <template v-if="itemSelecionado.conteudo_json?.questoes?.length > 0 && isMultiRespostaJson(itemSelecionado.registro.resposta_texto)">
+                  <div class="space-y-2">
+                    <div v-for="(q, idx) in itemSelecionado.conteudo_json.questoes" :key="idx" class="bg-white border border-green-100 rounded-lg px-3 py-2">
+                      <p class="text-xs font-semibold text-green-600 mb-0.5">Q{{ idx + 1 }}: {{ q.pergunta }}</p>
+                      <p class="text-sm text-gray-700">{{ getRespostaForQuestao(itemSelecionado.registro.resposta_texto, idx) }}</p>
+                    </div>
+                  </div>
+                </template>
+                <!-- Formato antigo -->
+                <template v-else>
+                  <div v-if="itemSelecionado.registro.resposta_opcao" class="bg-white border border-green-100 rounded-lg px-3 py-2 text-sm text-gray-700">
+                    <span class="text-xs font-semibold text-green-600 mr-1">Sua resposta:</span>{{ itemSelecionado.registro.resposta_opcao }}
+                  </div>
+                  <div v-else-if="itemSelecionado.registro.resposta_texto" class="bg-white border border-green-100 rounded-lg px-3 py-2.5 text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+                    <span class="text-xs font-semibold text-green-600 block mb-1">Sua resposta:</span>{{ itemSelecionado.registro.resposta_texto }}
+                  </div>
+                </template>
               </div>
               <button @click="abrirResultado(itemSelecionado)" class="mt-2 w-full text-xs font-medium text-amber-600 hover:text-amber-700 py-1.5 transition-colors">
                 📊 Ver o que a turma respondeu →
@@ -152,7 +164,7 @@
             <template v-else-if="itemSelecionado.status === 'PUBLICADA'">
               <button
                 @click="abrirResponder(itemSelecionado)"
-                class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 rounded-xl transition active:scale-95"
+                class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3.5 rounded-xl transition active:scale-95 text-base"
               >
                 ✏️ Participar e ganhar +10 ⭐
               </button>
@@ -234,61 +246,161 @@
       </div>
     </div>
 
-    <!-- Modal: responder missão -->
-    <Transition name="fade">
-      <div v-if="modalResponder" class="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-          <div class="px-6 pt-6 pb-4 border-b border-gray-100 bg-amber-50">
-            <div class="flex items-start justify-between gap-2">
-              <div class="min-w-0">
-                <p class="text-xs font-semibold text-amber-600 uppercase tracking-wide">🎯 Missão da Semana</p>
-                <h3 class="text-base font-semibold text-gray-800 mt-0.5 truncate">{{ missaoAtual?.titulo }}</h3>
-              </div>
-              <button @click="fecharResponder" class="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
-            </div>
+    <!-- ── TELA CHEIA: responder missão ── -->
+    <Transition name="slide-up">
+      <div v-if="modalResponder" class="fixed inset-0 bg-white z-[60] flex flex-col overflow-hidden">
+
+        <!-- Header -->
+        <div class="px-5 sm:px-8 py-4 border-b border-amber-100 bg-amber-50 flex items-center justify-between shrink-0">
+          <div class="min-w-0">
+            <p class="text-[10px] font-bold text-amber-600 uppercase tracking-wider">⭐ Missão da Semana · {{ missaoAtual?.turmaNome }}</p>
+            <h3 class="text-base sm:text-lg font-bold text-gray-800 mt-0.5 truncate">{{ missaoAtual?.titulo }}</h3>
           </div>
-          <div class="px-6 py-5 space-y-4">
-            <!-- Aviso anônimo no modal -->
-            <div v-if="missaoAtual?.conteudo_json?.anonimo" class="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
-              <span class="text-blue-400 text-sm">🔒</span>
-              <p class="text-xs text-blue-600"><strong>Missão anônima</strong> — sua identidade não será revelada ao professor.</p>
+          <button @click="fecharResponder" class="ml-3 shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-gray-400 hover:bg-white/70 hover:text-gray-600 text-xl transition">×</button>
+        </div>
+
+        <!-- Progresso (multi-questão) -->
+        <div v-if="isMultiQuestao" class="px-5 sm:px-8 pt-5 pb-1 shrink-0 bg-white border-b border-gray-100">
+          <div class="max-w-2xl mx-auto">
+            <div class="flex items-center justify-between text-xs mb-2">
+              <span class="font-semibold text-gray-700">Questão {{ questaoAtualIdx + 1 }} <span class="text-gray-400 font-normal">de {{ totalQuestoes }}</span></span>
+              <span class="font-bold text-amber-600">{{ Math.round(((questaoAtualIdx + 1) / totalQuestoes) * 100) }}%</span>
             </div>
-            <p class="text-sm text-gray-700 whitespace-pre-line">{{ missaoAtual?.conteudo_json?.pergunta }}</p>
-            <!-- Múltipla escolha -->
-            <div v-if="missaoAtual?.conteudo_json?.formato === 'multipla_escolha'" class="space-y-2">
+            <div class="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full bg-amber-400 rounded-full transition-all duration-300" :style="{ width: ((questaoAtualIdx + 1) / totalQuestoes * 100) + '%' }"></div>
+            </div>
+            <div class="flex gap-2 justify-center mt-3 mb-1">
               <button
-                v-for="(opcao, i) in missaoAtual?.conteudo_json?.opcoes"
+                v-for="(q, i) in questoesDaMissao"
                 :key="i"
-                type="button"
-                @click="opcaoSelecionada = opcao"
-                class="w-full text-left px-4 py-3 rounded-xl border-2 text-sm font-medium transition flex items-center gap-2"
-                :class="opcaoSelecionada === opcao ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'"
-              >
-                <span class="text-xs font-bold w-5 shrink-0">{{ ['A','B','C','D'][i] }}</span>
-                {{ opcao }}
-              </button>
+                @click="questaoAtualIdx = i"
+                class="w-2.5 h-2.5 rounded-full transition-all duration-200"
+                :class="i === questaoAtualIdx ? 'bg-amber-500 scale-125' : respostasMulti.find(r => r.questao_idx === i) ? 'bg-green-400' : 'bg-gray-200 hover:bg-gray-300'"
+              ></button>
             </div>
-            <!-- Texto livre -->
-            <div v-else>
-              <textarea
-                v-model="respostaTexto"
-                rows="4"
-                placeholder="Escreva sua resposta..."
-                class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 transition resize-none"
-              ></textarea>
-            </div>
-          </div>
-          <div class="px-6 pb-6">
-            <button
-              @click="enviarResposta"
-              :disabled="!podeEnviar || enviando"
-              class="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-amber-200 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition active:scale-95 flex items-center justify-center gap-2"
-            >
-              <div v-if="enviando" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              {{ enviando ? 'Enviando...' : '✅ Enviar resposta' }}
-            </button>
           </div>
         </div>
+
+        <!-- Conteúdo rolável -->
+        <div class="flex-1 overflow-y-auto">
+          <div class="px-5 sm:px-8 py-6 max-w-2xl mx-auto w-full space-y-5">
+
+            <!-- Aviso anônimo (apenas na 1ª questão ou formato único) -->
+            <div v-if="(questaoAtualIdx === 0 || !isMultiQuestao) && missaoAtual?.conteudo_json?.anonimo"
+              class="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 flex items-start gap-2.5">
+              <span class="text-blue-400 text-base mt-0.5">🔒</span>
+              <div>
+                <p class="text-xs font-bold text-blue-700 mb-0.5">Esta missão é anônima</p>
+                <p class="text-xs text-blue-600 leading-relaxed">O professor <strong>não terá acesso</strong> a quem respondeu. Fique à vontade para ser sincero(a).</p>
+              </div>
+            </div>
+
+            <!-- MULTI-QUESTÃO -->
+            <template v-if="isMultiQuestao">
+              <img v-if="questaoAtual?.imagem_url" :src="questaoAtual.imagem_url" class="w-full rounded-2xl object-cover max-h-72 sm:max-h-96" />
+              <p class="text-xl sm:text-2xl font-semibold text-gray-800 leading-relaxed">{{ questaoAtual?.pergunta }}</p>
+              <div v-if="questaoAtual?.formato === 'multipla_escolha'" class="space-y-3">
+                <button
+                  v-for="(opcao, i) in questaoAtual.opcoes"
+                  :key="i"
+                  type="button"
+                  @click="setRespostaMulti(questaoAtualIdx, opcao, 'opcao')"
+                  class="w-full text-left px-5 py-4 rounded-2xl border-2 text-sm font-medium transition-all flex items-center gap-3"
+                  :class="getRespostaMultiOpcao(questaoAtualIdx) === opcao
+                    ? 'border-amber-400 bg-amber-50 text-amber-800 shadow-sm'
+                    : 'border-gray-200 text-gray-600 hover:border-amber-200 hover:bg-amber-50/30'"
+                >
+                  <span class="text-xs font-bold w-7 h-7 flex items-center justify-center rounded-full shrink-0 transition-colors"
+                    :class="getRespostaMultiOpcao(questaoAtualIdx) === opcao ? 'bg-amber-400 text-white' : 'bg-gray-100 text-gray-500'">
+                    {{ ['A','B','C','D'][i] }}
+                  </span>
+                  {{ opcao }}
+                </button>
+              </div>
+              <div v-else>
+                <textarea
+                  :value="getRespostaMultiTexto(questaoAtualIdx)"
+                  @input="(e) => setRespostaMulti(questaoAtualIdx, e.target.value, 'texto')"
+                  rows="5"
+                  placeholder="Escreva sua resposta..."
+                  class="w-full border-2 border-gray-200 rounded-2xl px-5 py-4 text-base focus:outline-none focus:border-amber-400 transition resize-none leading-relaxed"
+                ></textarea>
+              </div>
+            </template>
+
+            <!-- FORMATO ANTIGO (questão única) -->
+            <template v-else>
+              <p class="text-xl sm:text-2xl font-semibold text-gray-800 leading-relaxed">{{ missaoAtual?.conteudo_json?.pergunta }}</p>
+              <div v-if="missaoAtual?.conteudo_json?.formato === 'multipla_escolha'" class="space-y-3">
+                <button
+                  v-for="(opcao, i) in missaoAtual?.conteudo_json?.opcoes"
+                  :key="i"
+                  type="button"
+                  @click="opcaoSelecionada = opcao"
+                  class="w-full text-left px-5 py-4 rounded-2xl border-2 text-sm font-medium transition-all flex items-center gap-3"
+                  :class="opcaoSelecionada === opcao
+                    ? 'border-amber-400 bg-amber-50 text-amber-800 shadow-sm'
+                    : 'border-gray-200 text-gray-600 hover:border-amber-200 hover:bg-amber-50/30'"
+                >
+                  <span class="text-xs font-bold w-7 h-7 flex items-center justify-center rounded-full shrink-0 transition-colors"
+                    :class="opcaoSelecionada === opcao ? 'bg-amber-400 text-white' : 'bg-gray-100 text-gray-500'">
+                    {{ ['A','B','C','D'][i] }}
+                  </span>
+                  {{ opcao }}
+                </button>
+              </div>
+              <div v-else>
+                <textarea
+                  v-model="respostaTexto"
+                  rows="5"
+                  placeholder="Escreva sua resposta..."
+                  class="w-full border-2 border-gray-200 rounded-2xl px-5 py-4 text-base focus:outline-none focus:border-amber-400 transition resize-none leading-relaxed"
+                ></textarea>
+              </div>
+            </template>
+
+          </div>
+        </div>
+
+        <!-- Footer com navegação -->
+        <div class="px-5 sm:px-8 py-4 border-t border-gray-100 bg-white shrink-0">
+          <div class="max-w-2xl mx-auto flex gap-3">
+            <template v-if="isMultiQuestao">
+              <button
+                v-if="questaoAtualIdx > 0"
+                @click="questaoAtualIdx--"
+                class="flex-1 border-2 border-gray-200 text-gray-600 font-semibold py-3.5 rounded-2xl transition hover:border-gray-300 hover:bg-gray-50 active:scale-95"
+              >← Anterior</button>
+              <div v-else class="flex-1"></div>
+              <button
+                v-if="questaoAtualIdx < totalQuestoes - 1"
+                @click="avancarQuestao"
+                :disabled="!podeAvancar"
+                class="flex-1 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-200 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-2xl transition active:scale-95"
+              >Próxima →</button>
+              <button
+                v-else
+                @click="enviarResposta"
+                :disabled="!podeEnviar || enviando"
+                class="flex-1 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-200 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-2xl transition active:scale-95 flex items-center justify-center gap-2"
+              >
+                <div v-if="enviando" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                {{ enviando ? 'Enviando...' : '✅ Enviar resposta' }}
+              </button>
+            </template>
+            <template v-else>
+              <button
+                @click="enviarResposta"
+                :disabled="!podeEnviar || enviando"
+                class="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-amber-200 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-2xl transition active:scale-95 flex items-center justify-center gap-2"
+              >
+                <div v-if="enviando" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                {{ enviando ? 'Enviando...' : '✅ Enviar resposta' }}
+              </button>
+            </template>
+          </div>
+        </div>
+
       </div>
     </Transition>
 
@@ -311,7 +423,38 @@
               Carregando...
             </div>
             <template v-else>
-              <div v-if="missaoResultado?.conteudo_json?.formato === 'multipla_escolha'" class="space-y-3">
+              <!-- MULTI-QUESTÃO: mostra por questão -->
+              <template v-if="missaoResultado?.conteudo_json?.questoes?.length > 0">
+                <div v-if="totalRespostas === 0" class="text-center text-sm text-gray-400 py-4">Nenhuma resposta ainda.</div>
+                <template v-else>
+                  <div v-for="(q, qi) in missaoResultado.conteudo_json.questoes" :key="qi" class="space-y-2">
+                    <p class="text-xs font-bold text-amber-700 pt-1">Q{{ qi + 1 }}: {{ q.pergunta }}</p>
+                    <!-- múltipla escolha: barra de resultados -->
+                    <template v-if="q.formato === 'multipla_escolha'">
+                      <div v-for="op in opcoesMultiPercentual(qi, q.opcoes)" :key="op.texto">
+                        <div class="flex items-center justify-between text-xs text-gray-600 mb-1">
+                          <span class="font-medium">{{ op.texto }}</span>
+                          <span>{{ op.quantidade }} · {{ op.percentual }}%</span>
+                        </div>
+                        <div class="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div class="h-full bg-amber-400 rounded-full transition-all" :style="{ width: op.percentual + '%' }"></div>
+                        </div>
+                      </div>
+                    </template>
+                    <!-- texto livre: lista de respostas -->
+                    <template v-else>
+                      <div v-for="(r, idx) in registrosResultado" :key="r.aluno_id" class="bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5">
+                        <p class="text-xs font-semibold text-gray-500 mb-1">{{ missaoResultado?.conteudo_json?.anonimo ? `Participante ${idx + 1}` : r.nome }}</p>
+                        <p class="text-sm text-gray-700 whitespace-pre-line">{{ getRespostaForQuestao(r.resposta_texto, qi) }}</p>
+                      </div>
+                    </template>
+                    <div class="border-b border-gray-100 pt-1"></div>
+                  </div>
+                  <p class="text-xs text-gray-400 text-center pt-1">{{ totalRespostas }} resposta(s) no total</p>
+                </template>
+              </template>
+              <!-- FORMATO ANTIGO: múltipla escolha geral -->
+              <div v-else-if="missaoResultado?.conteudo_json?.formato === 'multipla_escolha'" class="space-y-3">
                 <div v-if="totalRespostas === 0" class="text-center text-sm text-gray-400 py-4">Nenhuma resposta ainda.</div>
                 <template v-else>
                   <div v-for="op in opcoesComPercentual" :key="op.texto">
@@ -326,6 +469,7 @@
                   <p class="text-xs text-gray-400 text-center pt-1">{{ totalRespostas }} resposta(s) no total</p>
                 </template>
               </div>
+              <!-- FORMATO ANTIGO: texto livre -->
               <div v-else class="space-y-2">
                 <div v-if="respostasTexto.length === 0" class="text-center text-sm text-gray-400 py-4">Nenhuma resposta ainda.</div>
                 <div v-for="(r, idx) in respostasTexto" :key="r.aluno_id" class="bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5">
@@ -372,8 +516,7 @@ const tabs = computed(() => [
 ])
 
 function isAtiva(item) {
-  const s = item.status ?? (item.registro?.respondido_em ? null : null)
-  return s === 'PUBLICADA'
+  return item.status === 'PUBLICADA'
 }
 function isEncerrada(item) {
   return (item.status ?? '') === 'ENCERRADA'
@@ -405,15 +548,85 @@ function selecionarItem(item) {
   itemSelecionado.value = item
 }
 
-// ── Modal: responder missão ───────────────────────────────────────────────
+// ── Tela cheia: responder missão ─────────────────────────────────────────
 const modalResponder = ref(false)
 const missaoAtual = ref(null)
 const opcaoSelecionada = ref(null)
 const respostaTexto = ref('')
 const enviando = ref(false)
+const questaoAtualIdx = ref(0)
+
+const respostasMulti = ref([])
+
+const isMultiQuestao = computed(() =>
+  Array.isArray(missaoAtual.value?.conteudo_json?.questoes) && missaoAtual.value.conteudo_json.questoes.length > 0
+)
+const questoesDaMissao = computed(() => missaoAtual.value?.conteudo_json?.questoes ?? [])
+const totalQuestoes = computed(() => questoesDaMissao.value.length)
+const questaoAtual = computed(() => questoesDaMissao.value[questaoAtualIdx.value] ?? null)
+
+const podeAvancar = computed(() => {
+  if (!isMultiQuestao.value) return podeEnviar.value
+  const q = questoesDaMissao.value[questaoAtualIdx.value]
+  if (!q) return false
+  const r = respostasMulti.value.find((x) => x.questao_idx === questaoAtualIdx.value)
+  if (q.formato === 'multipla_escolha') return !!r?.opcao
+  return !!r?.texto?.trim()
+})
+
+function avancarQuestao() {
+  if (questaoAtualIdx.value < totalQuestoes.value - 1) {
+    questaoAtualIdx.value++
+  }
+}
+
+function setRespostaMulti(questaoIdx, value, tipo) {
+  const existing = respostasMulti.value.find((r) => r.questao_idx === questaoIdx)
+  if (existing) {
+    if (tipo === 'opcao') { existing.opcao = value; delete existing.texto }
+    else { existing.texto = value; delete existing.opcao }
+  } else {
+    const novo = { questao_idx: questaoIdx }
+    if (tipo === 'opcao') novo.opcao = value
+    else novo.texto = value
+    respostasMulti.value.push(novo)
+  }
+}
+
+function getRespostaMultiOpcao(questaoIdx) {
+  return respostasMulti.value.find((r) => r.questao_idx === questaoIdx)?.opcao
+}
+
+function getRespostaMultiTexto(questaoIdx) {
+  return respostasMulti.value.find((r) => r.questao_idx === questaoIdx)?.texto ?? ''
+}
+
+function isMultiRespostaJson(resposta_texto) {
+  try {
+    const parsed = JSON.parse(resposta_texto)
+    return Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0].questao_idx === 'number'
+  } catch { return false }
+}
+
+function getRespostaForQuestao(resposta_texto, questaoIdx) {
+  try {
+    const parsed = JSON.parse(resposta_texto)
+    if (!Array.isArray(parsed)) return '—'
+    const r = parsed.find((x) => x.questao_idx === questaoIdx)
+    return r?.opcao ?? r?.texto ?? '—'
+  } catch { return '—' }
+}
 
 const podeEnviar = computed(() => {
   if (!missaoAtual.value) return false
+  const questoes = missaoAtual.value.conteudo_json?.questoes
+  if (Array.isArray(questoes) && questoes.length > 0) {
+    return questoes.every((q, idx) => {
+      const r = respostasMulti.value.find((x) => x.questao_idx === idx)
+      if (q.formato === 'multipla_escolha') return !!r?.opcao
+      return !!r?.texto?.trim()
+    })
+  }
   if (missaoAtual.value.conteudo_json?.formato === 'multipla_escolha') return !!opcaoSelecionada.value
   return respostaTexto.value.trim().length > 0
 })
@@ -422,6 +635,8 @@ function abrirResponder(m) {
   missaoAtual.value = m
   opcaoSelecionada.value = null
   respostaTexto.value = ''
+  respostasMulti.value = []
+  questaoAtualIdx.value = 0
   modalResponder.value = true
 }
 
@@ -437,13 +652,16 @@ async function enviarResposta() {
   try {
     const m = missaoAtual.value
     const formato = m.conteudo_json?.formato ?? 'texto_livre'
+    const isMultiQ = Array.isArray(m.conteudo_json?.questoes) && m.conteudo_json.questoes.length > 0
     const payload = {
       atividade_id: m.id,
       aluno_id: alunoId,
       feito: true,
       respondido_em: new Date().toISOString(),
-      resposta_opcao: formato === 'multipla_escolha' ? opcaoSelecionada.value : null,
-      resposta_texto: formato !== 'multipla_escolha' ? respostaTexto.value.trim() : null,
+      resposta_opcao: !isMultiQ && formato === 'multipla_escolha' ? opcaoSelecionada.value : null,
+      resposta_texto: isMultiQ
+        ? JSON.stringify(respostasMulti.value)
+        : (formato !== 'multipla_escolha' ? respostaTexto.value.trim() : null),
     }
     if (m.registro?._id) payload.id = m.registro._id
 
@@ -474,7 +692,6 @@ async function enviarResposta() {
       feito: true,
     }
 
-    // Atualizar localmente
     const idx = missoes.value.findIndex((x) => x.id === m.id)
     if (idx >= 0) missoes.value[idx] = { ...missoes.value[idx], registro: registroAtualizado }
     if (itemSelecionado.value?.id === m.id) {
@@ -533,6 +750,20 @@ const opcoesComPercentual = computed(() => {
 })
 
 const respostasTexto = computed(() => registrosResultado.value.filter((r) => r.resposta_texto))
+
+function opcoesMultiPercentual(questaoIdx, opcoes) {
+  const total = registrosResultado.value.length
+  return (opcoes ?? []).map((texto) => {
+    const quantidade = registrosResultado.value.filter((r) => {
+      try {
+        const parsed = JSON.parse(r.resposta_texto)
+        if (!Array.isArray(parsed)) return false
+        return parsed.find((x) => x.questao_idx === questaoIdx)?.opcao === texto
+      } catch { return false }
+    }).length
+    return { texto, quantidade, percentual: total > 0 ? Math.round((quantidade / total) * 100) : 0 }
+  })
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function formatarDataCurta(iso) {
@@ -595,7 +826,6 @@ async function carregarAtividades() {
   const normais = atividades.filter((a) => a.tipo_missao !== 'MISSAO')
   const missoesRaw = atividades.filter((a) => a.tipo_missao === 'MISSAO')
 
-  // Montar grupos de provas por turma
   const lista = normais.map((a) => {
     const reg = mapaRegistros[a.id]
     return {
@@ -621,7 +851,6 @@ async function carregarAtividades() {
   }
   grupos.value = Object.values(mapaGrupos).sort((a, b) => a.turmaNome.localeCompare(b.turmaNome))
 
-  // Montar missões
   missoes.value = missoesRaw.map((a) => {
     const reg = mapaRegistros[a.id]
     return {
@@ -652,5 +881,14 @@ onMounted(carregarAtividades)
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: opacity 0.2s ease, transform 0.25s ease;
+}
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
 }
 </style>

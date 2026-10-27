@@ -243,47 +243,13 @@
         </div>
 
         <!-- ── Prévia da visão do aluno ── -->
-        <details class="border-b border-gray-100 group">
-          <summary class="px-3.5 py-2.5 flex items-center gap-2 cursor-pointer select-none bg-indigo-50 hover:bg-indigo-100 transition list-none">
+        <div class="border-b border-gray-100">
+          <button @click="abrirPreview" class="w-full px-3.5 py-2.5 flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 transition">
             <span class="text-indigo-500 text-xs">👁️</span>
-            <span class="text-xs font-semibold text-indigo-700 flex-1">Como o aluno vê esta atividade</span>
-            <span class="text-indigo-400 text-xs group-open:rotate-180 transition-transform">▾</span>
-          </summary>
-          <div class="p-4 bg-indigo-50/50">
-            <!-- Preview de missão -->
-            <template v-if="atividadeSelecionada.tipo_missao === 'MISSAO'">
-              <div class="bg-white border border-indigo-100 rounded-xl p-4 space-y-3 shadow-sm">
-                <div>
-                  <p class="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1.5">
-                    ⭐ Missão da Semana
-                    <span v-if="atividadeSelecionada.data_final" class="ml-2 font-normal normal-case text-gray-400">· prazo: {{ formatarDataCurta(atividadeSelecionada.data_final) }}</span>
-                  </p>
-                  <p class="text-sm font-semibold text-gray-800 leading-snug">{{ atividadeSelecionada.conteudo_json?.pergunta || atividadeSelecionada.titulo }}</p>
-                </div>
-                <!-- Múltipla escolha -->
-                <div v-if="atividadeSelecionada.conteudo_json?.formato === 'multipla_escolha' && atividadeSelecionada.conteudo_json?.opcoes?.length" class="space-y-2 pt-1">
-                  <div v-for="(op, i) in atividadeSelecionada.conteudo_json.opcoes" :key="i" class="flex items-center gap-2.5 text-sm text-gray-600">
-                    <span class="w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 bg-white"></span>
-                    {{ op }}
-                  </div>
-                </div>
-                <!-- Texto livre -->
-                <div v-else class="pt-1">
-                  <div class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-400 bg-gray-50 leading-relaxed">Escreva sua resposta aqui...</div>
-                </div>
-                <p class="text-[10px] text-gray-400">✓ Qualquer resposta válida dentro do prazo conta — <strong class="text-amber-600">+10 ⭐</strong></p>
-              </div>
-            </template>
-            <!-- Preview de prova -->
-            <template v-else>
-              <div class="bg-white border border-indigo-100 rounded-xl p-4 shadow-sm">
-                <p class="text-sm font-semibold text-gray-700 mb-1">📝 {{ atividadeSelecionada.titulo }}</p>
-                <p v-if="atividadeSelecionada.descricao" class="text-xs text-gray-500 mb-2 leading-relaxed">{{ atividadeSelecionada.descricao }}</p>
-                <p class="text-xs text-gray-400">O aluno visualiza a nota e o feedback individual após o professor salvar os registros.</p>
-              </div>
-            </template>
-          </div>
-        </details>
+            <span class="text-xs font-semibold text-indigo-700 flex-1 text-left">Como o aluno vê esta atividade</span>
+            <span class="text-indigo-400 text-xs">→</span>
+          </button>
+        </div>
 
         <!-- Painel de respostas — apenas para missões -->
         <!-- ── Respostas da missão da semana ── -->
@@ -324,15 +290,24 @@
                 </div>
                 <span class="text-[11px] text-gray-400 flex-shrink-0">{{ formatarDataCurta(r.respondido_em) }}</span>
               </div>
-              <!-- Resposta múltipla escolha -->
-              <div v-if="r.resposta_opcao" class="ml-7">
-                <span class="inline-flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-800 text-xs font-medium px-3 py-1.5 rounded-lg">
-                  <span>✦</span> {{ r.resposta_opcao }}
-                </span>
-              </div>
-              <!-- Resposta texto livre -->
-              <div v-else-if="r.resposta_texto" class="ml-7">
-                <p class="text-sm text-gray-700 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5 leading-relaxed">{{ r.resposta_texto }}</p>
+              <!-- Resposta -->
+              <div class="ml-7">
+                <template v-if="r.resposta_opcao">
+                  <span class="inline-flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-800 text-xs font-medium px-3 py-1.5 rounded-lg">
+                    <span>✦</span> {{ r.resposta_opcao }}
+                  </span>
+                </template>
+                <template v-else-if="r.resposta_texto && isMultiRespostaJson(r.resposta_texto)">
+                  <div class="space-y-1.5">
+                    <div v-for="(resp, ri) in parseMultiRespostas(r.resposta_texto)" :key="ri" class="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                      <p class="text-[10px] font-semibold text-gray-400 mb-0.5">Q{{ resp.questao_idx + 1 }}:</p>
+                      <p class="text-xs text-gray-700">{{ resp.opcao ?? resp.texto }}</p>
+                    </div>
+                  </div>
+                </template>
+                <template v-else-if="r.resposta_texto">
+                  <p class="text-sm text-gray-700 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5 leading-relaxed">{{ r.resposta_texto }}</p>
+                </template>
               </div>
             </div>
           </div>
@@ -728,11 +703,11 @@
 
             <!-- Conteúdo da missão -->
             <template v-if="form.tipo_missao === 'MISSAO'">
-              <div class="border-t border-gray-100 pt-4">
-                <p class="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-4">Configuração da missão</p>
+              <div class="border-t border-gray-100 pt-4 space-y-4">
+                <p class="text-xs font-semibold text-amber-600 uppercase tracking-wide">Configuração da missão</p>
 
                 <!-- Modo Anônimo -->
-                <div class="mt-4 flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+                <div class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
                   <div>
                     <p class="text-sm font-medium text-gray-700">🔒 Modo Anônimo</p>
                     <p class="text-xs text-gray-400 mt-0.5">Os estudantes não serão identificados nas respostas</p>
@@ -750,51 +725,90 @@
                   </button>
                 </div>
 
-                <!-- Formato da resposta -->
-                <div class="mb-4">
-                  <label class="text-sm font-medium text-gray-700 mb-2 mt-4 block">Formato da resposta</label>
-                  <div class="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      @click="form.formato_missao = 'multipla_escolha'"
-                      class="py-3 rounded-xl border-2 text-sm font-semibold transition"
-                      :class="form.formato_missao === 'multipla_escolha'
-                        ? 'border-amber-400 bg-amber-50 text-amber-700'
-                        : 'border-gray-200 text-gray-500 hover:border-gray-300'"
-                    >
-                      🔘 Múltipla escolha
-                    </button>
-                    <button
-                      type="button"
-                      @click="form.formato_missao = 'texto_livre'"
-                      class="py-3 rounded-xl border-2 text-sm font-semibold transition"
-                      :class="form.formato_missao === 'texto_livre'
-                        ? 'border-amber-400 bg-amber-50 text-amber-700'
-                        : 'border-gray-200 text-gray-500 hover:border-gray-300'"
-                    >
-                      ✍️ Texto livre
-                    </button>
-                  </div>
-                </div>
+                <!-- Questões -->
+                <div class="space-y-3">
+                  <div
+                    v-for="(questao, qi) in form.questoes"
+                    :key="qi"
+                    class="border border-amber-200 rounded-xl p-4 space-y-3 bg-amber-50/30"
+                  >
+                    <div class="flex items-center justify-between">
+                      <p class="text-xs font-bold text-amber-700">Questão {{ qi + 1 }}</p>
+                      <button
+                        v-if="form.questoes.length > 1"
+                        type="button"
+                        @click="removerQuestao(qi)"
+                        class="text-xs text-red-400 hover:text-red-600 hover:bg-red-50 px-2 py-1 rounded-lg transition"
+                      >✕ Remover</button>
+                    </div>
 
-                <!-- Opções (só para múltipla escolha) -->
-                <div v-if="form.formato_missao === 'multipla_escolha'">
-                  <label class="text-sm font-medium text-gray-700 mb-2 block">Opções de resposta</label>
-                  <div class="space-y-2">
-                    <div
-                      v-for="(opcao, i) in form.opcoes_missao"
-                      :key="i"
-                      class="flex items-center gap-2"
-                    >
-                      <span class="text-xs font-bold text-gray-400 w-5 text-center">{{ ['A','B','C','D'][i] }}</span>
-                      <input
-                        v-model="form.opcoes_missao[i]"
-                        type="text"
-                        :placeholder="`Opção ${['A','B','C','D'][i]}`"
-                        class="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 transition"
-                      />
+                    <!-- Upload de imagem -->
+                    <div>
+                      <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Imagem (opcional)</p>
+                      <div v-if="questao.imagem_url" class="relative mb-2">
+                        <img :src="questao.imagem_url" class="w-full rounded-xl object-cover max-h-48" />
+                        <button
+                          type="button"
+                          @click="questao.imagem_url = ''"
+                          class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs transition"
+                        >✕</button>
+                      </div>
+                      <div v-if="questao._uploadingImg" class="text-xs text-amber-600 flex items-center gap-1.5 py-1">
+                        <span class="w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></span> Enviando imagem...
+                      </div>
+                      <label v-else-if="!questao.imagem_url" class="flex items-center gap-2 cursor-pointer border border-dashed border-gray-300 rounded-xl px-3 py-2.5 hover:bg-gray-50 hover:border-amber-300 transition text-xs text-gray-500">
+                        <span>🖼️ Adicionar imagem</span>
+                        <input type="file" accept="image/*" @change="(e) => uploadImagem(e, qi)" class="hidden" />
+                      </label>
+                    </div>
+
+                    <!-- Pergunta -->
+                    <div>
+                      <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Pergunta</p>
+                      <textarea
+                        v-model="questao.pergunta"
+                        rows="2"
+                        placeholder="Qual é a pergunta desta questão?"
+                        class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 transition resize-none"
+                      ></textarea>
+                    </div>
+
+                    <!-- Tipo de resposta -->
+                    <div>
+                      <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Tipo de resposta</p>
+                      <div class="grid grid-cols-2 gap-2">
+                        <button type="button" @click="questao.formato = 'multipla_escolha'"
+                          class="py-2 rounded-xl border-2 text-xs font-semibold transition"
+                          :class="questao.formato === 'multipla_escolha' ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'"
+                        >🔘 Múltipla escolha</button>
+                        <button type="button" @click="questao.formato = 'texto_livre'"
+                          class="py-2 rounded-xl border-2 text-xs font-semibold transition"
+                          :class="questao.formato === 'texto_livre' ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'"
+                        >✍️ Texto livre</button>
+                      </div>
+                    </div>
+
+                    <!-- Opções de múltipla escolha -->
+                    <div v-if="questao.formato === 'multipla_escolha'" class="space-y-2">
+                      <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Opções de resposta</p>
+                      <div v-for="(_, i) in questao.opcoes" :key="i" class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-gray-400 w-5 text-center">{{ ['A','B','C','D'][i] }}</span>
+                        <input
+                          v-model="questao.opcoes[i]"
+                          type="text"
+                          :placeholder="`Opção ${['A','B','C','D'][i]}`"
+                          class="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 transition"
+                        />
+                      </div>
                     </div>
                   </div>
+
+                  <!-- Botão adicionar questão -->
+                  <button
+                    type="button"
+                    @click="adicionarQuestao"
+                    class="w-full py-2.5 rounded-xl border-2 border-dashed border-amber-300 text-amber-600 hover:bg-amber-50 text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                  >+ Adicionar questão</button>
                 </div>
               </div>
             </template>
@@ -822,6 +836,117 @@
         </div>
       </div>
     </Transition>
+
+    <!-- ── TELA CHEIA: Preview como o aluno vê ── -->
+    <Transition name="slide-up">
+      <div v-if="previewAberto" class="fixed inset-0 bg-white z-[70] flex flex-col overflow-hidden">
+
+        <!-- Header -->
+        <div class="px-5 sm:px-8 py-4 border-b border-amber-100 bg-amber-50 flex items-center justify-between shrink-0">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 mb-0.5">
+              <p class="text-[10px] font-bold text-amber-600 uppercase tracking-wider">⭐ Missão da Semana</p>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-600">👁️ Preview do professor</span>
+            </div>
+            <h3 class="text-base sm:text-lg font-bold text-gray-800 truncate">{{ atividadeSelecionada?.titulo }}</h3>
+          </div>
+          <button @click="previewAberto = false" class="ml-3 shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-gray-400 hover:bg-white/70 hover:text-gray-600 text-xl transition">×</button>
+        </div>
+
+        <!-- Progresso (multi-questão) -->
+        <div v-if="previewQuestoes.length > 1" class="px-5 sm:px-8 pt-5 pb-1 shrink-0 bg-white border-b border-gray-100">
+          <div class="max-w-2xl mx-auto">
+            <div class="flex items-center justify-between text-xs mb-2">
+              <span class="font-semibold text-gray-700">Questão {{ previewQuestaoIdx + 1 }} <span class="text-gray-400 font-normal">de {{ previewQuestoes.length }}</span></span>
+              <span class="font-bold text-amber-600">{{ Math.round(((previewQuestaoIdx + 1) / previewQuestoes.length) * 100) }}%</span>
+            </div>
+            <div class="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full bg-amber-400 rounded-full transition-all duration-300" :style="{ width: ((previewQuestaoIdx + 1) / previewQuestoes.length * 100) + '%' }"></div>
+            </div>
+            <div class="flex gap-2 justify-center mt-3 mb-1">
+              <button
+                v-for="(q, i) in previewQuestoes"
+                :key="i"
+                @click="previewQuestaoIdx = i"
+                class="w-2.5 h-2.5 rounded-full transition-all duration-200"
+                :class="i === previewQuestaoIdx ? 'bg-amber-500 scale-125' : 'bg-gray-200 hover:bg-gray-300'"
+              ></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Conteúdo -->
+        <div class="flex-1 overflow-y-auto">
+          <div class="px-5 sm:px-8 py-6 max-w-2xl mx-auto w-full space-y-5">
+
+            <!-- Aviso anônimo (1ª questão) -->
+            <div v-if="(previewQuestaoIdx === 0 || previewQuestoes.length <= 1) && atividadeSelecionada?.conteudo_json?.anonimo"
+              class="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 flex items-start gap-2.5">
+              <span class="text-blue-400 text-base mt-0.5">🔒</span>
+              <div>
+                <p class="text-xs font-bold text-blue-700 mb-0.5">Esta missão é anônima</p>
+                <p class="text-xs text-blue-600 leading-relaxed">O professor <strong>não terá acesso</strong> a quem respondeu.</p>
+              </div>
+            </div>
+
+            <!-- Multi-questão -->
+            <template v-if="previewQuestoes.length > 0">
+              <img v-if="previewQuestaoAtual?.imagem_url" :src="previewQuestaoAtual.imagem_url" class="w-full rounded-2xl object-cover max-h-72 sm:max-h-96" />
+              <p class="text-xl sm:text-2xl font-semibold text-gray-800 leading-relaxed">{{ previewQuestaoAtual?.pergunta }}</p>
+              <div v-if="previewQuestaoAtual?.formato === 'multipla_escolha'" class="space-y-3">
+                <div
+                  v-for="(opcao, i) in previewQuestaoAtual.opcoes"
+                  :key="i"
+                  class="w-full text-left px-5 py-4 rounded-2xl border-2 border-gray-200 text-sm text-gray-600 flex items-center gap-3 bg-white"
+                >
+                  <span class="text-xs font-bold w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 shrink-0">{{ ['A','B','C','D'][i] }}</span>
+                  {{ opcao }}
+                </div>
+              </div>
+              <div v-else class="border-2 border-gray-200 rounded-2xl px-5 py-4 text-base text-gray-400 bg-gray-50">Escreva sua resposta...</div>
+            </template>
+
+            <!-- Formato antigo (questão única) -->
+            <template v-else-if="atividadeSelecionada?.conteudo_json?.pergunta">
+              <p class="text-xl sm:text-2xl font-semibold text-gray-800 leading-relaxed">{{ atividadeSelecionada.conteudo_json.pergunta }}</p>
+              <div v-if="atividadeSelecionada.conteudo_json?.formato === 'multipla_escolha'" class="space-y-3">
+                <div
+                  v-for="(opcao, i) in atividadeSelecionada.conteudo_json.opcoes"
+                  :key="i"
+                  class="w-full text-left px-5 py-4 rounded-2xl border-2 border-gray-200 text-sm text-gray-600 flex items-center gap-3 bg-white"
+                >
+                  <span class="text-xs font-bold w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 shrink-0">{{ ['A','B','C','D'][i] }}</span>
+                  {{ opcao }}
+                </div>
+              </div>
+              <div v-else class="border-2 border-gray-200 rounded-2xl px-5 py-4 text-base text-gray-400 bg-gray-50">Escreva sua resposta...</div>
+            </template>
+
+          </div>
+        </div>
+
+        <!-- Footer com navegação -->
+        <div class="px-5 sm:px-8 py-4 border-t border-gray-100 bg-white shrink-0">
+          <div class="max-w-2xl mx-auto flex gap-3">
+            <template v-if="previewQuestoes.length > 1">
+              <button v-if="previewQuestaoIdx > 0" @click="previewQuestaoIdx--"
+                class="flex-1 border-2 border-gray-200 text-gray-600 font-semibold py-3.5 rounded-2xl transition hover:border-gray-300 hover:bg-gray-50 active:scale-95">← Anterior</button>
+              <div v-else class="flex-1"></div>
+              <button v-if="previewQuestaoIdx < previewQuestoes.length - 1" @click="previewQuestaoIdx++"
+                class="flex-1 bg-amber-500 text-white font-semibold py-3.5 rounded-2xl transition active:scale-95">Próxima →</button>
+              <button v-else @click="previewAberto = false"
+                class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3.5 rounded-2xl transition active:scale-95">✓ Fechar preview</button>
+            </template>
+            <template v-else>
+              <button @click="previewAberto = false"
+                class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3.5 rounded-2xl transition active:scale-95">✓ Fechar preview</button>
+            </template>
+          </div>
+        </div>
+
+      </div>
+    </Transition>
+
   </div>
 </template>
 
@@ -855,6 +980,16 @@ const modalEncerrar = ref(false);
 const encerrando = ref(false);
 const modalDeletar = ref(false);
 const deletando = ref(false);
+const previewAberto = ref(false);
+const previewQuestaoIdx = ref(0);
+
+const previewQuestoes = computed(() => atividadeSelecionada.value?.conteudo_json?.questoes ?? []);
+const previewQuestaoAtual = computed(() => previewQuestoes.value[previewQuestaoIdx.value] ?? null);
+
+function abrirPreview() {
+  previewQuestaoIdx.value = 0;
+  previewAberto.value = true;
+}
 
 const form = reactive({
   titulo: "",
@@ -866,6 +1001,7 @@ const form = reactive({
   opcoes_missao: ["", "", "", ""],
   data_final: "",
   anonimo: false,
+  questoes: [{ pergunta: '', formato: 'texto_livre', opcoes: ['', '', '', ''], imagem_url: '', _uploadingImg: false }],
   tipoEscolhido: false, // controla o step de seleção no drawer de criação
 });
 
@@ -1343,6 +1479,7 @@ function abrirCriacao() {
   form.opcoes_missao = ["", "", "", ""];
   form.data_final = umaSemanaAPartirDeHoje();
   form.anonimo = false;
+  form.questoes = [{ pergunta: '', formato: 'texto_livre', opcoes: ['', '', '', ''], imagem_url: '', _uploadingImg: false }];
   form.tipoEscolhido = false;
   painelAberto.value = true;
 }
@@ -1369,10 +1506,27 @@ function abrirEdicao(atividade) {
   form.descricao = atividade.descricao ?? "";
   form.tipo_missao = atividade.tipo_missao ?? "NORMAL";
   const conteudo = atividade.conteudo_json ?? {};
-  form.formato_missao = conteudo.formato ?? "multipla_escolha";
-  form.pergunta_missao = conteudo.pergunta ?? "";
-  form.opcoes_missao = conteudo.opcoes ?? ["", "", "", ""];
   form.anonimo = conteudo.anonimo ?? false;
+  if (Array.isArray(conteudo.questoes) && conteudo.questoes.length > 0) {
+    form.questoes = conteudo.questoes.map((q) => ({
+      pergunta: q.pergunta ?? '',
+      formato: q.formato ?? 'texto_livre',
+      opcoes: q.opcoes?.length === 4 ? [...q.opcoes] : ['', '', '', ''],
+      imagem_url: q.imagem_url ?? '',
+      _uploadingImg: false,
+    }))
+  } else {
+    form.questoes = [{
+      pergunta: conteudo.pergunta ?? '',
+      formato: conteudo.formato ?? 'texto_livre',
+      opcoes: conteudo.opcoes?.length === 4 ? [...conteudo.opcoes] : ['', '', '', ''],
+      imagem_url: '',
+      _uploadingImg: false,
+    }]
+  }
+  form.formato_missao = form.questoes[0]?.formato ?? 'multipla_escolha';
+  form.pergunta_missao = form.questoes[0]?.pergunta ?? '';
+  form.opcoes_missao = form.questoes[0]?.opcoes ?? ['', '', '', ''];
   // Converter timestamptz → datetime-local (sem segundos)
   form.data_final = atividade.data_final
     ? atividade.data_final.slice(0, 16)
@@ -1383,6 +1537,45 @@ function abrirEdicao(atividade) {
 
 function fecharPainel() {
   painelAberto.value = false;
+}
+
+function adicionarQuestao() {
+  form.questoes.push({ pergunta: '', formato: 'texto_livre', opcoes: ['', '', '', ''], imagem_url: '', _uploadingImg: false })
+}
+
+function removerQuestao(idx) {
+  form.questoes.splice(idx, 1)
+}
+
+async function uploadImagem(event, questaoIdx) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  form.questoes[questaoIdx]._uploadingImg = true
+  try {
+    const ext = file.name.split('.').pop()
+    const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+    const { data, error } = await supabase.storage.from('atividade-imagens').upload(path, file, { contentType: file.type, upsert: false })
+    if (error) throw error
+    const { data: urlData } = supabase.storage.from('atividade-imagens').getPublicUrl(data.path)
+    form.questoes[questaoIdx].imagem_url = urlData.publicUrl
+  } catch (err) {
+    console.error(err)
+    $toast.error('Erro ao enviar imagem. Verifique se o bucket "atividade-imagens" existe no Supabase Storage.')
+  } finally {
+    form.questoes[questaoIdx]._uploadingImg = false
+    event.target.value = ''
+  }
+}
+
+function isMultiRespostaJson(resposta_texto) {
+  try {
+    const parsed = JSON.parse(resposta_texto)
+    return Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0].questao_idx === 'number'
+  } catch { return false }
+}
+
+function parseMultiRespostas(resposta_texto) {
+  try { return JSON.parse(resposta_texto) } catch { return [] }
 }
 
 async function salvar() {
@@ -1399,16 +1592,13 @@ async function salvar() {
     const conteudo_json =
       form.tipo_missao === "MISSAO"
         ? {
-            formato: form.formato_missao,
-            pergunta: form.titulo.trim(),
+            questoes: form.questoes.map((q) => ({
+              pergunta: q.pergunta.trim(),
+              formato: q.formato,
+              imagem_url: q.imagem_url || null,
+              ...(q.formato === 'multipla_escolha' ? { opcoes: q.opcoes.map((o) => o.trim()).filter(Boolean) } : {}),
+            })),
             anonimo: form.anonimo,
-            ...(form.formato_missao === "multipla_escolha"
-              ? {
-                  opcoes: form.opcoes_missao
-                    .map((o) => o.trim())
-                    .filter(Boolean),
-                }
-              : {}),
           }
         : null;
 
@@ -1554,6 +1744,15 @@ onMounted(async () => {
 .slide-enter-from,
 .slide-leave-to {
   transform: translateX(100%);
+}
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: opacity 0.2s ease, transform 0.25s ease;
+}
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
 }
 
 /* Remove setas do input number */

@@ -41,6 +41,7 @@
           <SidebarItem to="/admin/pre-inscricao" label="Pré-inscrições" icon="📋" :open="true" @click="$emit('toggle')" />
           <SidebarItem to="/admin/gamificacao" label="Gamificação" icon="⭐" :open="true" @click="$emit('toggle')" />
           <SidebarItem to="/admin/troca-turma" label="Troca de Turma" icon="🔄" :open="true" @click="$emit('toggle')" />
+          <SidebarItem to="/admin/recompensas" label="Recompensas" icon="🎁" :open="true" @click="$emit('toggle')" />
           <SidebarItem to="/admin/configuracoes" label="Configurações" icon="⚙️" :open="true" @click="$emit('toggle')" />
           <SidebarItem to="/admin/reset-semestral" label="Reset Semestral" icon="🔄" :open="true" @click="$emit('toggle')" />
 
