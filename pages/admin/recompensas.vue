@@ -8,23 +8,35 @@
     </div>
 
     <!-- Filtros -->
-    <div class="flex gap-2 mb-6 flex-wrap">
-      <button
-        v-for="f in filtros"
-        :key="f.value"
-        @click="filtroAtivo = f.value"
-        class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition border-2"
-        :class="filtroAtivo === f.value
-          ? 'border-green-600 bg-green-50 text-green-700'
-          : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'"
+    <div class="flex flex-wrap gap-3 mb-6 items-center">
+      <!-- Status -->
+      <div class="flex gap-2 flex-wrap">
+        <button
+          v-for="f in filtros"
+          :key="f.value"
+          @click="filtroAtivo = f.value"
+          class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition border-2"
+          :class="filtroAtivo === f.value
+            ? 'border-green-600 bg-green-50 text-green-700'
+            : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'"
+        >
+          {{ f.label }}
+          <span
+            v-if="f.count > 0"
+            class="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+            :class="filtroAtivo === f.value ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
+          >{{ f.count }}</span>
+        </button>
+      </div>
+
+      <!-- Turma -->
+      <select
+        v-model="turmaFiltro"
+        class="border-2 border-gray-200 bg-white text-sm text-gray-600 font-semibold rounded-xl px-3 py-2 focus:outline-none focus:border-green-500 transition"
       >
-        {{ f.label }}
-        <span
-          v-if="f.count > 0"
-          class="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-          :class="filtroAtivo === f.value ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
-        >{{ f.count }}</span>
-      </button>
+        <option :value="null">Todas as turmas</option>
+        <option v-for="t in turmasDisponiveis" :key="t.id" :value="t.id">{{ t.nome }}</option>
+      </select>
     </div>
 
     <!-- Loading -->
@@ -56,8 +68,11 @@
               <span class="text-xs text-gray-400">{{ formatarData(req.created_at) }}</span>
             </div>
             <p class="text-sm font-bold text-gray-800">{{ req.usuarios?.nome ?? '—' }}</p>
-            <p class="text-xs text-gray-500 mt-0.5">
-              {{ recompensaNome(req.nivel) }} · Turma: {{ req.turma?.nome ?? '—' }}
+            <p class="text-sm font-semibold text-gray-700 mt-0.5">
+              {{ recompensaInfo(req.nivel).emoji }} {{ recompensaInfo(req.nivel).recompensa }}
+            </p>
+            <p class="text-xs text-gray-400 mt-0.5">
+              {{ req.nivel }} · {{ recompensaInfo(req.nivel).limiar }} · Turma: {{ req.turma?.nome ?? '—' }}
             </p>
             <p v-if="req.status === 'ENTREGUE' && req.dt_entrega" class="text-xs text-green-600 mt-1">
               Entregue em {{ formatarData(req.dt_entrega) }}
@@ -100,21 +115,21 @@ const { $toast } = useNuxtApp()
 const loading = ref(true)
 const requisicoes = ref([])
 const filtroAtivo = ref('PENDENTE')
+const turmaFiltro = ref(null)
+const turmasDisponiveis = ref([])
 
 const RECOMPENSAS_MAP = {
-  1: { nome: 'Nível 1 — 60⭐', emoji: '🥉' },
-  2: { nome: 'Nível 2 — 90⭐', emoji: '🥈' },
-  3: { nome: 'Nível 3 — 150⭐', emoji: '🥇' },
-  4: { nome: 'Nível 4 — 210⭐', emoji: '🏅' },
-  5: { nome: 'Nível 5 — 270⭐', emoji: '🎖️' },
-  6: { nome: 'Nível 6 — 330⭐', emoji: '🏆' },
-  7: { nome: 'Nível 7 (Professor) — 380⭐', emoji: '👑' },
+  'Nível 1': { recompensa: 'Doce / bombom',                     emoji: '🍬', limiar: '60⭐'  },
+  'Nível 2': { recompensa: 'Sticker personalizado',             emoji: '🎨', limiar: '90⭐'  },
+  'Nível 3': { recompensa: 'Marca-página',                      emoji: '🔖', limiar: '150⭐' },
+  'Nível 4': { recompensa: 'Bottom do Linguesc',                emoji: '📌', limiar: '210⭐' },
+  'Nível 5': { recompensa: 'Pontos bônus na prova +0,5',        emoji: '📝', limiar: '270⭐' },
+  'Nível 6': { recompensa: 'Troféu impresso em 3D',             emoji: '🏆', limiar: '330⭐' },
+  'Nível 7': { recompensa: 'Troféu impresso em 3D (professor)', emoji: '👑', limiar: '380⭐' },
 }
 
-function recompensaNome(nivel) {
-  const r = RECOMPENSAS_MAP[nivel]
-  if (!r) return `Nível ${nivel}`
-  return `${r.emoji} ${r.nome}`
+function recompensaInfo(nivel) {
+  return RECOMPENSAS_MAP[nivel] ?? { recompensa: '—', emoji: '🎁', limiar: '' }
 }
 
 function formatarData(iso) {
@@ -132,9 +147,20 @@ const filtros = computed(() => [
 ])
 
 const requisicoesFiltradas = computed(() => {
-  if (filtroAtivo.value === 'TODAS') return requisicoes.value
-  return requisicoes.value.filter((r) => r.status === filtroAtivo.value)
+  let lista = filtroAtivo.value === 'TODAS' ? requisicoes.value : requisicoes.value.filter((r) => r.status === filtroAtivo.value)
+  if (turmaFiltro.value) lista = lista.filter((r) => r.turma_id === turmaFiltro.value)
+  return lista
 })
+
+async function carregarTurmas() {
+  const { data } = await supabase
+    .from('turma')
+    .select('id, nome')
+    .eq('is_teste', false)
+    .eq('status', 'ATIVA')
+    .order('nome')
+  turmasDisponiveis.value = data ?? []
+}
 
 async function carregar() {
   loading.value = true
@@ -197,5 +223,5 @@ async function reabrirRequisicao(req) {
   }
 }
 
-onMounted(() => carregar())
+onMounted(() => { carregar(); carregarTurmas() })
 </script>
