@@ -155,6 +155,54 @@
                   </div>
                 </template>
               </div>
+              <div v-if="!itemSelecionado.conteudo_json?.anonimo" class="mt-3 border-t border-green-100 pt-3">
+                <p class="text-xs font-semibold text-gray-500 mb-2">💬 Feedback do professor</p>
+
+                <div v-if="loadingFeedback" class="flex items-center gap-2 text-xs text-gray-400 py-1">
+                  <div class="w-3 h-3 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"></div>
+                  Carregando...
+                </div>
+
+                <div v-else class="space-y-2">
+                  <div v-if="feedbackThread.length === 0" class="text-xs text-gray-400 italic pb-1">
+                    Nenhuma mensagem ainda.
+                  </div>
+                  <template v-else>
+                    <div
+                      v-for="msg in feedbackThread"
+                      :key="msg.id"
+                      class="flex flex-col"
+                      :class="msg.autor_id === user?.id ? 'items-end' : 'items-start'"
+                    >
+                      <span class="text-[10px] font-semibold mb-0.5" :class="msg.autor_id === user?.id ? 'text-green-600' : 'text-blue-600'">
+                        {{ msg.autor_id === user?.id ? 'Você' : 'Professor' }}
+                      </span>
+                      <div
+                        class="max-w-[90%] rounded-xl px-3 py-2 text-sm text-gray-700 leading-relaxed"
+                        :class="msg.autor_id === user?.id ? 'bg-green-50 border border-green-100' : 'bg-blue-50 border border-blue-100'"
+                      >{{ msg.mensagem }}</div>
+                    </div>
+                  </template>
+                </div>
+
+                <div v-if="!loadingFeedback" class="flex gap-2 mt-2">
+                  <textarea
+                    v-model="respostaFeedbackMissao"
+                    rows="2"
+                    placeholder="Escrever ao professor..."
+                    class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition resize-none text-gray-700"
+                  />
+                  <button
+                    @click="enviarRespostaFeedbackMissao"
+                    :disabled="enviandoRespostaFeedbackMissao || !respostaFeedbackMissao.trim()"
+                    class="px-3 py-2 rounded-xl bg-green-600 hover:bg-green-700 disabled:bg-green-200 text-white text-sm font-semibold transition self-end"
+                  >
+                    <div v-if="enviandoRespostaFeedbackMissao" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span v-else>→</span>
+                  </button>
+                </div>
+              </div>
+
               <button @click="abrirResultado(itemSelecionado)" class="mt-2 w-full text-xs font-medium text-amber-600 hover:text-amber-700 py-1.5 transition-colors">
                 📊 Ver o que a turma respondeu →
               </button>
@@ -513,6 +561,11 @@ const missoes = ref([])
 
 const itemSelecionado = ref(null)
 
+const feedbackThread = ref([])
+const loadingFeedback = ref(false)
+const respostaFeedbackMissao = ref('')
+const enviandoRespostaFeedbackMissao = ref(false)
+
 // ── Tabs ──────────────────────────────────────────────────────────────────
 const tabAtiva = ref('ativas')
 
@@ -553,6 +606,11 @@ function statusIconMissao(m) {
 
 function selecionarItem(item) {
   itemSelecionado.value = item
+  feedbackThread.value = []
+  respostaFeedbackMissao.value = ''
+  if (item._tipo === 'missao' && item.registro?.respondido_em) {
+    carregarFeedbackDaMissao(item.id)
+  }
 }
 
 // ── Tela cheia: responder missão ─────────────────────────────────────────
@@ -675,21 +733,45 @@ async function enviarResposta() {
     const { error } = await supabase.from('atividade_aluno').upsert(payload, { onConflict: 'atividade_id,aluno_id' })
     if (error) throw error
 
-    const { data: usuarioRow, error: erroUsuario } = await supabase.from('usuarios').select('estrelas').eq('id', alunoId).single()
-    if (erroUsuario) throw erroUsuario
+    // Verifica se já ganhou pontos por missão nesta semana calendário
+    const semanaInicio = inicioSemanaAtual()
+    const { data: bonusEstaSemana } = await supabase
+      .from('estrelas_historico')
+      .select('id')
+      .eq('usuario_id', alunoId)
+      .eq('motivo', 'MISSAO_RESPONDIDA')
+      .gte('created_at', semanaInicio.toISOString())
 
-    const novoSaldo = (usuarioRow?.estrelas ?? 0) + ESTRELAS_MISSAO
-    const { error: erroSaldo } = await supabase.from('usuarios').update({ estrelas: novoSaldo }).eq('id', alunoId)
-    if (erroSaldo) throw erroSaldo
+    const jaGanhouEstaSemana = bonusEstaSemana && bonusEstaSemana.length > 0
 
-    atualizarEstrelasLocal(novoSaldo)
-    supabase.from('estrelas_historico').insert({
-      usuario_id: alunoId,
-      quantidade: ESTRELAS_MISSAO,
-      motivo: 'MISSAO_RESPONDIDA',
-      descricao: `Respondeu missão da semana: ${m.titulo ?? 'Missão'}`,
-      turma_id: m.turmaId ?? null,
-    }).then(() => {})
+    if (!jaGanhouEstaSemana) {
+      // Conta semanas distintas já bonificadas (limite: 8)
+      const { data: historicoMissoes } = await supabase
+        .from('estrelas_historico')
+        .select('created_at')
+        .eq('usuario_id', alunoId)
+        .eq('motivo', 'MISSAO_RESPONDIDA')
+
+      const semanasDistintas = new Set((historicoMissoes || []).map((h) => isoWeekYear(h.created_at)))
+
+      if (semanasDistintas.size < 8) {
+        const { data: usuarioRow, error: erroUsuario } = await supabase.from('usuarios').select('estrelas').eq('id', alunoId).single()
+        if (erroUsuario) throw erroUsuario
+
+        const novoSaldo = (usuarioRow?.estrelas ?? 0) + ESTRELAS_MISSAO
+        const { error: erroSaldo } = await supabase.from('usuarios').update({ estrelas: novoSaldo }).eq('id', alunoId)
+        if (erroSaldo) throw erroSaldo
+
+        atualizarEstrelasLocal(novoSaldo)
+        supabase.from('estrelas_historico').insert({
+          usuario_id: alunoId,
+          quantidade: ESTRELAS_MISSAO,
+          motivo: 'MISSAO_RESPONDIDA',
+          descricao: `Respondeu missão da semana: ${m.titulo ?? 'Missão'}`,
+          turma_id: m.turmaId ?? null,
+        }).then(() => {})
+      }
+    }
 
     const registroAtualizado = {
       ...(m.registro || {}),
@@ -706,7 +788,7 @@ async function enviarResposta() {
     }
 
     modalResponder.value = false
-    $toast.success('Missão da semana respondida! +10 ⭐')
+    $toast.success(jaGanhouEstaSemana ? 'Missão respondida! Você já ganhou os pontos desta semana.' : 'Missão da semana respondida! +10 ⭐')
   } catch (err) {
     console.error(err)
     $toast.error('Erro ao enviar sua resposta.')
@@ -795,6 +877,25 @@ function formatarNota(nota) {
   return Number(nota).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+// ── Helpers de semana calendário ─────────────────────────────────────────
+function inicioSemanaAtual() {
+  const d = new Date()
+  const dia = d.getDay()
+  const diff = dia === 0 ? -6 : 1 - dia
+  d.setDate(d.getDate() + diff)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+function isoWeekYear(isoString) {
+  const d = new Date(isoString)
+  const dow = d.getDay() === 0 ? 7 : d.getDay()
+  d.setDate(d.getDate() + 4 - dow)
+  const yearStart = new Date(d.getFullYear(), 0, 1)
+  const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7)
+  return `${d.getFullYear()}-W${week}`
+}
+
 // ── Carregamento ──────────────────────────────────────────────────────────
 async function carregarAtividades() {
   const alunoId = user.value?.id
@@ -875,6 +976,46 @@ async function carregarAtividades() {
   })
 
   loading.value = false
+}
+
+async function carregarFeedbackDaMissao(atividadeId) {
+  loadingFeedback.value = true
+  const alunoId = user.value?.id
+  if (!alunoId) { loadingFeedback.value = false; return }
+  const { data } = await supabase
+    .from('missao_feedback')
+    .select('id, autor_id, aluno_id, mensagem, created_at')
+    .eq('atividade_id', atividadeId)
+    .eq('aluno_id', alunoId)
+    .order('created_at', { ascending: true })
+  feedbackThread.value = data || []
+  loadingFeedback.value = false
+}
+
+async function enviarRespostaFeedbackMissao() {
+  if (!respostaFeedbackMissao.value.trim() || !itemSelecionado.value) return
+  enviandoRespostaFeedbackMissao.value = true
+  const alunoId = user.value?.id
+  try {
+    const { data, error } = await supabase
+      .from('missao_feedback')
+      .insert({
+        atividade_id: itemSelecionado.value.id,
+        aluno_id: alunoId,
+        autor_id: alunoId,
+        mensagem: respostaFeedbackMissao.value.trim(),
+      })
+      .select('id, autor_id, aluno_id, mensagem, created_at')
+      .single()
+    if (error) throw error
+    feedbackThread.value.push(data)
+    respostaFeedbackMissao.value = ''
+  } catch (err) {
+    console.error(err)
+    $toast.error('Erro ao enviar mensagem.')
+  } finally {
+    enviandoRespostaFeedbackMissao.value = false
+  }
 }
 
 onMounted(carregarAtividades)

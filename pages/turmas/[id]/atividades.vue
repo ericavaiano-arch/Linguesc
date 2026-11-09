@@ -171,13 +171,13 @@
               ✏️ Editar
             </button>
 
-            <!-- Badge leitura — encerrada -->
-            <span
+            <button
               v-if="atividadeSelecionada.status === 'ENCERRADA'"
-              class="text-xs px-3 py-1.5 rounded-lg bg-red-50 border border-red-100 text-red-500 font-medium"
+              @click="reabrirAtividade"
+              class="text-xs px-3 py-1.5 rounded-lg border border-green-200 text-green-600 hover:bg-green-50 transition"
             >
-              🔒 Encerrada
-            </span>
+              🔓 Reabrir
+            </button>
 
             <!-- Botão deletar — só missões encerradas -->
             <button
@@ -309,6 +309,17 @@
                   <p class="text-sm text-gray-700 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5 leading-relaxed">{{ r.resposta_texto }}</p>
                 </template>
               </div>
+              <!-- Botão de feedback individual (não disponível em modo anônimo) -->
+              <div v-if="!atividadeSelecionada.conteudo_json?.anonimo" class="ml-7 mt-2">
+                <button
+                  @click="abrirFeedbackMissao(r)"
+                  class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border transition"
+                  :class="contagemFeedbacks[r.aluno_id] ? 'bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'"
+                >
+                  💬
+                  <span>{{ contagemFeedbacks[r.aluno_id] ? `${contagemFeedbacks[r.aluno_id]} ${contagemFeedbacks[r.aluno_id] === 1 ? 'mensagem' : 'mensagens'}` : 'Dar feedback' }}</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -414,6 +425,61 @@
       </div>
     </div>
 
+    <!-- ── MODAL FEEDBACK MISSÃO ── -->
+    <Transition name="fade">
+      <div v-if="modalFeedbackMissao" class="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
+          <div class="flex items-start justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+            <div>
+              <h3 class="text-base font-semibold text-gray-800">💬 Feedback da missão</h3>
+              <p class="text-sm text-gray-400 mt-0.5">{{ alunoFeedbackAtual?.nome }}</p>
+            </div>
+            <button @click="modalFeedbackMissao = false" class="text-gray-400 hover:text-gray-600 text-2xl leading-none mt-0.5">×</button>
+          </div>
+
+          <!-- Thread -->
+          <div class="flex-1 overflow-y-auto px-6 py-4 space-y-3 min-h-[120px]">
+            <div v-if="threadFeedbackMissao.length === 0" class="text-center text-xs text-gray-400 py-6">
+              Nenhuma mensagem ainda. Seja o primeiro a comentar.
+            </div>
+            <div
+              v-for="msg in threadFeedbackMissao"
+              :key="msg.id"
+              class="flex flex-col"
+              :class="msg.autor_id === user?.id ? 'items-end' : 'items-start'"
+            >
+              <span class="text-[10px] font-semibold mb-1" :class="msg.autor_id === user?.id ? 'text-green-600' : 'text-blue-600'">
+                {{ msg.autor_id === user?.id ? 'Você' : alunoFeedbackAtual?.nome }}
+              </span>
+              <div
+                class="max-w-[85%] rounded-xl px-4 py-2.5 text-sm text-gray-700 leading-relaxed"
+                :class="msg.autor_id === user?.id ? 'bg-green-50 border border-green-100' : 'bg-blue-50 border border-blue-100'"
+              >{{ msg.mensagem }}</div>
+            </div>
+          </div>
+
+          <!-- Input -->
+          <div class="px-6 pb-5 pt-3 border-t border-gray-100 flex gap-2">
+            <textarea
+              v-model="textoFeedbackMissao"
+              rows="2"
+              placeholder="Escreva seu feedback... (Ctrl+Enter para enviar)"
+              class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition resize-none text-gray-700"
+              @keydown.enter.ctrl="enviarMsgFeedbackMissao"
+            />
+            <button
+              @click="enviarMsgFeedbackMissao"
+              :disabled="enviandoFeedbackMissao || !textoFeedbackMissao.trim()"
+              class="px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 disabled:bg-green-200 text-white text-sm font-semibold transition flex items-center justify-center self-end"
+            >
+              <div v-if="enviandoFeedbackMissao" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span v-else>Enviar</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
     <!-- ── MODAL FEEDBACK ── -->
     <Transition name="fade">
       <div
@@ -494,7 +560,7 @@
             <p class="text-2xl mb-3">🔒</p>
             <h3 class="text-base font-semibold text-gray-800 mb-1">Encerrar atividade?</h3>
             <p class="text-sm text-gray-500">
-              Os estudantes não poderão mais responder. Esta ação não pode ser desfeita.
+              Os estudantes não poderão mais responder. Você poderá reabrir a atividade depois, se precisar.
             </p>
           </div>
           <div class="px-6 pb-6 flex gap-3">
@@ -531,8 +597,7 @@
               A missão <strong>{{ atividadeSelecionada?.titulo }}</strong> será removida permanentemente.
             </p>
             <div class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
-              ⭐ Os <strong>+20 estrelas</strong> ganhos por criar esta missão serão descontados do seu saldo.
-              Você ganhará as estrelas novamente ao criar uma nova missão esta semana.
+              ⭐ Se esta foi a única missão criada nesta semana, os <strong>+20 estrelas</strong> serão descontados do seu saldo.
             </div>
           </div>
           <div class="px-6 pb-6 flex gap-3">
@@ -599,19 +664,11 @@
               </button>
               <button
                 @click="escolherTipoCriacao('MISSAO')"
-                :disabled="bloqueioMissao.bloqueado"
-                class="flex flex-col items-center gap-2 py-5 rounded-xl border-2 transition"
-                :class="bloqueioMissao.bloqueado
-                  ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
-                  : 'border-gray-200 hover:border-amber-400 hover:bg-amber-50 text-gray-600 hover:text-amber-700'"
+                class="flex flex-col items-center gap-2 py-5 rounded-xl border-2 transition border-gray-200 hover:border-amber-400 hover:bg-amber-50 text-gray-600 hover:text-amber-700"
               >
-                <span class="text-3xl">{{ bloqueioMissao.bloqueado ? '🔒' : '⭐' }}</span>
-                <span class="text-sm font-semibold" :class="bloqueioMissao.bloqueado ? 'text-gray-400' : ''">Missão da Semana</span>
-                <span class="text-[10px] text-center leading-tight px-1" :class="bloqueioMissao.bloqueado ? 'text-gray-400' : 'text-gray-400'">
-                  {{ bloqueioMissao.bloqueado
-                    ? (bloqueioMissao.motivo === 'ativa' ? 'Encerre a missão ativa' : 'Já criada neste ciclo')
-                    : 'Interativa · +20 ⭐' }}
-                </span>
+                <span class="text-3xl">⭐</span>
+                <span class="text-sm font-semibold">Missão da Semana</span>
+                <span class="text-[10px] text-center leading-tight px-1 text-gray-400">Interativa · +20 ⭐</span>
               </button>
             </div>
           </div>
@@ -970,7 +1027,6 @@ const turmaId = Number(route.params.id);
 
 const turma = ref(null);
 const atividades = ref([]);
-const aulasDatas = ref([]); // datas das aulas da turma para calcular o ciclo
 const atividadeSelecionada = ref(null);
 const registros = ref([]);
 const registrosSnapshot = ref(""); // JSON dos registros ao carregar/salvar
@@ -989,6 +1045,14 @@ const modalDeletar = ref(false);
 const deletando = ref(false);
 const previewAberto = ref(false);
 const previewQuestaoIdx = ref(0);
+
+// ── Feedback modal (missão) ────────────────────────────────────────────────
+const modalFeedbackMissao = ref(false)
+const alunoFeedbackAtual = ref(null)
+const threadFeedbackMissao = ref([])
+const textoFeedbackMissao = ref('')
+const enviandoFeedbackMissao = ref(false)
+const contagemFeedbacks = reactive({})
 
 const previewQuestoes = computed(() => atividadeSelecionada.value?.conteudo_json?.questoes ?? []);
 const previewQuestaoAtual = computed(() => previewQuestoes.value[previewQuestaoIdx.value] ?? null);
@@ -1011,54 +1075,6 @@ const form = reactive({
   questoes: [{ pergunta: '', formato: 'texto_livre', opcoes: ['', '', '', ''], imagem_url: '', _uploadingImg: false }],
   tipoEscolhido: false, // controla o step de seleção no drawer de criação
 });
-
-// ── Ciclo de missão (última aula ≤ hoje, fallback: segunda da semana) ────────
-const inicioCicloAtual = computed(() => {
-  const hoje = new Date()
-  hoje.setHours(23, 59, 59, 999)
-  const passadas = aulasDatas.value
-    .map((d) => new Date(d + 'T00:00:00'))
-    .filter((d) => d <= hoje)
-    .sort((a, b) => b - a)
-
-  if (passadas.length > 0) {
-    const inicio = new Date(passadas[0])
-    inicio.setHours(0, 0, 0, 0)
-    return inicio
-  }
-
-  // Fallback: segunda-feira da semana atual
-  const d = new Date()
-  const dia = d.getDay()
-  const diff = dia === 0 ? -6 : 1 - dia
-  d.setDate(d.getDate() + diff)
-  d.setHours(0, 0, 0, 0)
-  return d
-})
-
-// ── Bloqueio de criação de missão ─────────────────────────────────────────
-const bloqueioMissao = computed(() => {
-  const ativa = atividades.value.find(
-    (a) => a.tipo_missao === 'MISSAO' && a.status === 'PUBLICADA'
-  )
-  if (ativa) {
-    return { bloqueado: true, motivo: 'ativa', msg: 'Já existe uma missão ativa nesta turma. Encerre-a antes de criar uma nova.' }
-  }
-
-  const ciclo = inicioCicloAtual.value
-  const noCiclo = atividades.value.find(
-    (a) => a.tipo_missao === 'MISSAO' && new Date(a.criado_em) >= ciclo
-  )
-  if (noCiclo) {
-    return {
-      bloqueado: true,
-      motivo: 'ciclo',
-      msg: `A missão "${noCiclo.titulo}" já foi criada neste ciclo. Uma nova só pode ser criada após a próxima aula.`,
-    }
-  }
-
-  return { bloqueado: false, motivo: null, msg: null }
-})
 
 // ── Filtro de status ───────────────────────────────────────────────────────
 const filtroAtivo = ref('todas')
@@ -1248,33 +1264,51 @@ async function deletarMissao() {
   try {
     const missaoId = atividadeSelecionada.value.id;
 
-    // Verifica quantas missões o professor já criou (para decidir se reverte estrelas)
-    const turmasIds = await turmasIdsDoProfessor(user.value?.id);
-    const { count } = await supabase
-      .from('atividade')
-      .select('id', { count: 'exact', head: true })
-      .eq('tipo_missao', 'MISSAO')
-      .in('turma_id', turmasIds);
+    // Verifica se deve reverter os pontos desta semana
+    let reverteuPontos = false
+    if (user.value?.id) {
+      const semanaInicio = inicioSemanaAtual()
+      const turmasIds = await turmasIdsDoProfessor(user.value.id)
 
-    // Se estava dentro do limite de 8, o bônus foi dado — reverte
-    if ((count ?? 0) <= 8 && user.value?.id) {
-      const { data: prof } = await supabase
-        .from('usuarios')
-        .select('estrelas')
-        .eq('id', user.value.id)
-        .single();
+      // Verifica se ganhou pontos esta semana
+      const { data: bonusEstaSemana } = await supabase
+        .from('estrelas_historico')
+        .select('id')
+        .eq('usuario_id', user.value.id)
+        .eq('motivo', 'CRIOU_MISSAO')
+        .gte('created_at', semanaInicio.toISOString())
 
-      if (prof) {
-        const novoSaldo = Math.max(0, (prof.estrelas ?? 0) - 20);
-        await supabase.from('usuarios').update({ estrelas: novoSaldo }).eq('id', user.value.id);
-        atualizarEstrelasLocal(novoSaldo);
-        supabase.from('estrelas_historico').insert({
-          usuario_id: user.value.id,
-          quantidade: -20,
-          motivo: 'MISSAO_DELETADA',
-          descricao: 'Missão da semana deletada',
-          turma_id: turmaId ?? null,
-        }).then(() => {});
+      const temBonusEstaSemana = bonusEstaSemana && bonusEstaSemana.length > 0
+
+      // Verifica se há outras missões criadas esta semana (exceto a que está sendo deletada)
+      const { count: outrasMissoesEstaSemana } = await supabase
+        .from('atividade')
+        .select('id', { count: 'exact', head: true })
+        .eq('tipo_missao', 'MISSAO')
+        .in('turma_id', turmasIds)
+        .neq('id', missaoId)
+        .gte('criado_em', semanaInicio.toISOString())
+
+      if (temBonusEstaSemana && (outrasMissoesEstaSemana ?? 0) === 0) {
+        const { data: prof } = await supabase
+          .from('usuarios')
+          .select('estrelas')
+          .eq('id', user.value.id)
+          .single()
+
+        if (prof) {
+          const novoSaldo = Math.max(0, (prof.estrelas ?? 0) - 20)
+          await supabase.from('usuarios').update({ estrelas: novoSaldo }).eq('id', user.value.id)
+          atualizarEstrelasLocal(novoSaldo)
+          supabase.from('estrelas_historico').insert({
+            usuario_id: user.value.id,
+            quantidade: -20,
+            motivo: 'MISSAO_DELETADA',
+            descricao: 'Missão da semana deletada',
+            turma_id: turmaId ?? null,
+          }).then(() => {})
+          reverteuPontos = true
+        }
       }
     }
 
@@ -1283,7 +1317,7 @@ async function deletarMissao() {
     const { error } = await supabase.from('atividade').delete().eq('id', missaoId);
     if (error) throw error;
 
-    $toast.success('Missão deletada. -20 ⭐ removidos. Você ganhará as estrelas novamente ao criar uma nova missão esta semana.');
+    $toast.success(reverteuPontos ? 'Missão deletada. -20 ⭐ removidos.' : 'Missão deletada.');
     modalDeletar.value = false;
     atividadeSelecionada.value = null;
     await carregarAtividades();
@@ -1303,15 +1337,6 @@ async function carregarTurma() {
     .eq("id", turmaId)
     .single();
   turma.value = data;
-}
-
-async function carregarAulas() {
-  const { data } = await supabase
-    .from("aula")
-    .select("data")
-    .eq("turma_id", turmaId)
-    .order("data", { ascending: false });
-  aulasDatas.value = (data || []).map((a) => a.data);
 }
 
 async function carregarAtividades() {
@@ -1385,6 +1410,9 @@ async function escolherAtividade(atividade) {
 
   loadingAlunos.value = false;
   tirarSnapshot();
+  if (atividade.tipo_missao === 'MISSAO') {
+    carregarContagemFeedbacks(atividade.id)
+  }
 }
 
 function abrirFeedback(registro) {
@@ -1492,10 +1520,6 @@ function abrirCriacao() {
 }
 
 function escolherTipoCriacao(tipo) {
-  if (tipo === "MISSAO" && bloqueioMissao.value.bloqueado) {
-    $toast.error(bloqueioMissao.value.msg)
-    return
-  }
   if (tipo === "MISSAO") {
     form.tipo_missao = "MISSAO";
     form.tipo = "NOTA";
@@ -1587,12 +1611,6 @@ function parseMultiRespostas(resposta_texto) {
 
 async function salvar() {
   if (!form.titulo.trim()) return;
-
-  // Guard: bloqueia criação de missão duplicada
-  if (modo.value === 'criar' && form.tipo_missao === 'MISSAO' && bloqueioMissao.value.bloqueado) {
-    $toast.error(bloqueioMissao.value.msg)
-    return
-  }
 
   salvandoForm.value = true;
   try {
@@ -1691,14 +1709,27 @@ async function salvar() {
 }
 
 async function creditarBonusMissaoProfessor(professorId) {
-  // Conta quantas missões este professor já criou (via turmas dele)
-  const { count } = await supabase
-    .from('atividade')
-    .select('id', { count: 'exact', head: true })
-    .eq('tipo_missao', 'MISSAO')
-    .in('turma_id', await turmasIdsDoProfessor(professorId))
+  const semanaInicio = inicioSemanaAtual()
 
-  if ((count ?? 0) > 8) return // Limite de 8 missões com bônus
+  // Verifica se já ganhou pontos por missão nesta semana calendário
+  const { data: bonusEstaSemana } = await supabase
+    .from('estrelas_historico')
+    .select('id')
+    .eq('usuario_id', professorId)
+    .eq('motivo', 'CRIOU_MISSAO')
+    .gte('created_at', semanaInicio.toISOString())
+
+  if (bonusEstaSemana && bonusEstaSemana.length > 0) return // já ganhou esta semana
+
+  // Conta semanas distintas já bonificadas (limite: 8)
+  const { data: historico } = await supabase
+    .from('estrelas_historico')
+    .select('created_at')
+    .eq('usuario_id', professorId)
+    .eq('motivo', 'CRIOU_MISSAO')
+
+  const semanasDistintas = new Set((historico || []).map((h) => isoWeekYear(h.created_at)))
+  if (semanasDistintas.size >= 8) return // limite de 8 semanas atingido
 
   const { data: prof } = await supabase
     .from('usuarios')
@@ -1729,8 +1760,104 @@ async function turmasIdsDoProfessor(professorId) {
   return (data ?? []).map((t) => t.id)
 }
 
+function inicioSemanaAtual() {
+  const d = new Date()
+  const dia = d.getDay()
+  const diff = dia === 0 ? -6 : 1 - dia
+  d.setDate(d.getDate() + diff)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+function isoWeekYear(isoString) {
+  const d = new Date(isoString)
+  const dow = d.getDay() === 0 ? 7 : d.getDay()
+  d.setDate(d.getDate() + 4 - dow)
+  const yearStart = new Date(d.getFullYear(), 0, 1)
+  const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7)
+  return `${d.getFullYear()}-W${week}`
+}
+
+async function reabrirAtividade() {
+  try {
+    const agora = new Date()
+    const dataAtual = atividadeSelecionada.value.data_final
+      ? new Date(atividadeSelecionada.value.data_final)
+      : null
+    // Se não há prazo ou o prazo já passou, usa hoje como base; senão, estende a partir do prazo atual
+    const base = (!dataAtual || dataAtual < agora) ? agora : dataAtual
+    const novaData = new Date(base.getTime() + 7 * 24 * 60 * 60 * 1000)
+    novaData.setHours(23, 0, 0, 0)
+
+    const { error } = await supabase
+      .from('atividade')
+      .update({ status: 'PUBLICADA', data_final: novaData.toISOString() })
+      .eq('id', atividadeSelecionada.value.id)
+    if (error) throw error
+    $toast.success('Atividade reaberta. Prazo estendido em 7 dias.')
+    await carregarAtividades()
+    const atualizada = atividades.value.find((a) => a.id === atividadeSelecionada.value.id)
+    if (atualizada) atividadeSelecionada.value = atualizada
+  } catch (err) {
+    console.error(err)
+    $toast.error('Erro ao reabrir atividade.')
+  }
+}
+
+async function carregarContagemFeedbacks(atividadeId) {
+  const { data } = await supabase
+    .from('missao_feedback')
+    .select('aluno_id')
+    .eq('atividade_id', atividadeId)
+  for (const key of Object.keys(contagemFeedbacks)) delete contagemFeedbacks[key]
+  for (const row of (data || [])) {
+    contagemFeedbacks[row.aluno_id] = (contagemFeedbacks[row.aluno_id] ?? 0) + 1
+  }
+}
+
+async function abrirFeedbackMissao(r) {
+  alunoFeedbackAtual.value = { aluno_id: r.aluno_id, nome: r.nome }
+  threadFeedbackMissao.value = []
+  textoFeedbackMissao.value = ''
+  modalFeedbackMissao.value = true
+  const { data } = await supabase
+    .from('missao_feedback')
+    .select('id, autor_id, aluno_id, mensagem, created_at')
+    .eq('atividade_id', atividadeSelecionada.value.id)
+    .eq('aluno_id', r.aluno_id)
+    .order('created_at', { ascending: true })
+  threadFeedbackMissao.value = data || []
+}
+
+async function enviarMsgFeedbackMissao() {
+  if (!textoFeedbackMissao.value.trim() || !alunoFeedbackAtual.value) return
+  enviandoFeedbackMissao.value = true
+  try {
+    const { data, error } = await supabase
+      .from('missao_feedback')
+      .insert({
+        atividade_id: atividadeSelecionada.value.id,
+        aluno_id: alunoFeedbackAtual.value.aluno_id,
+        autor_id: user.value.id,
+        mensagem: textoFeedbackMissao.value.trim(),
+      })
+      .select('id, autor_id, aluno_id, mensagem, created_at')
+      .single()
+    if (error) throw error
+    threadFeedbackMissao.value.push(data)
+    textoFeedbackMissao.value = ''
+    const id = alunoFeedbackAtual.value.aluno_id
+    contagemFeedbacks[id] = (contagemFeedbacks[id] ?? 0) + 1
+  } catch (err) {
+    console.error(err)
+    $toast.error('Erro ao enviar feedback.')
+  } finally {
+    enviandoFeedbackMissao.value = false
+  }
+}
+
 onMounted(async () => {
-  await Promise.all([carregarTurma(), carregarAtividades(), carregarAulas()]);
+  await Promise.all([carregarTurma(), carregarAtividades()]);
   loading.value = false;
 });
 </script>
